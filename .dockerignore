@@ -1,0 +1,44 @@
+# --- Virtual environments (local-only; not needed in the image) ---
+gpu_env
+.venv
+venv
+env
+
+# --- Git metadata (the image does not need history) ---
+.git
+.gitignore
+.gitattributes
+
+# --- Datasets (downloaded at runtime via torchvision / HF Hub) ---
+src/datasets/data
+
+# --- Pretrained checkpoints (local artefacts from previous runs) ---
+pinsfacerecognition_resnet18_checkpoints
+logs/training/model_checkpoints
+
+# --- Logs, experiment tracking, profiler output ---
+logs
+wandb
+*.log
+
+# --- Python cache and build artefacts (recursive) ---
+**/__pycache__
+**/*.pyc
+**/*.pyo
+*.egg-info
+**/*.egg-info
+build
+dist
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# --- Editor / IDE ---
+.vscode
+.idea
+*.swp
+.DS_Store
+
+# --- CI / local config (not required at runtime) ---
+.github
+docker-compose.dev.yml

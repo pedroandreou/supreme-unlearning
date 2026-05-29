@@ -1,0 +1,21 @@
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0  # Keep this as it has useful general hooks
+    hooks:
+    -   id: check-yaml
+        types: [yaml]
+    -   id: end-of-file-fixer
+        exclude: ^docs/
+    -   id: trailing-whitespace
+
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+    -   id: ruff
+        args: [--fix]  # Autofix fixable issues
+    -   id: ruff-format  # Replaces black
+
+-   repo: https://github.com/scop/pre-commit-shfmt  # Keep if you need shell script formatting
+    rev: v3.10.0-1
+    hooks:
+    -   id: shfmt

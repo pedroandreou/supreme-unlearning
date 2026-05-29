@@ -1,0 +1,72 @@
+services:
+  cuda_12_1_from_scratch:
+    extends:
+      file: docker-compose.yml
+      service: cuda_12_1_from_scratch
+    user: vscode
+    shm_size: '16gb'  # Increased from 5gb to 16gb  # num_workers > 0 --> error. See https://github.com/ultralytics/yolov3/issues/283
+    ipc: host
+    # ulimits:
+    #   nofile:
+    #     soft: 65536
+    #     hard: 65536
+    environment:
+      # Basic environment setup
+      - PYTHONUNBUFFERED=1
+      - PYTHONFAULTHANDLER=1 # Enable detailed Python error traces
+      # NCCL Debug Configuration
+      - NCCL_BLOCKING_WAIT=1
+      - NCCL_ASYNC_ERROR_HANDLING=1
+      - NCCL_SOCKET_TIMEOUT=30
+      # Detailed NCCL debugging
+      # - NCCL_DEBUG=INFO
+      # - NCCL_DEBUG_SUBSYS=INIT,COLL,NET,ALL # Too verbose
+      # - NCCL_DEBUG_TIMESTAMP_FORMAT="%H:%M:%S"      # Simpler timestamp format than "%Y-%m-%d %H:%M:%S.%f"
+      # - NCCL_DEBUG_TIMESTAMP_LEVELS=INFO,WARN,ERROR # Apply timestamps to these log levels
+      # PyTorch Distributed Debug Settings
+      # - TORCH_DISTRIBUTED_DEBUG=INFO         # Instead of DETAIL
+      - TORCH_NCCL_DESYNC_DEBUG=1            # Help identify rank desynchronization
+      - TORCH_NCCL_DUMP_ON_TIMEOUT=1         # Dump NCCL state on timeout
+      - TORCH_NCCL_TRACE_BUFFER_SIZE=1048576 # 1MB buffer for NCCL traces
+      # See more here:
+      # https://www.restack.io/p/pytorch-lightning-answer-ddp-timeout-cat-ai#clzst1qjk01konqyp1by8onjk
+      # https://docs.nvidia.com/deeplearning/nccl/user-guide/docs/troubleshooting.html
+      # https://massedcompute.com/faq-answers/?question=What%20are%20the%20best%20practices%20for%20debugging%20NCCL%20issues%20with%20NVIDIA%20GPUs?
+      # Other NCCL settings:
+      # - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      # - NCCL_P2P_DISABLE=1  # If needed for memory issues
+      # - NCCL_NSOCKS_PERTHREAD=4
+      # - NCCL_SOCKET_NTHREADS=8
+      # - NCCL_MIN_NCHANNELS=2
+
+    volumes:
+      - vscode-server:/home/vscode/.vscode-server
+      # Removed the .gitconfig mount since we handle git config in setup.sh
+      # - ~/.gitconfig:/home/vscode/.gitconfig:cached
+      - ./.devcontainer:/home/vscode/.devcontainer:cached
+    # # Add an init command to fix permissions if needed
+    # command: >
+    #   bash -c "
+    #     if [ -d /app/.venv ]; then
+    #       sudo chown -R vscode:vscode /app/.venv &&
+    #       sudo chmod -R u+w /app/.venv
+    #     fi &&
+    #     /bin/bash
+    #   "
+    # develop:
+    #   watch:
+    #     - action: sync
+    #       path: .
+    #       target: /app/host
+    #       ignore:
+    #         - .venv/
+    #         - logs/
+    #         - wandb/
+    #         - __pycache__/
+    #         - "*.pyc"
+    #     - action: rebuild
+    #       path: ./requirements.cuda_12_1.txt
+
+volumes:
+  vscode-server:
+    name: vscode-server-extensions

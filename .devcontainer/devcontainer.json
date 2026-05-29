@@ -1,0 +1,61 @@
+{
+    "name": "Python 3",
+    "dockerComposeFile": "../docker-compose.dev.yml",
+    "service": "cuda_12_1_from_scratch",
+    "workspaceFolder": "/app/host",
+    "shutdownAction": "stopCompose",
+    // "initializeCommand": "${localWorkspaceFolder}/.devcontainer/cleanup.sh",
+    "containerEnv": {
+        "DOCKER_BUILDKIT": "1"
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest",
+            "ppa": false
+        },
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": false,
+            "username": "vscode",
+            "upgradePackages": true
+        }
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "files.trimTrailingWhitespace": true,
+                "git.autofetch": true,
+                "python.defaultInterpreterPath": "/usr/local/bin/python",
+                "git.path": "/usr/bin/git",
+                "terminal.integrated.defaultProfile.linux": "bash",
+                "terminal.integrated.profiles.linux": {
+                    "bash": {
+                        "path": "/bin/bash",
+                        "icon": "terminal"
+                    }
+                },
+                "dev.containers.copyGitConfig": false,
+                "dev.containers.gitCredentialHelperConfigLocation": "none",
+                "debug.hideSidePreLaunchTasks": true,
+                "debug.onTaskErrors": "debugAnyway"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-azuretools.vscode-docker",
+                "github.vscode-github-actions",
+                "github.vscode-pull-request-github",
+                "shardulm94.trailing-spaces",
+                "ms-python.debugpy"
+            ]
+        }
+    },
+    "remoteUser": "vscode",
+    "containerUser": "vscode",
+    "updateRemoteUserUID": true,
+    "forwardPorts": [5678],
+    "postCreateCommand": [
+        "/bin/bash",
+        "-c",
+        "sudo apt-get update && sudo apt-get install -y ripgrep && chmod +x /app/host/.devcontainer/setup.sh && /app/host/.devcontainer/setup.sh"
+    ]
+}

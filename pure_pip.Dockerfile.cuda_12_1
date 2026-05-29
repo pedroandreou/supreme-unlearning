@@ -1,0 +1,98 @@
+# Use CUDA 12.1 base image
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu20.04
+
+# Avoid prompts from apt
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Create the vscode user first, before any other operations
+ARG USERNAME=vscode
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+# Create the user before any other operations
+RUN apt-get update \
+    && apt-get install -y sudo \
+    && groupadd --gid $USER_GID $USERNAME \
+    && useradd -s /bin/bash --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create and set permissions for required directories
+RUN mkdir -p /home/$USERNAME/.$USERNAME-server \
+    && chown -R $USERNAME:$USERNAME /home/$USERNAME/.$USERNAME-server
+# Set the working directory
+WORKDIR /app
+# Make sure vscode user owns the app directory
+RUN chown $USERNAME:$USERNAME /app
+
+# Install Python 3.9 and its tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    curl \
+    && apt-get install -y --allow-change-held-packages --no-install-recommends \
+    libnccl2=2.18.3-1+cuda12.1 \
+    libnccl-dev=2.18.3-1+cuda12.1 \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+    python3.9 \
+    python3.9-dev \
+    python3.9-distutils \
+    python3-pip \
+    && rm -f /usr/bin/python3 \
+    && rm -f /usr/bin/python \
+    && rm -f /usr/bin/pip \
+    && ln -s /usr/bin/python3.9 /usr/bin/python3 \
+    && ln -s /usr/bin/python3.9 /usr/bin/python \
+    && ln -s /usr/bin/pip3 /usr/bin/pip \
+    && curl -sS https://bootstrap.pypa.io/get-pip.py | python3.9 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch to the vscode user for pip operations
+USER $USERNAME
+
+# Upgrade pip + setuptools (>=64 needed for PEP 660 editable installs) + wheel
+RUN pip3 install --upgrade pip setuptools wheel
+
+# Copy requirements first to leverage Docker cache
+COPY --chown=$USERNAME:$USERNAME requirements.cuda_12_1.txt /app/
+RUN pip3 install -r requirements.cuda_12_1.txt
+
+# Copy the entire project directory into the container
+COPY --chown=$USERNAME:$USERNAME . /app/host
+
+# Change to the host directory and install the package using setup.py
+WORKDIR /app/host
+RUN pip install -e .
+
+# Switch back to root for system operations
+USER root
+
+# Make scripts executable and convert line endings
+RUN apt-get update && apt-get install -y dos2unix \
+    && dos2unix /app/host/src/MAIN.sh \
+    && find /app/host/src -type f -iname "*.sh" -exec dos2unix {} \; \
+    && chmod +x /app/host/src/MAIN.sh \
+    && find /app/host/src -type f -iname "*.sh" -exec chmod +x {} \; \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install NVIDIA Management Library Python bindings for GPU monitoring
+# Required by Scalene profiler to track GPU memory usage and performance metrics
+# Disabled: scalene is not in requirements.cuda_12_1.txt, and nvidia-ml-py (newer official package) is already
+# installed via requirements. To re-enable Scalene profiling, add `scalene` to requirements.cuda_12_1.txt and
+# uncomment the RUN below.
+# RUN pip3 install nvidia-ml-py3 && \
+#     python3 -m scalene.set_nvidia_gpu_modes || true
+
+# Set the working directory
+WORKDIR /app/host/src
+# Switch back to vscode user for final operations
+USER $USERNAME
+
+# Put pip --user bin on PATH so CLI tools (wandb, lightning, torchrun, huggingface-cli,
+# transformers-cli, debugpy, etc.) are invokable by name inside the container.
+ENV PATH="/home/vscode/.local/bin:${PATH}"

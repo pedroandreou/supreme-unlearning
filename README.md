@@ -197,44 +197,7 @@ Each submitted job runs one `(seed, dataset, model)` cell independently; cells r
 
 ## 🔁 Reproducing the paper
 
-The paper demonstrates SUPREME on Pins Face Recognition using ResNet18 and ViT, under full-class and random-sample unlearning, across 10 training seeds with the matched protocol (`J = K = 1`). Reproducing the reported numbers is a two-step process: run the experiment grid, then produce the LaTeX tables from the W&B-logged results.
-
-### 1. Run the paper's experiment grid
-
-The command below matches the paper's setup exactly (six unlearning methods plus the retrain baseline, both scenarios, both architectures, seeds 260–269, 0.1% forget set for the random-sample scenario):
-
-```bash
-bash src/run_local.sh \
-  --gpu 0 \
-  --datasets PinsFaceRecognition \
-  --models ResNet18,ViT \
-  --strategies fullclass,random_ \
-  --methods retrain,finetune,bad_teacher,random_labeling,unsir,ssd,lfssd \
-  --forget-percs 0.001
-```
-
-The paper's runs used a single NVIDIA L40S GPU (48 GB VRAM) to maintain exact numerical parity with the reference unlearning implementations. The pipeline writes per-stage outputs (checkpoints, W&B runs) so re-launching after an interruption is safe.
-
-To run a single-cell smoke test before committing to the full grid (one method, one seed, one scenario), see the Quickstart command above.
-
-### 2. Produce the paper's LaTeX tables
-
-After the runs finish and their results are in W&B, export the metrics and render the three paper tables:
-
-```bash
-# Export and combine W&B metrics into CSVs under
-#   src/utils/wandb_utils/results_extraction/wandb_metrics_summary/
-bash src/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --all-existing
-
-# Open the notebook and run all cells - it writes the three .tex files next to itself
-jupyter notebook src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb
-```
-
-The notebook ([`src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb)) emits:
-
-- `pins_results_table.tex` (main paper): $\Delta\mathrm{Acc}_{D_{\mathrm{f}}'}$, $\Delta\mathrm{Acc}_{D_{\mathrm{r}}'}$, $\mathrm{Layer}$
-- `pins_appendix_table.tex` (appendix): $\mathrm{Activ}_{D_{\mathrm{f}}'}$, $\mathrm{Activ}_{D_{\mathrm{r}}'}$, $\Delta\mathrm{MIA}$
-- `pins_raw_values_table.tex` (appendix): the per-seed raw accuracy values
+Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md).
 
 ---
 
@@ -258,6 +221,7 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
 | [`src/README.md`](src/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |
+| [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md) | Single command for the paper's experiment grid plus the W&B-export-to-LaTeX-tables workflow |
 | [`docs/script_arguments.md`](docs/script_arguments.md) | Full argument reference for `train_main.py` and `unlearn_main.py` |
 | [`docs/extending.md`](docs/extending.md) | How to add new datasets, models, methods, and metrics |
 | [`docs/tooling.md`](docs/tooling.md) | Debugger, profiler, Fabric callbacks, process tracker, split export, W&B exporter |
@@ -280,11 +244,10 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
 }
 ```
 
-This work was conducted at [Loughborough University](https://www.lboro.ac.uk/) and supported by a PhD studentship from [Darktrace](https://darktrace.com/).
+This work was conducted at [Loughborough University](https://www.lboro.ac.uk/).
 
 <p>
   <a href="https://www.lboro.ac.uk/"><img src="https://img.shields.io/badge/Loughborough_University-9B1B30?style=flat&logoColor=white" alt="Loughborough University"></a>
-  <a href="https://darktrace.com/"><img src="https://img.shields.io/badge/Darktrace-0F1923?style=flat&logoColor=white" alt="Darktrace"></a>
 </p>
 
 ---

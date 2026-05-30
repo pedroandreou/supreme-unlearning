@@ -17,7 +17,7 @@ Enable advanced debugging (CUDA/MPS error tracing, blocking calls) by setting `D
 
 ```bash
 # Standalone
-DEBUGGER=1 bash src/run_local.sh --gpu 0 --methods finetune --models ViT --training-seeds 260
+DEBUGGER=1 bash supreme/run_local.sh --gpu 0 --methods finetune --models ViT --training-seeds 260
 
 # In .vscode/tasks.json (Docker Dev Container)
 "args": ["-c", "cd /app/host/src && DEBUGGER=1 bash run_local.sh --gpu 0 --methods finetune"]
@@ -25,7 +25,7 @@ DEBUGGER=1 bash src/run_local.sh --gpu 0 --methods finetune --models ViT --train
 
 **How it works.** `debugpy` attaches to rank 0 (port 5678, listens on 0.0.0.0) after distributed setup but before training. Other ranks (> 0) continue normally. Set breakpoints in VS Code; rank 0 pauses.
 
-**Implementation:** attachment in [`src/utils/training/train_main.py`](../src/utils/training/train_main.py) and [`src/utils/unlearning/unlearn_main.py`](../src/utils/unlearning/unlearn_main.py); core logic in [`src/utils/debug_utils.py`](../src/utils/debug_utils.py) (`create_debugger_session()`).
+**Implementation:** attachment in [`supreme/utils/training/train_main.py`](../supreme/utils/training/train_main.py) and [`supreme/utils/unlearning/unlearn_main.py`](../supreme/utils/unlearning/unlearn_main.py); core logic in [`supreme/utils/debug_utils.py`](../supreme/utils/debug_utils.py) (`create_debugger_session()`).
 
 Debugging flags are only enabled when `DEBUGGER=1`, keeping normal runs fast.
 
@@ -43,13 +43,13 @@ SCALENE=1 ./run_local.sh ...
 "args": ["-c", "cd /app/host/src && SCALENE=1 bash run_local.sh --gpu 0 --methods finetune"]
 ```
 
-When `SCALENE=1`, the framework automatically sets `num_workers=0` for all DataLoaders (see [`src/utils/generic_utils.py`](../src/utils/generic_utils.py)) because Scalene has limited multiprocessing support. `SCALENE` can be combined with `DEBUGGER` for simultaneous profiling and debugging.
+When `SCALENE=1`, the framework automatically sets `num_workers=0` for all DataLoaders (see [`supreme/utils/generic_utils.py`](../supreme/utils/generic_utils.py)) because Scalene has limited multiprocessing support. `SCALENE` can be combined with `DEBUGGER` for simultaneous profiling and debugging.
 
 ---
 
 ## Fabric callbacks
 
-SUPREME uses [Lightning Fabric callbacks](https://lightning.ai/docs/fabric/2.1.0/guide/callbacks.html) to hook into the training/unlearning/evaluation loops without polluting the main code. Register callback classes in [`src/utils/fabric/callbacks.py`](../src/utils/fabric/callbacks.py) and call their hooks:
+SUPREME uses [Lightning Fabric callbacks](https://lightning.ai/docs/fabric/2.1.0/guide/callbacks.html) to hook into the training/unlearning/evaluation loops without polluting the main code. Register callback classes in [`supreme/utils/fabric/callbacks.py`](../supreme/utils/fabric/callbacks.py) and call their hooks:
 
 ```python
 fabric.call("on_train_epoch_start", fabric=fabric, epoch=epoch)
@@ -64,7 +64,7 @@ Provided callbacks: `TrainingCallback` (training/unlearning), `TestCallback` (va
 
 **When they're disabled.** During unlearning and metric evaluation the callback calls are commented out so the logging overhead doesn't skew our timing, power, and memory measurements. Initial training keeps them enabled (we don't benchmark training).
 
-When callbacks are enabled, the framework logs every 10 batches (see `if batch_idx % 10 == 0:` in [`src/utils/fabric/callbacks.py`](../src/utils/fabric/callbacks.py)). The regular logging also feeds the [process tracker](#process-auto-cleanup) so it can distinguish healthy progress from stalls.
+When callbacks are enabled, the framework logs every 10 batches (see `if batch_idx % 10 == 0:` in [`supreme/utils/fabric/callbacks.py`](../supreme/utils/fabric/callbacks.py)). The regular logging also feeds the [process tracker](#process-auto-cleanup) so it can distinguish healthy progress from stalls.
 
 W&B specifics - rank-0 logging, offline mode, sync workflow, and metric synchronisation - are documented separately in [`docs/wandb_integration.md`](wandb_integration.md).
 
@@ -110,7 +110,7 @@ Each contains two subdirectories:
   Class,electrical_devices,500
   ...
   ```
-  `Unknown Class` means the integer label wasn't registered in [`src/utils/project_config.py`](../src/utils/project_config.py) (e.g. `cifar20_dict`, `cifar100_dict`, `pins_dict`) - we only define labels for classes we care about for forgetting. Reference: original mappings in [bad-teaching-unlearning](https://github.com/vikram2000b/bad-teaching-unlearning).
+  `Unknown Class` means the integer label wasn't registered in [`supreme/utils/project_config.py`](../supreme/utils/project_config.py) (e.g. `cifar20_dict`, `cifar100_dict`, `pins_dict`) - we only define labels for classes we care about for forgetting. Reference: original mappings in [bad-teaching-unlearning](https://github.com/vikram2000b/bad-teaching-unlearning).
 
 - `set_info/` - `forget_set_info.csv` and `retain_set_info.csv` with detailed batch/sample info:
   ```
@@ -120,7 +120,7 @@ Each contains two subdirectories:
   0,2,people,girl
   ```
 
-Useful for verifying splits, catching data leakage, and debugging unexpected per-class results. Implementation in [`src/utils/debug_utils.py`](../src/utils/debug_utils.py).
+Useful for verifying splits, catching data leakage, and debugging unexpected per-class results. Implementation in [`supreme/utils/debug_utils.py`](../supreme/utils/debug_utils.py).
 
 ---
 
@@ -130,13 +130,13 @@ Fetch, combine, and visualise metrics from W&B projects via the orchestrator scr
 
 ```bash
 # Full pipeline (export → combine → analyse) for curated projects (recommended)
-./src/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --all-existing
+./supreme/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --all-existing
 
 # Single combination
-./src/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --export ResNet18 Cifar20 fullclass veg
+./supreme/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --export ResNet18 Cifar20 fullclass veg
 
 # Clean generated files
-./src/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --clean
+./supreme/utils/wandb_utils/results_extraction/orchestrate_wandb_export.sh --clean
 ```
 
 ### Execution modes
@@ -159,7 +159,7 @@ Fetch, combine, and visualise metrics from W&B projects via the orchestrator scr
 
 Two analysis notebooks consume the exported CSVs:
 
-- [`src/utils/wandb_utils/results_analysis/all_results_exploration.ipynb`](../src/utils/wandb_utils/results_analysis/all_results_exploration.ipynb) - broad multi-dataset analysis across the whole sweep.
-- [`src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](../src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb) - produces the exact LaTeX tables in the paper (Pins Face Recognition main + appendix).
+- [`supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb`](../supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb) - broad multi-dataset analysis across the whole sweep.
+- [`supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](../supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb) - produces the exact LaTeX tables in the paper (Pins Face Recognition main + appendix).
 
 For the field-naming conventions used by the exporter (paper-to-W&B metric mapping, per-metric paths), see [`docs/wandb_fields.md`](wandb_fields.md). For W&B's runtime behaviour (rank-0 logging, offline mode, sync workflow), see [`docs/wandb_integration.md`](wandb_integration.md).

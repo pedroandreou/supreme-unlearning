@@ -89,19 +89,19 @@ The first build takes several minutes; subsequent builds use Docker cache. You m
 
 ## 4. macOS-only: install bash 4+
 
-`src/run_local.sh` uses bash 4 features (`mapfile`, etc.). macOS ships with bash 3.2.
+`supreme/run_local.sh` uses bash 4 features (`mapfile`, etc.). macOS ships with bash 3.2.
 
 ```bash
 brew install bash
 # Then run experiments with:
-/opt/homebrew/bin/bash src/run_local.sh --gpu 0 ...
+/opt/homebrew/bin/bash supreme/run_local.sh --gpu 0 ...
 ```
 
 ## Verifying the install
 
 ```bash
 python -c "import torch; print('torch', torch.__version__, '| cuda', torch.cuda.is_available(), '| mps', torch.backends.mps.is_available())"
-python -c "from src.utils.unlearning import unlearn_main; print('SUPREME import OK')"
+python -c "from supreme.utils.unlearning import unlearn_main; print('SUPREME import OK')"
 ```
 
 Then run a minimal smoke test - see [README → Running Experiments](../README.md#-running-experiments).

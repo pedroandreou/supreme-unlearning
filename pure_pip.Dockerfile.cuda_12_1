@@ -73,9 +73,9 @@ USER root
 
 # Make scripts executable and convert line endings
 RUN apt-get update && apt-get install -y dos2unix \
-    && dos2unix /app/host/src/MAIN.sh \
+    && dos2unix /app/host/supreme/MAIN.sh \
     && find /app/host/src -type f -iname "*.sh" -exec dos2unix {} \; \
-    && chmod +x /app/host/src/MAIN.sh \
+    && chmod +x /app/host/supreme/MAIN.sh \
     && find /app/host/src -type f -iname "*.sh" -exec chmod +x {} \; \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*

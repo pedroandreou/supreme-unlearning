@@ -79,7 +79,7 @@ It ships ready-to-use implementations of **5 datasets, 2 model architectures, 11
 - **Registry-based extensibility.** Add a dataset, model, unlearning method, or metric by implementing a small interface and registering its module path, with no framework changes required (see [`docs/extending.md`](docs/extending.md)).
 - **Efficient.** When several experiments share the same training configuration, the model is trained once and reused across them, guarded by a file lock so parallel SLURM jobs and concurrent local runs stay consistent.
 
-For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`src/README.md`](src/README.md) and [`docs/notation.md`](docs/notation.md).
+For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`supreme/README.md`](supreme/README.md) and [`docs/notation.md`](docs/notation.md).
 
 ---
 
@@ -91,11 +91,11 @@ Registry-based components are **user-extensible** - implement the relevant inter
 
 | Component | Available implementations |
 |---|---|
-| **Datasets** | [CIFAR-10](src/datasets/datasets.py), [CIFAR-20](src/datasets/datasets.py), [CIFAR-100](src/datasets/datasets.py), [PinsFaceRecognition](src/datasets/datasets.py), [Caltech-101](src/datasets/datasets.py) |
-| **Models** | [ResNet18](src/models/ResNet18.py), [Vision Transformer (ViT)](src/models/ViT.py) |
-| **Baselines** | [Retrain](src/methods/baselines/retrain.py), [Original](src/methods/baselines/original.py) |
-| **Unlearning methods** | [Fine-Tuning (FT)](src/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/methods/unlearning_methods/random_labeling.py), [UNSIR](src/methods/unlearning_methods/unsir.py), [SSD](src/methods/unlearning_methods/ssd.py), [LFSSD](src/methods/unlearning_methods/lfssd.py), [ASSD](src/methods/unlearning_methods/assd.py), [SCRUB](src/methods/unlearning_methods/scrub.py), [JIT](src/methods/unlearning_methods/jit.py) |
-| **Evaluation metrics** | [Accuracy](src/eval_metrics/accuracy.py), [Loss/Error](src/utils/training/training_utils.py), [ZRF](src/eval_metrics/zrf.py), [Activation Distance](src/eval_metrics/activation_distance.py), [JS-Divergence](src/eval_metrics/jsdiv.py), [Layer-wise Distance](src/eval_metrics/layerwise_distance.py), [Membership Inference Attack](src/eval_metrics/membership_inference_attack.py), [Completeness](src/eval_metrics/completeness.py), [Resource Consumption](src/eval_metrics/resource_consumption.py), [Time](src/eval_metrics/time.py) |
+| **Datasets** | [CIFAR-10](supreme/datasets/datasets.py), [CIFAR-20](supreme/datasets/datasets.py), [CIFAR-100](supreme/datasets/datasets.py), [PinsFaceRecognition](supreme/datasets/datasets.py), [Caltech-101](supreme/datasets/datasets.py) |
+| **Models** | [ResNet18](supreme/models/ResNet18.py), [Vision Transformer (ViT)](supreme/models/ViT.py) |
+| **Baselines** | [Retrain](supreme/methods/baselines/retrain.py), [Original](supreme/methods/baselines/original.py) |
+| **Unlearning methods** | [Fine-Tuning (FT)](supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](supreme/methods/unlearning_methods/unsir.py), [SSD](supreme/methods/unlearning_methods/ssd.py), [LFSSD](supreme/methods/unlearning_methods/lfssd.py), [ASSD](supreme/methods/unlearning_methods/assd.py), [SCRUB](supreme/methods/unlearning_methods/scrub.py), [JIT](supreme/methods/unlearning_methods/jit.py) |
+| **Evaluation metrics** | [Accuracy](supreme/eval_metrics/accuracy.py), [Loss/Error](supreme/utils/training/training_utils.py), [ZRF](supreme/eval_metrics/zrf.py), [Activation Distance](supreme/eval_metrics/activation_distance.py), [JS-Divergence](supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](supreme/eval_metrics/membership_inference_attack.py), [Completeness](supreme/eval_metrics/completeness.py), [Resource Consumption](supreme/eval_metrics/resource_consumption.py), [Time](supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
 
 > Paper-evaluated subset: Retrain, FT, BadT, RL, UNSIR, SSD, LFSSD. The remaining methods (ASSD, SCRUB, JIT) are experimental implementations that aren't in the paper's evaluation but can be selected via `--methods`.
@@ -129,7 +129,7 @@ cp .env.example .env
 # edit .env with your WANDB_API_KEY and HF_TOKEN
 
 # 4. Smoke test - one seed, one method, one dataset
-bash src/run_local.sh \
+bash supreme/run_local.sh \
   --gpu 0 --models ViT --training-seeds 260 \
   --methods retrain,finetune,ssd \
   --strategies random_ --datasets Cifar10 \
@@ -148,10 +148,10 @@ The pipeline runs **train → unlearn → evaluate** automatically. Re-running i
 
 ```bash
 # All 10 seeds, all methods, all datasets - defaults
-bash src/run_local.sh --gpu 0
+bash supreme/run_local.sh --gpu 0
 
 # Filter the sweep
-bash src/run_local.sh \
+bash supreme/run_local.sh \
   --gpu 0,1 \
   --models ViT \
   --training-seeds 260,261,262 \
@@ -176,19 +176,19 @@ bash src/run_local.sh \
 
 ```bash
 # Preview the grid (no submission)
-./src/run_slurm.sh --dry-run
+./supreme/run_slurm.sh --dry-run
 
 # Submit all experiments, max 12 concurrent jobs
-./src/run_slurm.sh --max-concurrent 12
+./supreme/run_slurm.sh --max-concurrent 12
 
 # Subset
-./src/run_slurm.sh \
+./supreme/run_slurm.sh \
   --datasets Cifar10,Cifar20 \
   --models ViT \
   --training-seeds 260,261,262
 
 # Multi-GPU DDP per job
-./src/run_slurm.sh --gpus 4
+./supreme/run_slurm.sh --gpus 4
 ```
 
 Each submitted job runs one `(seed, dataset, model)` cell independently; cells run in parallel across the cluster. Distributed-strategy selection (DDP / FSDP / DeepSpeed) is documented in [`docs/implementation_notes.md → Distributed Strategies`](docs/implementation_notes.md#distributed-strategies).
@@ -197,7 +197,7 @@ Each submitted job runs one `(seed, dataset, model)` cell independently; cells r
 
 ## 🔁 Reproducing the paper
 
-Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md).
+Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md).
 
 ---
 
@@ -219,7 +219,7 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
 | Document | Covers |
 |---|---|
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
-| [`src/README.md`](src/README.md) | Formal algorithm specification (matched and decoupled protocols) |
+| [`supreme/README.md`](supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |
 | [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md) | Single command for the paper's experiment grid plus the W&B-export-to-LaTeX-tables workflow |
 | [`docs/script_arguments.md`](docs/script_arguments.md) | Full argument reference for `train_main.py` and `unlearn_main.py` |

@@ -12,6 +12,7 @@ from supreme.utils.debug_utils import (
     # benchmark_dataloader,
 )
 import supreme.datasets.datasets as datasets
+from supreme.registry import resolve_dataset_class
 from supreme.utils import project_config
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
 from supreme.utils.generic_utils import create_dataloader
@@ -99,7 +100,7 @@ def prepare_dataloaders(
 
             root = get_root_directory(dataset_name)
 
-            trainset = getattr(datasets, dataset_name)(
+            trainset = resolve_dataset_class(dataset_name)(
                 root=root,
                 download=True,
                 train=True,
@@ -110,7 +111,7 @@ def prepare_dataloaders(
             torch.save(trainset, trainset_full_path)
 
             fabric.print(f"File {testset_full_path} does not exist. Saving it.")
-            testset = getattr(datasets, dataset_name)(
+            testset = resolve_dataset_class(dataset_name)(
                 root=root,
                 download=True,
                 train=False,

@@ -85,7 +85,7 @@ For the formal pipeline algorithm and mathematical notation (seed formulas, set 
 
 ## 🗃️ Available Components
 
-Registry-based components are **user-extensible** - implement the relevant interface and register the module path (see [`docs/extending.md`](docs/extending.md)). The components provided via Lightning Fabric cover the supported hardware and execution configurations.
+Registry-based components are **user-extensible** - implement the relevant interface and register the module path, either in-tree or **from your own package** (runtime API or packaging entry points, no edits to SUPREME). See [`docs/extending.md`](docs/extending.md). The components provided via Lightning Fabric cover the supported hardware and execution configurations.
 
 ### Registry-based (user-extensible)
 
@@ -116,7 +116,7 @@ Registry-based components are **user-extensible** - implement the relevant inter
 ```bash
 # 1. Clone
 git clone https://github.com/pedroandreou/supreme-unlearning.git
-cd supreme
+cd supreme-unlearning
 
 # 2. Set up environment
 python3.9 -m venv gpu_env
@@ -202,6 +202,27 @@ Reproducing the paper's numbers is a two-step process: run the experiment grid o
 ---
 
 ## ➕ Extending SUPREME
+
+SUPREME is pip-installable (`pip install supreme`) and reusable as a library.
+Register your own components from your own package - no edits to framework code:
+
+```python
+import supreme
+
+supreme.register_unlearning_method("mymethod", "my_pkg.mymethod")
+supreme.register_model("MyNet", "my_pkg.models:MyNet")
+supreme.register_dataset("MyDS", "my_pkg.data:MyDS",
+                         root="/data/myds", class_dict={"cat": 0, "dog": 1})
+
+supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
+                        "-dataset", "MyDS", "-seed", "260"])
+```
+
+Components can equivalently be advertised by an installed plugin package via
+packaging entry points (`supreme.models`, `supreme.unlearning_methods`,
+`supreme.metrics`, `supreme.plugins`). The public API (`supreme.register_*`,
+`supreme.run_training`, `supreme.run_unlearning`, `supreme.project_config`) is
+the supported surface; everything under `supreme.utils.*` is internal.
 
 Adding a dataset, model, method, or metric follows a consistent register-and-implement pattern. Walkthroughs and Fabric-integration rules live in [`docs/extending.md`](docs/extending.md):
 

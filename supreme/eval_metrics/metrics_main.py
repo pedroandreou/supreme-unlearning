@@ -752,4 +752,55 @@ def get_metric_scores(
         result["time"]["unlearning_method"].update(unlearning_method_resources)
     #############################################################################
 
+    # ----
+
+    ####################### Externally registered metrics #######################
+    # Built-in metrics are handled by the branches above (byte-for-byte
+    # unchanged). Any requested metric NOT recognised by those branches is
+    # resolved through the registry and invoked here, so external metrics work
+    # with no edits to this file. External metrics are expected to be decorated
+    # with @track_evaluation_metric and thus return the standard envelope
+    # {"metric_value_dict", "core_time_dict", "memory_usage_dict",
+    #  "power_consumption_dict"}.
+    from supreme.registry import external_metric_names, resolve_metric_location
+    from supreme.utils.generic_utils import dynamic_method_call
+
+    for metric_name in external_metric_names(eval_metrics):
+        fabric.print("================================================")
+        fabric.print(f"\nCalculating external metric: {metric_name}")
+        module_name, attr_name = resolve_metric_location(metric_name)
+        metric_output = dynamic_method_call(
+            module_name=module_name,
+            file_name=attr_name,
+            fabric=fabric,
+            num_gpus=num_gpus,
+            original_model=original_model,
+            unlearned_model=unlearned_model,
+            unlearning_teacher=unlearning_teacher,
+            reference_model=reference_model,
+            retain_train_dataloader=retain_train_dataloader,
+            retain_test_dataloader=retain_test_dataloader,
+            forget_train_dataloader=forget_train_dataloader,
+            forget_test_dataloader=forget_test_dataloader,
+            train_dataloader=train_dataloader,
+            test_dataloader=test_dataloader,
+            do_global_aggregation=do_global_aggregation,
+            track_evaluation_resources=track_evaluation_resources,
+        )
+        if metric_output is None:
+            fabric.print(f"External metric '{metric_name}' returned no result.")
+            continue
+        result[metric_name] = {
+            "unlearning_method": {
+                metric_name: metric_output.get("metric_value_dict"),
+            },
+            "eval_metric": {
+                "core_time_elapsed": metric_output.get("core_time_dict"),
+                "memory_usage": metric_output.get("memory_usage_dict"),
+                "power_consumption": metric_output.get("power_consumption_dict"),
+            },
+        }
+        result[metric_name]["unlearning_method"].update(unlearning_method_resources)
+    #############################################################################
+
     return result

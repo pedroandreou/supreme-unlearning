@@ -38,8 +38,15 @@ def set_seeds(fabric, seed):
 
 
 def get_root_directory(dataset):
+    # Externally registered datasets may declare their own data root.
+    from supreme.registry import resolve_dataset_root
+
+    override = resolve_dataset_root(dataset)
+    if override is not None:
+        return override
+
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    
+
     if dataset == "PinsFaceRecognition":
         root = os.path.abspath(
             os.path.join(current_dir, "../datasets/data/105_classes_pins_dataset")
@@ -101,8 +108,13 @@ def create_dataloader(
 
 
 def initialize_network(fabric, model_name, num_labels, device, **kwargs):
-    # Define the module path based on the network type
-    module_path = f"supreme.models.{model_name}"
+    # Resolve the model's module path via the registry. For built-in models this
+    # returns ("supreme.models.<model_name>", model_name) - identical to the
+    # original hardcoded convention - while externally registered models resolve
+    # to their own module path with no edits here.
+    from supreme.registry import resolve_callable_location
+
+    module_path, model_file = resolve_callable_location("model", model_name)
 
     # Check if 'weight_path' is provided in kwargs and load the weights if it is
     weight_path = kwargs.get("weight_path", None)
@@ -129,7 +141,7 @@ def initialize_network(fabric, model_name, num_labels, device, **kwargs):
         # the DeepSpeed engine is created inside the unlearning method.
         net = dynamic_method_call(
             module_name=module_path,
-            file_name=model_name,
+            file_name=model_file,
             num_labels=num_labels,
             fabric=fabric,
         )
@@ -159,7 +171,7 @@ def initialize_network(fabric, model_name, num_labels, device, **kwargs):
             with fabric.init_module():
                 net = dynamic_method_call(
                     module_name=module_path,
-                    file_name=model_name,
+                    file_name=model_file,
                     num_labels=num_labels,
                     fabric=fabric,
                 )

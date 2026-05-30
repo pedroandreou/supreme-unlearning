@@ -1,3 +1,82 @@
 [build-system]
 requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "supreme"
+description = "A registry-based, multi-GPU framework for reproducible image-unlearning evaluation."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { file = "LICENSE" }
+authors = [{ name = "Petros Andreou" }]
+keywords = ["machine-unlearning", "deep-learning", "pytorch", "lightning-fabric", "benchmark"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dynamic = ["version"]
+
+# Core dependencies mirror the cross-platform tested lock (requirements.mps.txt).
+# For exact, reproducible CUDA reproduction of the paper's numbers, install from
+# requirements.cuda_12_1.txt (which pins the CUDA-12.1 PyTorch build via
+# --extra-index-url) plus the `cuda` extra below. See docs/reproducing_the_paper.md.
+dependencies = [
+    "torch==2.1.0",
+    "torchvision==0.16.0",
+    "torchaudio==2.1.0",
+    "lightning==2.1.0",
+    "pytorch-lightning==2.1.0",
+    "transformers==4.35.0",
+    "numpy<2.0",
+    "scipy==1.13.1",
+    "scikit-learn==1.6.1",
+    "matplotlib==3.9.4",
+    "seaborn==0.13.2",
+    "wandb==0.25.1",
+    "python-dotenv==1.1.0",
+    "psutil",
+    "requests==2.28.2",
+    "urllib3<2.0.0",
+    "chardet==4.0.0",
+    "charset-normalizer==3.0.1",
+    "datetime==5.5",
+]
+
+[project.optional-dependencies]
+# NVIDIA CUDA-only extras (DeepSpeed ZeRO strategy, bitsandbytes precision,
+# NVIDIA power/utilisation telemetry). Not available on Apple Silicon.
+cuda = [
+    "deepspeed==0.14.5",
+    "bitsandbytes==0.42.0",
+    "nvidia-ml-py==13.580.82",
+]
+tensorboard = ["tensorboard"]
+dev = ["pre-commit", "debugpy"]
+
+[project.urls]
+Homepage = "https://github.com/pedroandreou/supreme-unlearning"
+Repository = "https://github.com/pedroandreou/supreme-unlearning"
+
+# Console entry points for the train and unlearn/evaluate stages.
+[project.scripts]
+supreme-train = "supreme.utils.training.train_main:main"
+supreme-unlearn = "supreme.utils.unlearning.unlearn_main:main"
+
+# Entry-point GROUPS used to register external components from installed plugin
+# packages (see supreme/registry.py and docs/extending.md). A plugin package
+# declares entries under these groups; SUPREME discovers them automatically.
+#   [project.entry-points."supreme.models"]
+#   MyNet = "my_pkg.models:MyNet"
+#   [project.entry-points."supreme.unlearning_methods"]
+#   mymethod = "my_pkg.mymethod:mymethod"
+#   [project.entry-points."supreme.plugins"]   # setup callable; for datasets/bulk
+#   my_plugin = "my_pkg.register:setup"
+
+[tool.setuptools.dynamic]
+version = { attr = "supreme.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["supreme*"]
+namespaces = false

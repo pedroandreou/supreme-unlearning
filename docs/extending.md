@@ -1,6 +1,123 @@
 # Extending SUPREME
 
-SUPREME components live in registries declared in [`supreme/utils/project_config.py`](../supreme/utils/project_config.py). The framework discovers a new component once its name is in the relevant registry list and its file is in the expected directory. All four component types - datasets, models, unlearning methods, evaluation metrics - follow the same pattern.
+SUPREME is **registry-based**: datasets, models, unlearning methods/baselines
+and evaluation metrics are resolved by *name* through a convention - a
+registered name `Foo` maps to `supreme.<subpackage>.Foo` exposing a
+callable/class named `Foo`. You extend the framework by *implementing the
+relevant interface and registering a module path* - never by editing framework
+internals.
+
+There are **two ways to register**, both requiring no edits to SUPREME's code:
+
+- **Option A - From your own package (recommended for reuse).** Register from
+  outside the installed `supreme` package, via the runtime API or packaging
+  entry points. Covered in [Registering from outside the package](#registering-from-outside-the-package).
+- **Option B - In-tree.** Add files under `supreme/` and list the name in
+  [`supreme/utils/project_config.py`](../supreme/utils/project_config.py). Useful
+  when you are vendoring/forking the framework. Covered in the per-component
+  walkthroughs below.
+
+Both paths share the same component interfaces (the contract your dataset
+class / model factory / method function / metric function must satisfy). The
+walkthroughs document those interfaces in detail; Option A simply changes
+*where the files live* and *how the name is registered*.
+
+---
+
+## Registering from outside the package
+
+Install SUPREME (`pip install supreme`) and your own package alongside it, then
+register your components. Resolution order is **runtime overrides -> entry
+points -> built-in convention**, so your registrations never collide with or
+alter built-in components.
+
+### Runtime API
+
+Call these before launching the pipeline (e.g. at the top of your run script).
+`target` is either a bare module (`"my_pkg.mymethod"`, attribute defaults to the
+registered name) or an explicit `"module:attribute"`:
+
+```python
+import supreme
+
+supreme.register_model("MyNet", "my_pkg.models:MyNet")
+supreme.register_baseline("mybase", "my_pkg.mybase")
+supreme.register_unlearning_method("mymethod", "my_pkg.mymethod")
+supreme.register_metric("mymetric", "my_pkg.mymetric", requires_retrain=False)
+supreme.register_dataset(
+    "MyDS",
+    "my_pkg.data:MyDS",
+    root="/data/myds",                  # optional data root (else default layout)
+    class_dict={"cat": 0, "dog": 1},    # for full/sub-class unlearning strategies
+    rn_epochs=100, rn_milestones=[30, 60, 80],   # ResNet schedule (optional)
+    vit_epochs=8,  vit_milestones=[7],            # ViT schedule (optional)
+)
+
+supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
+                        "-dataset", "MyDS", "-seed", "260"])
+```
+
+Registration keeps the framework's bookkeeping in sync automatically: the name
+is appended to the relevant `project_config` list (so argument parsing and
+validation accept it), a registered dataset's `class_dict` and training
+schedule are attached to `project_config`, and a metric registered with
+`requires_retrain=True` is added to `metrics_requiring_retrain` (which triggers
+the retrained-reference `M_r` pipeline when the metric is requested).
+
+### Packaging entry points (auto-discovered plugins)
+
+A separately installed package can advertise components declaratively; SUPREME
+discovers them on first use - no run-script changes needed. Use the direct
+`module:attribute` groups for the callable categories:
+
+```toml
+# in your plugin package's pyproject.toml
+[project.entry-points."supreme.models"]
+MyNet = "my_pkg.models:MyNet"
+
+[project.entry-points."supreme.baselines"]
+mybase = "my_pkg.mybase:mybase"
+
+[project.entry-points."supreme.unlearning_methods"]
+mymethod = "my_pkg.mymethod:mymethod"
+
+[project.entry-points."supreme.metrics"]
+mymetric = "my_pkg.mymetric:mymetric"
+```
+
+Datasets carry extra metadata (root, class dict, schedule) that doesn't fit a
+single entry-point value, and you may want to register several components at
+once. For those, point the `supreme.plugins` group at a zero-argument **setup
+callable** that performs registration via the runtime API:
+
+```toml
+[project.entry-points."supreme.plugins"]
+my_plugin = "my_pkg.register:setup"
+```
+
+```python
+# my_pkg/register.py
+import supreme
+
+def setup():
+    supreme.register_dataset("MyDS", "my_pkg.data:MyDS",
+                             root="/data/myds", class_dict={"cat": 0, "dog": 1})
+    supreme.register_unlearning_method("mymethod", "my_pkg.mymethod")
+```
+
+> **Externally registered metrics.** Built-in metrics are dispatched by
+> `supreme/eval_metrics/metrics_main.py`. Any requested metric name that is not
+> built in is resolved through the registry and invoked automatically, so your
+> metric runs with no edits to that file. Decorate it with
+> `@track_evaluation_metric` (as the built-ins do) so it returns the standard
+> result envelope and gets memory/power/time tracking; its result is recorded
+> under its registered name.
+
+The component interfaces themselves (signatures, Fabric-integration rules,
+distributed-synchronisation requirements) are identical to the in-tree path and
+are documented in full below.
+
+---
 
 - [Adding a new dataset](#adding-a-new-dataset)
 - [Adding a new model](#adding-a-new-model)

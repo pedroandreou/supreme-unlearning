@@ -12,6 +12,7 @@ import wandb
 from supreme.utils.generic_utils import create_dataloader, get_root_directory
 from supreme.utils import project_config
 import supreme.datasets.datasets as dataset_module
+from supreme.registry import resolve_dataset_class
 
 
 class _ListDataset(Dataset):
@@ -556,7 +557,7 @@ def prepare_classwise_dataloaders(
     if hasattr(retain_train, "indices"):
         img_size = 224 if model_name == "ViT" else 32
         root = get_root_directory(dataset_name)
-        augmented_trainset = getattr(dataset_module, dataset_name)(
+        augmented_trainset = resolve_dataset_class(dataset_name)(
             root=root, download=False, train=True, unlearning=False, img_size=img_size,
             model_name=model_name,
         )

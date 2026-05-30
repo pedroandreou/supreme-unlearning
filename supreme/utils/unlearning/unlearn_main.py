@@ -761,13 +761,14 @@ def setup_unlearning(
     #         }
     #     )
 
-    # Define the module path based on the method type
-    if method_name in project_config.baselines:
-        module_path = f"supreme.methods.baselines.{method_name}"
-    elif method_name in project_config.unlearning_methods:
-        module_path = f"supreme.methods.unlearning_methods.{method_name}"
-    else:
-        raise ValueError(f"Method {method_name} is not recognized.")
+    # Resolve the method's module path via the registry. For built-in methods
+    # this reproduces the original dispatch exactly (baselines ->
+    # supreme.methods.baselines.<name>, unlearning methods ->
+    # supreme.methods.unlearning_methods.<name>); externally registered methods
+    # resolve to their own module path and raise ValueError if unknown.
+    from supreme.registry import resolve_method_location
+
+    module_path, method_file = resolve_method_location(method_name)
 
     method_name_capitalized = method_name.capitalize()
 
@@ -821,7 +822,7 @@ def setup_unlearning(
             ) = track_resources(
                 dynamic_method_call,
                 module_name=module_path,
-                file_name=method_name,
+                file_name=method_file,
                 **kwargs,
             )
 

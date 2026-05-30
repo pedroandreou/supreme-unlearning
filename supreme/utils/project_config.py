@@ -494,8 +494,17 @@ Caltech101_ViT_MILESTONES = [7]
 # ==============================================================================
 # ### OTHER CONFIGURATIONS ###
 # ==============================================================================
+# Project root (app/host). Defaults to the repository root inferred from this
+# file's location, which is correct for source checkouts and editable installs
+# (pip install -e .). When SUPREME is installed as a wheel into site-packages
+# and reused from another project, set SUPREME_PROJECT_ROOT to point logs/ and
+# checkpoints at a writable working directory. The default is unchanged, so the
+# paper's reproduction behaviour is unaffected.
 PROJECT_ROOT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..")
+    os.environ.get(
+        "SUPREME_PROJECT_ROOT",
+        os.path.join(os.path.dirname(__file__), "..", ".."),
+    )
 )  # Get the absolute path to the project root (app/host)
 CHECKPOINT_PATH = os.path.join(
     PROJECT_ROOT,
@@ -695,6 +704,14 @@ def get_dict_name_for_dataset(dataset: str, strategy: str) -> str:
     }
 
     if dataset not in dataset_to_dict:
+        # Externally registered datasets store their class dict on this module
+        # under "<dataset>_dict" (see supreme.registry.register_dataset).
+        from supreme.registry import get_external_dataset_dict_name
+
+        external = get_external_dataset_dict_name(dataset)
+        if external is not None:
+            return external
+
         raise ValueError(
             f"Unknown dataset '{dataset}'. "
             f"Supported datasets: {', '.join(dataset_to_dict.keys())}"

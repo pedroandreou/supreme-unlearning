@@ -218,6 +218,10 @@ supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
                         "-dataset", "MyDS", "-seed", "260"])
 ```
 
+A runnable, end-to-end walkthrough from an external user's point of view -
+`pip install supreme` then register your own method/metric/model/dataset - is in
+the notebook [`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
+
 Components can equivalently be advertised by an installed plugin package via
 packaging entry points (`supreme.models`, `supreme.unlearning_methods`,
 `supreme.metrics`, `supreme.plugins`). The public API (`supreme.register_*`,

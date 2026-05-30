@@ -26,6 +26,10 @@ walkthroughs document those interfaces in detail; Option A simply changes
 
 ## Registering from outside the package
 
+> **Runnable notebook.** [`notebooks/custom_components.ipynb`](../notebooks/custom_components.ipynb)
+> demonstrates this whole flow - installing SUPREME via pip and registering your
+> own components - with a GPU-free proof cell you can run immediately.
+
 Install SUPREME (`pip install supreme`) and your own package alongside it, then
 register your components. Resolution order is **runtime overrides -> entry
 points -> built-in convention**, so your registrations never collide with or

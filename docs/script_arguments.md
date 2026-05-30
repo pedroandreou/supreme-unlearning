@@ -2,6 +2,13 @@
 
 **Note:** Most users should use [run_local.sh](../supreme/run_local.sh) (documented in the README). This section is for advanced users running [train_main.py](../supreme/utils/training/train_main.py) or [unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py) directly.
 
+The two stages can be invoked three equivalent ways, all taking the same
+arguments documented below:
+
+- the scripts directly: `python supreme/utils/training/train_main.py ...`
+- the installed console scripts: `supreme-train ...` / `supreme-unlearn ...`
+- the Python API: `supreme.run_training([...])` / `supreme.run_unlearning([...])`
+
 ## Common Arguments (both scripts)
 
 Defined in [common_args.py](../supreme/utils/parsers/common_args.py):

@@ -67,11 +67,27 @@ pip install -r requirements.mps.txt
 
 The MPS requirements file uses the standard PyPI PyTorch build, which includes MPS support natively. `bitsandbytes` and `nvidia-ml-py` are omitted as they are CUDA-only.
 
-Install the framework in editable mode:
+Install the framework. For development inside this repository, use an editable
+install:
 
 ```bash
 pip install -e .
 ```
+
+SUPREME is also a regular pip package, so to reuse it from another project you
+can install it directly (optionally with the CUDA extra for the DeepSpeed ZeRO
+strategy, bitsandbytes precision, and NVIDIA telemetry):
+
+```bash
+pip install supreme            # core (CPU / MPS)
+pip install "supreme[cuda]"    # + deepspeed, bitsandbytes, nvidia-ml-py (NVIDIA only)
+pip install "supreme[tensorboard]"   # + TensorBoard logger
+```
+
+This installs the `supreme-train` and `supreme-unlearn` console scripts and the
+importable public API (`import supreme`). When SUPREME is installed as a wheel
+and run from outside the repo, set `SUPREME_PROJECT_ROOT` to a writable
+directory so `logs/` and checkpoints are created there.
 
 ## 3b. Docker Dev Container (alternative)
 
@@ -101,6 +117,7 @@ brew install bash
 
 ```bash
 python -c "import torch; print('torch', torch.__version__, '| cuda', torch.cuda.is_available(), '| mps', torch.backends.mps.is_available())"
+python -c "import supreme; print('SUPREME', supreme.__version__, '| API:', 'register_unlearning_method' in dir(supreme))"
 python -c "from supreme.utils.unlearning import unlearn_main; print('SUPREME import OK')"
 ```
 

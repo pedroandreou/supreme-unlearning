@@ -2,6 +2,20 @@
 
 The SUPREME paper demonstrates the framework on **Pins Face Recognition** using **ResNet18** and **ViT**, under **full-class** and **random-sample** unlearning, across **10 training seeds** with the matched protocol (`J = K = 1`). Reproducing the reported numbers is a two-step process: run the experiment grid to populate W&B, then export the metrics and render the LaTeX tables via the analysis notebook.
 
+## Reference version
+
+The reported numbers were produced by the tagged reference release
+[`v0.1.0-paper`](https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.0-paper).
+To reproduce them exactly, check that tag out first:
+
+```bash
+git checkout v0.1.0-paper
+```
+
+Later commits (e.g. the pip-packaging refactor) keep the train -> unlearn ->
+evaluate behaviour, defaults and seeds identical, but the tag is the
+guaranteed, citable reference point.
+
 ## Prerequisites
 
 Before running anything, make sure the environment is set up and tokens are configured. See [`docs/environment_setup.md`](environment_setup.md) for the virtual-env or Docker Dev Container instructions, the `.env` template, and the Pins Face Recognition dataset download (which requires a Kaggle key, see [`docs/adding_pinsfacerecognition.md`](adding_pinsfacerecognition.md)).

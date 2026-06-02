@@ -11,7 +11,6 @@ import os
 import wandb
 from supreme.utils.generic_utils import create_dataloader, get_root_directory
 from supreme.utils import project_config
-import supreme.datasets.datasets as dataset_module
 from supreme.registry import resolve_dataset_class
 
 
@@ -53,13 +52,13 @@ def get_classwise_indices(ds, num_labels, type_of_unlearning_strategy=None):
         # OPTIMIZATION: Use targets directly if available (avoids loading images)
         # ImageFolder-based datasets (PinsFaceRecognition, Caltech101, etc.) have targets
         # IMPORTANT: For Cifar20, use coarse_targets instead of targets (fine labels)
-        if hasattr(ds, 'coarse_targets'):
+        if hasattr(ds, "coarse_targets"):
             # Fast path for Cifar20: use coarse labels
             for idx, clabel in enumerate(ds.coarse_targets):
                 if clabel not in classwise_indices:
                     classwise_indices[clabel] = []
                 classwise_indices[clabel].append(idx)
-        elif hasattr(ds, 'targets'):
+        elif hasattr(ds, "targets"):
             # Fast path: read labels directly without loading images
             for idx, clabel in enumerate(ds.targets):
                 if clabel not in classwise_indices:
@@ -121,7 +120,12 @@ def prepare_classwise_dataloaders(
                 retain_train_indices.extend(classwise_train_indices[cls])
                 retain_test_indices.extend(classwise_test_indices[cls])
 
-        return (retain_train_indices, retain_test_indices, forget_train_indices, forget_test_indices)
+        return (
+            retain_train_indices,
+            retain_test_indices,
+            forget_train_indices,
+            forget_test_indices,
+        )
 
     seed = kwargs.get("seed", None)
     forget_class_name = kwargs.get("forget_class_name", None)
@@ -137,7 +141,9 @@ def prepare_classwise_dataloaders(
     assert final_output_dir is not None, "LOG_DIR environment variable must be set"
 
     # Use centralized path construction for consistency with prepare_dataloaders()
-    dataset_path = project_config.get_dataset_path_from_log_dir(final_output_dir, model_name)
+    dataset_path = project_config.get_dataset_path_from_log_dir(
+        final_output_dir, model_name
+    )
 
     # Paths for original dataset files
     trainset_full_path = os.path.join(dataset_path, "trainset.pt")
@@ -146,9 +152,13 @@ def prepare_classwise_dataloaders(
     fabric.print(f"testset_full_path: {testset_full_path}")
 
     # Index-based paths (much smaller files ~100KB vs ~10GB)
-    retain_train_indices_path = os.path.join(final_output_dir, "retain_train_indices.pt")
+    retain_train_indices_path = os.path.join(
+        final_output_dir, "retain_train_indices.pt"
+    )
     retain_test_indices_path = os.path.join(final_output_dir, "retain_test_indices.pt")
-    forget_train_indices_path = os.path.join(final_output_dir, "forget_train_indices.pt")
+    forget_train_indices_path = os.path.join(
+        final_output_dir, "forget_train_indices.pt"
+    )
     forget_test_indices_path = os.path.join(final_output_dir, "forget_test_indices.pt")
     fabric.print(f"retain_train_indices_path: {retain_train_indices_path}")
     fabric.print(f"retain_test_indices_path: {retain_test_indices_path}")
@@ -197,9 +207,7 @@ def prepare_classwise_dataloaders(
     ]
 
     if all(os.path.exists(path) for path in index_paths):
-        fabric.print(
-            "Loading index-based datasets (fast loading, ~100KB files)..."
-        )
+        fabric.print("Loading index-based datasets (fast loading, ~100KB files)...")
 
         if fabric.global_rank == 0:
             # Load original datasets
@@ -209,14 +217,30 @@ def prepare_classwise_dataloaders(
             fabric.print("Loaded test set")
 
             # Load indices (tiny files, instant load)
-            retain_train_indices = torch.load(retain_train_indices_path, weights_only=False)
-            fabric.print(f"Loaded retain train indices ({len(retain_train_indices)} samples)")
-            retain_test_indices = torch.load(retain_test_indices_path, weights_only=False)
-            fabric.print(f"Loaded retain test indices ({len(retain_test_indices)} samples)")
-            forget_train_indices = torch.load(forget_train_indices_path, weights_only=False)
-            fabric.print(f"Loaded forget train indices ({len(forget_train_indices)} samples)")
-            forget_test_indices = torch.load(forget_test_indices_path, weights_only=False)
-            fabric.print(f"Loaded forget test indices ({len(forget_test_indices)} samples)")
+            retain_train_indices = torch.load(
+                retain_train_indices_path, weights_only=False
+            )
+            fabric.print(
+                f"Loaded retain train indices ({len(retain_train_indices)} samples)"
+            )
+            retain_test_indices = torch.load(
+                retain_test_indices_path, weights_only=False
+            )
+            fabric.print(
+                f"Loaded retain test indices ({len(retain_test_indices)} samples)"
+            )
+            forget_train_indices = torch.load(
+                forget_train_indices_path, weights_only=False
+            )
+            fabric.print(
+                f"Loaded forget train indices ({len(forget_train_indices)} samples)"
+            )
+            forget_test_indices = torch.load(
+                forget_test_indices_path, weights_only=False
+            )
+            fabric.print(
+                f"Loaded forget test indices ({len(forget_test_indices)} samples)"
+            )
         else:
             retain_train_indices = None
             retain_test_indices = None
@@ -246,7 +270,9 @@ def prepare_classwise_dataloaders(
         #   - forget_test = test samples of forgotten class
         retain_test = Subset(testset, retain_test_indices)
         if type_of_unlearning_strategy == "random_":
-            forget_test = Subset(trainset, forget_test_indices)  # Uses trainset, same as forget_train
+            forget_test = Subset(
+                trainset, forget_test_indices
+            )  # Uses trainset, same as forget_train
         else:
             forget_test = Subset(testset, forget_test_indices)  # Uses testset
         fabric.print("Reconstructed Subset views from indices")
@@ -405,8 +431,12 @@ def prepare_classwise_dataloaders(
                 testset, num_labels, type_of_unlearning_strategy
             )
 
-            fabric.print("The classwise train has classes: ", len(classwise_train_indices))
-            fabric.print("The classwise test has classes: ", len(classwise_test_indices))
+            fabric.print(
+                "The classwise train has classes: ", len(classwise_train_indices)
+            )
+            fabric.print(
+                "The classwise test has classes: ", len(classwise_test_indices)
+            )
 
             forget_class_id = kwargs.get("forget_class_id", None)
             assert forget_class_id is not None, "forget_class_id cannot be None"
@@ -416,7 +446,10 @@ def prepare_classwise_dataloaders(
                 forget_train_indices,
                 forget_test_indices,
             ) = build_retain_forget_indices(
-                classwise_train_indices, classwise_test_indices, num_labels, forget_class_id
+                classwise_train_indices,
+                classwise_test_indices,
+                num_labels,
+                forget_class_id,
             )
 
         fabric.print("the train set is of size: ", len(trainset))
@@ -426,7 +459,9 @@ def prepare_classwise_dataloaders(
             # Save indices (tiny files ~100KB instead of ~10GB)
             fabric.print(f"Saving retain train indices to {retain_train_indices_path}")
             torch.save(retain_train_indices, retain_train_indices_path)
-            fabric.print(f"the retain train set is of size: {len(retain_train_indices)}")
+            fabric.print(
+                f"the retain train set is of size: {len(retain_train_indices)}"
+            )
 
             fabric.print(f"Saving retain test indices to {retain_test_indices_path}")
             torch.save(retain_test_indices, retain_test_indices_path)
@@ -434,7 +469,9 @@ def prepare_classwise_dataloaders(
 
             fabric.print(f"Saving forget train indices to {forget_train_indices_path}")
             torch.save(forget_train_indices, forget_train_indices_path)
-            fabric.print(f"the forget train set is of size: {len(forget_train_indices)}")
+            fabric.print(
+                f"the forget train set is of size: {len(forget_train_indices)}"
+            )
 
             fabric.print(f"Saving forget test indices to {forget_test_indices_path}")
             torch.save(forget_test_indices, forget_test_indices_path)
@@ -452,32 +489,6 @@ def prepare_classwise_dataloaders(
         else:
             forget_test = Subset(testset, forget_test_indices)
         fabric.print("Created Subset views from indices")
-
-    if os.getenv("SAMPLE_SCALING") == "true":
-        # === TEMPORARY: DUPLICATE DATASETS FOR EXPERIMENTS ===
-        # To create a larger unlearning set for distributed speedup experiments, the factor is set from run_local.sh
-        duplication_factor = int(os.getenv("DUPLICATION_FACTOR", "1"))
-        fabric.print(f"[EXPERIMENT] Duplication factor from env: {duplication_factor}")
-
-        # # Duplicate the training sets for unlearning
-        # retain_train = ConcatDataset([retain_train] * duplication_factor)
-        # fabric.print(f"[EXPERIMENT] Duplicated retain_train size: {len(retain_train)} samples")
-
-        # forget_train = ConcatDataset([forget_train] * duplication_factor)
-        # fabric.print(f"[EXPERIMENT] Duplicated forget_train size: {len(forget_train)} samples")
-
-        # Duplicate the test sets for unlearning (using ConcatDataset for Subset compatibility)
-        testset = ConcatDataset([testset] * duplication_factor)
-        fabric.print(f"[EXPERIMENT] Duplicated testset size: {len(testset)} samples")
-        retain_test = ConcatDataset([retain_test] * duplication_factor)
-        fabric.print(
-            f"[EXPERIMENT] Duplicated retain_test size: {len(retain_test)} samples"
-        )
-        forget_test = ConcatDataset([forget_test] * duplication_factor)
-        fabric.print(
-            f"[EXPERIMENT] Duplicated forget_test size: {len(forget_test)} samples"
-        )
-        # === END TEMPORARY BLOCK ===
 
     datasets = [
         trainset,
@@ -558,7 +569,11 @@ def prepare_classwise_dataloaders(
         img_size = 224 if model_name == "ViT" else 32
         root = get_root_directory(dataset_name)
         augmented_trainset = resolve_dataset_class(dataset_name)(
-            root=root, download=False, train=True, unlearning=False, img_size=img_size,
+            root=root,
+            download=False,
+            train=True,
+            unlearning=False,
+            img_size=img_size,
             model_name=model_name,
         )
         augmented_retain_train = Subset(augmented_trainset, retain_train.indices)

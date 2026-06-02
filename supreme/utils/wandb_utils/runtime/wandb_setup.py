@@ -5,7 +5,9 @@ from dotenv import find_dotenv, load_dotenv
 from wandb.integration.lightning.fabric import WandbLogger
 
 
-def find_wandb_run_id(project_name: str, run_name: str, entity: Optional[str] = None) -> Optional[str]:
+def find_wandb_run_id(
+    project_name: str, run_name: str, entity: Optional[str] = None
+) -> Optional[str]:
     """Find the WandB run ID for a given project and run name.
 
     Args:
@@ -66,20 +68,14 @@ def initialize_wandb(fabric, config):
 
     # Resume existing run if requested (to append new metrics to an existing run)
     if config.get("resume_if_exists"):
-        existing_run_id = find_wandb_run_id(
-            config["project_name"], config["run_name"]
-        )
+        existing_run_id = find_wandb_run_id(config["project_name"], config["run_name"])
         # Fallback: try old naming format (e.g. `{method}_seed{U}`) if the
         # new format (`{method}_tseed{T}_useed{U}`) wasn't found and TRAINING_SEED is set.
         if not existing_run_id and os.environ.get("TRAINING_SEED"):
             for alt_name in config.get("alt_run_names", []):
-                existing_run_id = find_wandb_run_id(
-                    config["project_name"], alt_name
-                )
+                existing_run_id = find_wandb_run_id(config["project_name"], alt_name)
                 if existing_run_id:
-                    fabric.print(
-                        f"Found run under alternative name '{alt_name}'"
-                    )
+                    fabric.print(f"Found run under alternative name '{alt_name}'")
                     break
         if existing_run_id:
             logger_kwargs["id"] = existing_run_id
@@ -143,8 +139,12 @@ def sync_wandb(fabric):
 
 
 def check_wandb_run_exists(
-    project_name: str, run_name: str, eval_metrics: list, entity: Optional[str] = None,
-    max_retries: int = 5, retry_delay: float = 5.0,
+    project_name: str,
+    run_name: str,
+    eval_metrics: list,
+    entity: Optional[str] = None,
+    max_retries: int = 5,
+    retry_delay: float = 5.0,
 ):
     """
     Check if a WandB run with evaluation metrics already exists for the given configuration.
@@ -189,13 +189,15 @@ def check_wandb_run_exists(
                 return ("none", eval_metrics)
             last_api_error = e
             if attempt < max_retries:
-                backoff = retry_delay * (2 ** attempt) + random.uniform(0, 3)
+                backoff = retry_delay * (2**attempt) + random.uniform(0, 3)
                 print(
                     f"WandB API error (attempt {attempt + 1}/{max_retries + 1}): "
                     f"{type(e).__name__}: {e}. Retrying in {backoff:.1f}s..."
                 )
                 time.sleep(backoff)
-                entity = None  # Re-resolve default_entity on retry in case of auth refresh
+                entity = (
+                    None  # Re-resolve default_entity on retry in case of auth refresh
+                )
                 continue
 
     # All retries exhausted without a successful API call - fail open (proceed with evaluation)
@@ -232,13 +234,17 @@ def check_wandb_run_exists(
                 "jsdiv.test.unlearning_method.jsdiv_retain",
                 "jsdiv.test.unlearning_method.jsdiv_forget",
             ],
-            "membership_inference_attack": ["membership_inference_attack.test.unlearning_method.mia"],
+            "membership_inference_attack": [
+                "membership_inference_attack.test.unlearning_method.mia"
+            ],
             "activation_distance": [
                 "activation_distance.test.unlearning_method.activation_distance_whole",
                 "activation_distance.test.unlearning_method.activation_distance_retain",
                 "activation_distance.test.unlearning_method.activation_distance_forget",
             ],
-            "layerwise_distance": ["layerwise_distance.unlearning_method.layerwise_distance"],
+            "layerwise_distance": [
+                "layerwise_distance.unlearning_method.layerwise_distance"
+            ],
             "completeness": [
                 "completeness.test.unlearning_method.completeness_whole",
                 "completeness.test.unlearning_method.completeness_retain",
@@ -265,7 +271,7 @@ def check_wandb_run_exists(
             E.g., 'accuracy.test.unlearning_method.whole_acc' checks
             dictionary['accuracy']['test']['unlearning_method']['whole_acc']
             """
-            keys = key_path.split('.')
+            keys = key_path.split(".")
             current = dictionary
             for key in keys:
                 if isinstance(current, dict) and key in current:
@@ -334,7 +340,9 @@ def main():
     import argparse
     import sys
 
-    parser = argparse.ArgumentParser(description="Check if WandB evaluation results exist")
+    parser = argparse.ArgumentParser(
+        description="Check if WandB evaluation results exist"
+    )
 
     # Minimal arguments needed to construct project_name and run_name
     parser.add_argument("-method", type=str, required=True)
@@ -349,11 +357,26 @@ def main():
     parser.add_argument("-forget_class_name", type=str, default=None)
     parser.add_argument("-forget_subclass_name", type=str, default=None)
     parser.add_argument("-forget_perc", type=float, default=None)
-    
+
     # Additional arguments that might be passed but aren't needed for checking
-    parser.add_argument("-classes", type=int, default=None, help="Number of classes (not used for WandB check)")
-    parser.add_argument("-superclasses", type=int, default=None, help="Number of superclasses (not used for WandB check)")
-    parser.add_argument("-subclasses", type=int, default=None, help="Number of subclasses (not used for WandB check)")
+    parser.add_argument(
+        "-classes",
+        type=int,
+        default=None,
+        help="Number of classes (not used for WandB check)",
+    )
+    parser.add_argument(
+        "-superclasses",
+        type=int,
+        default=None,
+        help="Number of superclasses (not used for WandB check)",
+    )
+    parser.add_argument(
+        "-subclasses",
+        type=int,
+        default=None,
+        help="Number of subclasses (not used for WandB check)",
+    )
 
     args = parser.parse_args()
 
@@ -374,13 +397,13 @@ def main():
     elif type_of_unlearning_strategy == "subclass":
         forget_class_name = args.forget_subclass_name
     else:
-        print(f"Unknown unlearning strategy: {type_of_unlearning_strategy}", file=sys.stderr)
+        print(
+            f"Unknown unlearning strategy: {type_of_unlearning_strategy}",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    # Get experiment scenario from environment (same as unlearn_main.py)
-    experiment_scenario = os.getenv("SCALABLE_EXPERIMENT_SCENARIO", "")
-
-    # Construct project_name (same logic as unlearn_main.py lines 1314-1334)
+    # Construct project_name (same logic as unlearn_main.py)
     # Use WANDB_PROJECT_PREFIX environment variable (default: R7) for flexibility
     wandb_project_prefix = os.getenv("WANDB_PROJECT_PREFIX", "R14")
     project_name_parts = list(
@@ -388,7 +411,6 @@ def main():
             None,
             [
                 f"{wandb_project_prefix}_UNLEARNING",
-                experiment_scenario,
                 model_name,
                 dataset_name,
                 type_of_unlearning_strategy,
@@ -403,9 +425,13 @@ def main():
     #   1. `{method}_seed{U}`                       (no TRAINING_SEED set)
     #   2. `{method}_tseed{T}_useed{U}`             (J>1, K=1)
     #   3. `{method}_tseed{T}_useed{U}_eseed{E}`    (K>1 eval, -seed = s_e ≠ s_u)
-    _training_seed_env = os.environ.get('TRAINING_SEED')
-    _unlearning_seed_env = os.environ.get('UNLEARNING_SEED')
-    if _training_seed_env and _unlearning_seed_env and int(_unlearning_seed_env) != int(seed):
+    _training_seed_env = os.environ.get("TRAINING_SEED")
+    _unlearning_seed_env = os.environ.get("UNLEARNING_SEED")
+    if (
+        _training_seed_env
+        and _unlearning_seed_env
+        and int(_unlearning_seed_env) != int(seed)
+    ):
         run_name = (
             f"{method_name}_tseed{_training_seed_env}"
             f"_useed{_unlearning_seed_env}_eseed{seed}"
@@ -416,7 +442,9 @@ def main():
         run_name = f"{method_name}_seed{seed}"
 
     # Check if results exist in WandB
-    status, missing_metrics = check_wandb_run_exists(project_name, run_name, eval_metrics)
+    status, missing_metrics = check_wandb_run_exists(
+        project_name, run_name, eval_metrics
+    )
 
     # Exit codes:
     #   0: All metrics exist - skip evaluation

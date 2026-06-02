@@ -533,7 +533,6 @@ def get_base_log_path(
     phase: str,
     precision: str,
     num_gpus: int,
-    scenario: str = "",
     include_gpus_in_path: bool = True,
 ) -> str:
     """
@@ -543,7 +542,6 @@ def get_base_log_path(
         phase: "training" or "unlearning"
         precision: Precision string (e.g., "32-true")
         num_gpus: Number of GPUs used
-        scenario: Optional experiment scenario (e.g., "50k")
         include_gpus_in_path: Whether to include GPU count in path
 
     Returns:
@@ -552,13 +550,10 @@ def get_base_log_path(
     Examples:
         >>> get_base_log_path("unlearning", "32-true", 4)
         'logs/unlearning/precision_32-true/4gpus'
-        >>> get_base_log_path("training", "bf16-mixed", 1, scenario="50k")
-        'logs/training/precision_bf16-mixed/50k/1gpus'
+        >>> get_base_log_path("training", "bf16-mixed", 1)
+        'logs/training/precision_bf16-mixed/1gpus'
     """
     components = [PROJECT_ROOT, "logs", phase, f"precision_{precision}"]
-
-    if scenario:
-        components.append(scenario)
 
     if include_gpus_in_path:
         components.append(f"{num_gpus}gpus")
@@ -573,14 +568,13 @@ def get_unlearning_dataset_path(
     strategy: str,
     dataset_name: str,
     model_name: str,
-    scenario: str = "",
     include_gpus_in_path: bool = True,
 ) -> str:
     """
     Construct the path for unlearning processed datasets (trainset.pt, testset.pt).
 
     This path is used for caching original datasets during unlearning.
-    Structure: logs/unlearning/precision_{precision}/{scenario}/{num_gpus}gpus/seed_{seed}/{strategy}/{dataset}/{model}/
+    Structure: logs/unlearning/precision_{precision}/{num_gpus}gpus/seed_{seed}/{strategy}/{dataset}/{model}/
 
     Args:
         precision: Precision string (e.g., "32-true")
@@ -589,7 +583,6 @@ def get_unlearning_dataset_path(
         strategy: Unlearning strategy (fullclass, subclass, random_)
         dataset_name: Dataset name (e.g., "Cifar10")
         model_name: Model name (e.g., "ResNet18")
-        scenario: Optional experiment scenario
         include_gpus_in_path: Whether to include GPU count in path
 
     Returns:
@@ -603,7 +596,6 @@ def get_unlearning_dataset_path(
         phase="unlearning",
         precision=precision,
         num_gpus=num_gpus,
-        scenario=scenario,
         include_gpus_in_path=include_gpus_in_path,
     )
 

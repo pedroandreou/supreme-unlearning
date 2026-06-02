@@ -37,12 +37,6 @@ def main():
         "-unlearning_seed", type=str, required=True, help="Seed used for unlearning"
     )
     parser.add_argument(
-        "-experiment_scenario",
-        type=str,
-        default="",
-        help="Type of experiment (e.g., 'normal', '50k')",
-    )
-    parser.add_argument(
         "-num_gpus",
         type=int,
         required=True,
@@ -95,7 +89,6 @@ def main():
     base_checkpoint_path = os.path.join(
         project_config.CHECKPOINT_PATH,
         f"precision_{args.precision}",
-        args.experiment_scenario,
         gpu_str,
         dist_str,
         training_seed_str,
@@ -121,7 +114,9 @@ def main():
     # TRAINING_DONE marker written by MAIN_scaled.sh after train_model returns
     # successfully. Without this filter, a partial best.pth from an in-progress
     # run can be picked up by another task waiting on the training lock.
-    time_dirs = [d for d in time_dirs if os.path.isfile(os.path.join(d, "TRAINING_DONE"))]
+    time_dirs = [
+        d for d in time_dirs if os.path.isfile(os.path.join(d, "TRAINING_DONE"))
+    ]
     if not time_dirs:
         sys.exit(1)
 

@@ -4,6 +4,7 @@
 # =============================================================================
 import os as _os
 
+
 def _fix_slurm_gpu_binding():
     """Fix GPU binding when SLURM doesn't set CUDA_VISIBLE_DEVICES per task.
 
@@ -22,6 +23,7 @@ def _fix_slurm_gpu_binding():
             if local_id < len(gpu_list):
                 assigned_gpu = gpu_list[local_id]
                 _os.environ["CUDA_VISIBLE_DEVICES"] = assigned_gpu
+
 
 _fix_slurm_gpu_binding()
 # =============================================================================
@@ -44,7 +46,10 @@ from supreme.utils.fabric.callbacks import (
     TrainingCallback,
     TestCallback,
 )
-from supreme.utils.fabric.fabric_setup import initialize_fabric, convert_to_sync_batchnorm
+from supreme.utils.fabric.fabric_setup import (
+    initialize_fabric,
+    convert_to_sync_batchnorm,
+)
 from supreme.utils.wandb_utils.runtime.wandb_setup import initialize_wandb, sync_wandb
 from lightning.fabric.accelerators.cuda import num_cuda_devices
 from lightning.fabric.accelerators.mps import MPSAccelerator
@@ -288,12 +293,10 @@ def setup_training(
     )
     gpu_str = f"{num_gpus}gpus" if include_gpus_in_path else ""
     dist_str = f"dist_{distributed_strategy_name}" if num_gpus > 1 else "no_dist"
-    experiment_scenario = os.getenv("SCALABLE_EXPERIMENT_SCENARIO", "")
 
     checkpoint_path = os.path.join(
         project_config.CHECKPOINT_PATH,
         f"precision_{precision}",
-        experiment_scenario,
         gpu_str,
         dist_str,
         training_seed_str,
@@ -351,7 +354,9 @@ def setup_training(
                     epoch=epoch,
                     type="best",
                 )
-                fabric.print(f"New best accuracy! {best_acc*100:.2f}% -> {acc*100:.2f}%")
+                fabric.print(
+                    f"New best accuracy! {best_acc*100:.2f}% -> {acc*100:.2f}%"
+                )
                 fabric.print(f"Saving weights to {weights_path}")
                 if distributed_strategy_name.startswith("deepspeed"):
                     # DeepSpeed saves sharded checkpoints by default (directory with
@@ -364,16 +369,21 @@ def setup_training(
                         # state_dict() returns full-size tensors. Other ranks must
                         # enter the same context (it's a collective gather).
                         import deepspeed
+
                         with deepspeed.zero.GatheredParameters(
                             list(model.parameters()), modifier_rank=0
                         ):
                             if fabric.global_rank == 0:
-                                raw_model = model.module if hasattr(model, "module") else model
+                                raw_model = (
+                                    model.module if hasattr(model, "module") else model
+                                )
                                 torch.save(raw_model.state_dict(), weights_path)
                     else:
                         # DS1/DS2: params are full-size on each rank already.
                         if fabric.global_rank == 0:
-                            raw_model = model.module if hasattr(model, "module") else model
+                            raw_model = (
+                                model.module if hasattr(model, "module") else model
+                            )
                             torch.save(raw_model.state_dict(), weights_path)
                     fabric.barrier()
                 else:
@@ -472,7 +482,9 @@ def main():
     # - Each task sees only 1 GPU (CUDA_VISIBLE_DEVICES set per task)
     # - fabric_devices = 1 (what Fabric can actually use per task)
     # - num_gpus = world_size = SLURM_NTASKS (for paths like "4gpus/")
-    fabric_devices = 1 if MPSAccelerator.is_available() else num_cuda_devices()  # What each task actually sees (1 with GPU binding)
+    fabric_devices = (
+        1 if MPSAccelerator.is_available() else num_cuda_devices()
+    )  # What each task actually sees (1 with GPU binding)
     slurm_ntasks = _os.environ.get("SLURM_NTASKS")
     if slurm_ntasks:
         num_gpus = int(slurm_ntasks)  # World size for paths/logging
@@ -540,7 +552,13 @@ def main():
             "logging_root_dir": logging_root_dir,
             "logging_run_name": f"{model_name}_{dataset_name}_precision_{precision}",
         }
-        fabric, device, fabric_strategy, use_sync_batchnorm, distributed_strategy_name = initialize_fabric(fabric_config)
+        (
+            fabric,
+            device,
+            fabric_strategy,
+            use_sync_batchnorm,
+            distributed_strategy_name,
+        ) = initialize_fabric(fabric_config)
 
         if use_process_tracker:
             tracker = ProcessTracker(
@@ -552,14 +570,9 @@ def main():
                 batch_size=batch_size,  # this does not need scaling because is for each process
             )
 
-        # Get experiment type from environment variable
-        experiment_scenario = os.getenv("SCALABLE_EXPERIMENT_SCENARIO", "")
-
         # Initialize WandB
         wandb_project_prefix = os.getenv("WANDB_PROJECT_PREFIX", "R14")
         project_name_parts = [f"{wandb_project_prefix}_TRAINING"]
-        if experiment_scenario:
-            project_name_parts.append(experiment_scenario)
         project_name_parts.extend(
             [
                 model_name,
@@ -660,7 +673,7 @@ def main():
                 "================================================================================\n\n\n"
             )
         )
-        
+
         if fabric:
             fabric.print(message)
         else:

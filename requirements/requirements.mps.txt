@@ -4,7 +4,7 @@ wandb==0.25.1  # 0.18.7 rejects new 86-char API keys (wandb_v1_... format); 0.25
 numpy<2.0
 matplotlib==3.9.4
 scikit-learn==1.6.1
-transformers==4.35.0
+transformers==5.0.0rc3
 scipy==1.13.1
 python-dotenv==1.1.0
 pytorch-lightning==2.1.0

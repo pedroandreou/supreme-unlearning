@@ -14,8 +14,8 @@ Registration (extend the framework from your own package, no edits to SUPREME)::
     supreme.register_dataset("MyDS", "my_pkg.data:MyDS",
                              root="/data/myds", class_dict={"a": 0, "b": 1})
 
-Components can equivalently be advertised by an installed plugin package via
-packaging entry points - see ``supreme.registry`` and ``docs/extending.md``.
+An installed plugin package can equivalently provide components via packaging
+entry points - see ``supreme.registry`` and ``docs/extending.md``.
 
 Running the pipeline::
 

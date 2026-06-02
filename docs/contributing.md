@@ -5,9 +5,6 @@ code. Answering questions, helping others, improving documentation, and
 reporting bugs are all appreciated. If you find SUPREME useful, please ⭐️ the
 repo, cite it, and share it.
 
-> 🤝 The structure of this guide is inspired by the
-> [Transformers contributing guide](https://github.com/huggingface/transformers/blob/main/CONTRIBUTING.md).
-
 ## Ways to contribute
 
 - Fix bugs in the existing code.
@@ -32,14 +29,14 @@ Please use the issue templates. They appear automatically when you
 SUPREME is **registry-based**, so adding a dataset, model, unlearning method, or
 metric means implementing a small interface and registering its module path, with no
 changes to framework internals. The walkthroughs live in
-[`docs/extending.md`](extending.md):
+[`docs/extending.md`](https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md):
 
 | What to add | Walkthrough |
 |---|---|
-| New dataset | [Adding a new dataset](extending.md#adding-a-new-dataset) |
-| New model | [Adding a new model](extending.md#adding-a-new-model) |
-| New unlearning method | [Adding a new unlearning method](extending.md#adding-a-new-unlearning-method) |
-| New evaluation metric | [Adding a new evaluation metric](extending.md#adding-a-new-evaluation-metric) |
+| New dataset | [Adding a new dataset](https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md#adding-a-new-dataset) |
+| New model | [Adding a new model](https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md#adding-a-new-model) |
+| New unlearning method | [Adding a new unlearning method](https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md#adding-a-new-unlearning-method) |
+| New evaluation metric | [Adding a new evaluation metric](https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md#adding-a-new-evaluation-metric) |
 
 There are **two ways** to share a component, and you can choose either:
 
@@ -49,14 +46,14 @@ There are **two ways** to share a component, and you can choose either:
    (`supreme.models`, `supreme.unlearning_methods`, `supreme.metrics`,
    `supreme.plugins`). Publish your package and others can `pip install` it and
    use your component immediately. See
-   [`notebooks/custom_components.ipynb`](../notebooks/custom_components.ipynb) for
-   an end-to-end example, and list it in [`community/`](../community/README.md) so
+   [`notebooks/custom_components.ipynb`](https://github.com/pedroandreou/supreme-unlearning/blob/main/notebooks/custom_components.ipynb) for
+   an end-to-end example, and list it in [`community/`](https://github.com/pedroandreou/supreme-unlearning/blob/main/community/README.md) so
    others can find it.
 
 2. **In-tree, via a pull request.** If your component is broadly useful and you'd
    like it shipped with SUPREME, open a PR adding it under `supreme/` with a short
    `community/` entry documenting it (see the
-   [method template](../community/methods/template/README.md)).
+   [method template](https://github.com/pedroandreou/supreme-unlearning/blob/main/community/methods/template/README.md)).
 
 ## Opening a pull request
 
@@ -79,5 +76,5 @@ a green CI.
 ## Documentation
 
 When you change behaviour or add a component, update the relevant doc under
-[`docs/`](.) and, if user-facing, the [README](../README.md). Documentation-only
+[`docs/`](https://github.com/pedroandreou/supreme-unlearning/tree/main/docs) and, if user-facing, the [README](https://github.com/pedroandreou/supreme-unlearning/blob/main/README.md). Documentation-only
 PRs are very welcome and can skip the component checklist.

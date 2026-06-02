@@ -1,7 +1,8 @@
 name: CI
 
-# Lint + format check on every push to main and every PR. Mirrors `make quality`
-# (ruff pinned to match .pre-commit-config.yaml). Fast - no torch needed.
+# Lint + format check on every push to main and every PR. Runs `make quality`
+# directly (ruff pinned to match .pre-commit-config.yaml) so the target dirs live
+# only in the Makefile. Fast - no torch needed.
 on:
   push:
     branches: [main]
@@ -20,10 +21,10 @@ jobs:
           python-version: "3.9"
       - name: Install ruff (pinned)
         run: python -m pip install ruff==0.6.9
-      - name: Lint
-        run: ruff check supreme setup.py
-      - name: Format check
-        run: ruff format --check supreme setup.py
+      # Reuse the Makefile target (RUFF=ruff -> system ruff, not a venv) so the
+      # lint/format dirs (check_dirs) have a single source of truth.
+      - name: Lint + format check
+        run: make quality RUFF=ruff
 
   build-check:
     # Confirms the package still builds and its metadata is valid (catches
@@ -34,6 +35,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
+      # Mirrors the Makefile `build` recipe (kept inline, not `make build`, to keep
+      # the system Python out of a venv). Keep these commands in sync with the Makefile.
       - run: |
           python -m pip install --upgrade build twine
           python -m build

@@ -28,6 +28,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.9"
+      # Mirrors the Makefile `build` recipe (kept inline, not `make build`, to keep
+      # this release-critical path free of a venv/Makefile dependency). Keep in sync.
       - name: Build sdist + wheel and validate
         run: |
           python -m pip install --upgrade build twine

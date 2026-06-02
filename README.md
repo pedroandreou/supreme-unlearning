@@ -72,11 +72,11 @@
 2. **Unlearn** the chosen subset using the selected unlearning method.
 3. **Evaluate** the unlearned model against a from-scratch *retrained* baseline (trained only on the data that was kept), using a configurable set of metrics that cover forgetting, utility, privacy, behavioural/parametric equivalence, and efficiency.
 
-It ships ready-to-use implementations of **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, and 10 evaluation metrics**, all selectable through command-line flags.
+It ships **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, and 9 selectable evaluation metrics** (plus loss, reported automatically alongside accuracy), all selectable through command-line flags.
 
 **What makes SUPREME different:**
 
-- **Reproducible by design.** Recent work has shown that single-seed unlearning results can misrepresent a method's true behaviour. SUPREME runs the same experiment under multiple seeds, independently for the training, unlearning, and evaluation stages, so you measure distributions, not point estimates. The number of seeds at each stage is configurable per run.
+- **Reproducible.** Recent work has shown that single-seed unlearning results can misrepresent a method's true behaviour. SUPREME runs the same experiment under multiple seeds, independently for the training, unlearning, and evaluation stages, so you measure distributions, not point estimates. The number of seeds at each stage is configurable per run.
 - **Multi-GPU and multi-precision.** Built on PyTorch and Lightning Fabric. Distribution (DDP, FSDP, DeepSpeed ZeRO 1/2/3) applies to *all three stages*, with mixed-precision (fp16 / bf16) and NVIDIA / Apple Silicon / CPU back-ends.
 - **Registry-based extensibility.** Add a dataset, model, unlearning method, or metric by implementing a small interface and registering its module path, with no framework changes required (see [`docs/extending.md`](docs/extending.md)).
 - **Efficient.** When several experiments share the same training configuration, the model is trained once and reused across them, guarded by a file lock so parallel SLURM jobs and concurrent local runs stay consistent.
@@ -100,8 +100,6 @@ Registry-based components are **user-extensible** - implement the relevant inter
 | **Evaluation metrics** | [Accuracy](supreme/eval_metrics/accuracy.py), [Loss/Error](supreme/utils/training/training_utils.py), [ZRF](supreme/eval_metrics/zrf.py), [Activation Distance](supreme/eval_metrics/activation_distance.py), [JS-Divergence](supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](supreme/eval_metrics/membership_inference_attack.py), [Completeness](supreme/eval_metrics/completeness.py), [Resource Consumption](supreme/eval_metrics/resource_consumption.py), [Time](supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
 
-> Paper-evaluated subset: Retrain, FT, BadT, RL, UNSIR, SSD, LFSSD. The remaining methods (ASSD, SCRUB, JIT) are experimental implementations that aren't in the paper's evaluation but can be selected via `--methods`.
-
 ### Provided via Lightning Fabric
 
 | Component | Available implementations |
@@ -120,8 +118,8 @@ Registry-based components are **user-extensible** - implement the relevant inter
 git clone https://github.com/pedroandreou/supreme-unlearning.git
 cd supreme-unlearning
 
-# 2. Set up environment - the Makefile is the single entry point: it creates the
-#    venv (named `unlearning` by default; override with VENV=<name>), installs the
+# 2. Set up environment - the Makefile is the entry point for local dev: it creates
+#    the venv (named `unlearning` by default; override with VENV=<name>), installs the
 #    pinned deps + SUPREME (editable), and enables the git hook. (Prompts if it
 #    already exists; pass ON_EXISTING=reuse to skip.)
 make cuda                  # NVIDIA GPU (Linux / WSL2).  Apple Silicon / CPU: `make mps`
@@ -226,11 +224,11 @@ A runnable, end-to-end walkthrough from an external user's point of view -
 `pip install supreme-unlearning` then register your own method/metric/model/dataset - is in
 the notebook [`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
 
-Components can equivalently be advertised by an installed plugin package via
-packaging entry points (`supreme.models`, `supreme.unlearning_methods`,
-`supreme.metrics`, `supreme.plugins`). The public API (`supreme.register_*`,
-`supreme.run_training`, `supreme.run_unlearning`, `supreme.project_config`) is
-the supported surface; everything under `supreme.utils.*` is internal.
+An installed plugin package can equivalently provide components via packaging
+entry points (`supreme.models`, `supreme.unlearning_methods`, `supreme.metrics`,
+`supreme.plugins`). The public API is `supreme.register_*`, `supreme.run_training`,
+`supreme.run_unlearning`, and `supreme.project_config`; everything under
+`supreme.utils.*` is internal.
 
 Adding a dataset, model, method, or metric follows a consistent register-and-implement pattern. Walkthroughs and Fabric-integration rules live in [`docs/extending.md`](docs/extending.md):
 

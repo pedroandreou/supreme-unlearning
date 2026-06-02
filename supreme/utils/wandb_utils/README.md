@@ -15,7 +15,7 @@ wandb_utils/
 │   └── wandb_metrics_summary/        - generated CSVs (gitignored)
 │
 └── results_analysis/     Stage 2: aggregate the CSVs and emit the LaTeX tables for the paper
-    └── results_tables.ipynb
+    └── pins_paper_tables.ipynb
 ```
 
 ## Stage 0 - Runtime logging
@@ -74,7 +74,7 @@ All shared constants (seeds, experiment prefixes, models, dataset/strategy combi
 Open the notebook and run all cells:
 
 ```bash
-jupyter notebook supreme/utils/wandb_utils/results_analysis/results_tables.ipynb
+jupyter notebook supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb
 ```
 
 The notebook reads the CSVs from `results_extraction/wandb_metrics_summary/`, averages across forget targets per scenario, computes mean ± std across the 10 seeds, and emits one LaTeX table per dataset.

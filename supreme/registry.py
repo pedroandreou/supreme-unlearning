@@ -180,7 +180,7 @@ def _entry_points_for(group):
 
 
 def _load_entry_points():
-    """Discover and register components advertised by installed plugin packages.
+    """Discover and register components declared by installed plugin packages.
 
     Idempotent and lazy: runs once on first resolution. Runtime ``register_*``
     calls take precedence (entry points never overwrite an existing override).

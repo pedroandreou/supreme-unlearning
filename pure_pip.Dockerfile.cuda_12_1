@@ -57,7 +57,9 @@ USER $USERNAME
 # Upgrade pip + setuptools (>=64 needed for PEP 660 editable installs) + wheel
 RUN pip3 install --upgrade pip setuptools wheel
 
-# Copy requirements first to leverage Docker cache
+# Copy requirements first to leverage Docker cache.
+# This + the editable install below mirror `make cuda`/`make dev` for the container
+# (system Python, no venv). Keep in sync with the Makefile.
 COPY --chown=$USERNAME:$USERNAME requirements.cuda_12_1.txt /app/
 RUN pip3 install -r requirements.cuda_12_1.txt
 

@@ -4,8 +4,10 @@ set -e # Exit on any error
 echo "$(date): Starting development container setup..." >/app/host/.devcontainer/setup_log.txt
 
 ### PACKAGE INSTALLATION ###
+# Pinned to match requirements.*.txt and .pre-commit-config.yaml so the hook
+# manager can't silently drift past the version the image was built with.
 echo "Installing Python packages of pre-commit..."
-pip install pre-commit
+pip install pre-commit==4.0.1
 
 # We're already in /app/host where .git exists, so no need to cd or initialize git
 echo "Current directory: $(pwd)"

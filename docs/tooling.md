@@ -157,9 +157,8 @@ Fetch, combine, and visualise metrics from W&B projects via the orchestrator scr
 | `--analyze` | Only generate visualisations |
 | `--clean`   | Delete generated directories and logs |
 
-Two analysis notebooks consume the exported CSVs:
+The analysis notebook consumes the exported CSVs:
 
-- [`supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb`](../supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb) - broad multi-dataset analysis across the whole sweep.
 - [`supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](../supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb) - produces the exact LaTeX tables in the paper (Pins Face Recognition main + appendix).
 
 For the field-naming conventions used by the exporter (paper-to-W&B metric mapping, per-metric paths), see [`docs/wandb_fields.md`](wandb_fields.md). For W&B's runtime behaviour (rank-0 logging, offline mode, sync workflow), see [`docs/wandb_integration.md`](wandb_integration.md).

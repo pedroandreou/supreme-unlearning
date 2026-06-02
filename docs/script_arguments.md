@@ -18,9 +18,12 @@ Defined in [common_args.py](../supreme/utils/parsers/common_args.py):
 | `-net` | str | required | Model architecture (`ResNet18`, `ViT`) |
 | `-lr` | float | `0.1` | Initial learning rate |
 | `-warm` | int | `1` | Warm-up training phase duration (epochs) |
-| `-distributed_strategy` | str | `"ddp"` | Distributed training strategy. Choices: `ddp`, `fsdp`, `deepspeed` |
-| `-deepspeed_stage` | int | `2` | DeepSpeed ZeRO stage (only used when `-distributed_strategy=deepspeed`). Choices: `1`, `2`, `3` |
+| `-distributed_strategy` | str | `"ddp"` | Distributed training strategy (or `DISTRIBUTED_STRATEGY` env var). Choices: `ddp`, `fsdp`, `deepspeed`, `auto`, `xla` |
+| `-deepspeed_stage` | int | `2` | DeepSpeed ZeRO stage (or `DEEPSPEED_STAGE` env var; only used when `-distributed_strategy=deepspeed`). Choices: `1`, `2`, `3` |
 | `-wandb_logging_flag` | flag | `False` | Enable W&B logging |
+| `-tensorboard_logging_flag` | flag | `False` | Enable Lightning Fabric TensorBoardLogger (requires `tensorboard`/`tensorboardX`) |
+| `-csv_logging_flag` | flag | `False` | Enable Lightning Fabric CSVLogger (writes `metrics.csv` under `-logging_root_dir`) |
+| `-logging_root_dir` | str | `"./fabric_logs"` | Root directory for Fabric CSV/TensorBoard loggers (or `FABRIC_LOGGING_ROOT_DIR` env var) |
 | `-export_class_distribution_info_flag` | flag | `False` | Export class distribution CSVs |
 | `-use_process_tracker` | flag | `False` | Enable zombie process monitoring |
 

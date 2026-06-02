@@ -1,8 +1,16 @@
 # SUPREME developer convenience targets.
 #
-# The Makefile is the single entry point for ALL environment work in this repo -
+# The Makefile is the entry point for LOCAL, interactive dev work in this repo -
 # creating the venv, installing/updating dependencies, the editable install, the
-# git hook, and building/publishing the package. Don't run pip/venv/twine by hand.
+# git hook, and building/publishing the package. For local work, prefer it over
+# running pip/venv/twine by hand.
+#
+# The automated environments deliberately do NOT call it (they install into the
+# system / container Python, not a venv) and instead mirror these same recipes:
+#   - Docker:  pure_pip.Dockerfile.cuda_12_1  (mirrors `cuda` + the editable install)
+#   - CI lint: .github/workflows/ci.yml       (calls `make quality RUFF=ruff`)
+#   - CI build/publish: ci.yml + publish.yml  (mirror the `build` recipe below)
+# When you change a recipe here, update its mirror.
 #
 # First-time setup (creates and provisions the virtual environment):
 #
@@ -34,12 +42,16 @@
 VENV   ?= unlearning
 PYTHON := $(VENV)/bin/python
 PIP    := $(VENV)/bin/pip
+# ruff binary used by quality/style. Defaults to the one in the venv; CI overrides
+# it (RUFF=ruff) to reuse these targets against a system-installed ruff.
+RUFF   ?= $(VENV)/bin/ruff
 # Interpreter used to CREATE the venv (3.9 required); see header for overrides.
 BASE_PYTHON ?= python3.9
 # Behaviour when the venv already exists: empty -> prompt; reuse | recreate.
 ON_EXISTING ?=
 
-# Directories/files that the lint + format targets operate on.
+# Directories/files that the lint + format targets operate on. Single source of
+# truth: CI runs `make quality`, so it inherits this list (don't duplicate it there).
 check_dirs := supreme setup.py
 
 help:  ## Show this help
@@ -123,12 +135,12 @@ clean:  ## Remove build artifacts (dist/, build/, *.egg-info, __pycache__)
 # --- Code quality ---------------------------------------------------------
 
 quality:  ## Lint + format check without modifying files (CI-style)
-	$(VENV)/bin/ruff check $(check_dirs)
-	$(VENV)/bin/ruff format --check $(check_dirs)
+	$(RUFF) check $(check_dirs)
+	$(RUFF) format --check $(check_dirs)
 
 style:  ## Auto-fix lint issues and format in place
-	$(VENV)/bin/ruff check $(check_dirs) --fix
-	$(VENV)/bin/ruff format $(check_dirs)
+	$(RUFF) check $(check_dirs) --fix
+	$(RUFF) format $(check_dirs)
 
 precommit:  ## Run every pre-commit hook against the whole tree
 	$(VENV)/bin/pre-commit run --all-files

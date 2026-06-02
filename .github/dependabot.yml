@@ -1,0 +1,34 @@
+# Dependabot keeps dependencies and CI actions up to date.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  # Python dependencies (reads pyproject.toml + requirements*.txt at the repo root).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+
+  # GitHub Actions used across .github/workflows/.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "ci"
+      - "dependencies"
+    commit-message:
+      prefix: "ci"

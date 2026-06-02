@@ -47,9 +47,9 @@ When adapting existing unlearning methods for distributed computing, we Standard
 
 Standard BatchNorm computes statistics only from the local batch on each GPU. **SyncBatchNorm** synchronizes these statistics across all GPUs, ensuring consistent normalization.
 
-The framework automatically converts all models to SyncBatchNorm in [unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py#L425-L430) before `fabric.setup()`. This conversion must happen before Fabric wraps the model.
+The framework automatically converts all models to SyncBatchNorm in [unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py#L434-L441) before `fabric.setup()`. This conversion must happen before Fabric wraps the model.
 
-**Implementation:** [convert_to_sync_batchnorm()](../supreme/utils/fabric/fabric_setup.py#L257-L272)
+**Implementation:** [convert_to_sync_batchnorm()](../supreme/utils/fabric/fabric_setup.py#L511-L526)
 
 ---
 
@@ -139,7 +139,7 @@ This configuration ensures proper gradient computation and parameter updating ac
 
 ## Memory Management
 
-Generic cleanup is strategically invoked both within experiments and at their conclusion.
+Cleanup runs both during experiments and at their conclusion.
 
 - **At experiment conclusion**: We perform cleanup following guidance from the optimization literature, including (i) GPU→CPU tensor migration, (ii) explicit variable dereferencing, (iii) forced garbage collection, and (iv) GPU cache clearing.
 
@@ -147,7 +147,7 @@ Generic cleanup is strategically invoked both within experiments and at their co
 
 ## Non-Adopted Optimizations & Rationale
 
-We evaluated several optimizations but did not adopt them in the final experiments. We document them here for completeness and to aid practitioners who may face similar constraints.
+We evaluated several optimizations but did not adopt them in the final experiments.
 
 - **In-place weight assignment** (`assign=True`, introduced in PyTorch 2.3.0) was *not* adopted. The codebase depends on TorchAudio 2.1.0, which is only compatible with PyTorch 2.1.0 and therefore lacks support for newer PyTorch versions that provide `assign=True`.
 
@@ -202,7 +202,7 @@ The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR 
 
 **DDP Scalability:**
 - Data-parallel metrics achieve near-linear speedup with additional GPUs
-- Parameter-based metrics (layerwise distance) require manual parameter sharding across ranks (see [metrics_main.py:356-379](../supreme/eval_metrics/metrics_main.py#L356-L379))
+- Parameter-based metrics (layerwise distance) require manual parameter sharding across ranks (see [metrics_main.py:517-598](../supreme/eval_metrics/metrics_main.py#L517-L598))
 - Time metric remains unaffected (simple arithmetic on pre-computed values)
 
 **Reproducibility:**

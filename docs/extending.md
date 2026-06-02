@@ -70,8 +70,8 @@ the retrained-reference `M_r` pipeline when the metric is requested).
 
 ### Packaging entry points (auto-discovered plugins)
 
-A separately installed package can advertise components declaratively; SUPREME
-discovers them on first use - no run-script changes needed. Use the direct
+A separately installed package can declare components in its packaging metadata;
+SUPREME discovers them on first use - no run-script changes needed. Use the direct
 `module:attribute` groups for the callable categories:
 
 ```toml
@@ -429,10 +429,10 @@ DEFAULT_METHODS="retrain,original,finetune,bad_teacher,random_labeling,unsir,ssd
 
 ### Reusable training loops
 
-Save time with pre-built loops in [`supreme/utils/training/training_utils.py`](../supreme/utils/training/training_utils.py):
+Save time with pre-built loops:
 
-- `fit_one_learning_cycle` - standard fine-tuning. Used by [`finetune.py`](../supreme/methods/unlearning_methods/finetune.py), [`retrain.py`](../supreme/methods/baselines/retrain.py).
-- `fit_one_unlearning_cycle` - unlearning iterations. Used by [`random_labeling.py`](../supreme/methods/unlearning_methods/random_labeling.py), [`unsir.py`](../supreme/methods/unlearning_methods/unsir.py).
+- `fit_one_learning_cycle` (in [`supreme/utils/training/training_utils.py`](../supreme/utils/training/training_utils.py)) - standard fine-tuning. Used by [`finetune.py`](../supreme/methods/unlearning_methods/finetune.py), [`retrain.py`](../supreme/methods/baselines/retrain.py).
+- `fit_one_unlearning_cycle` (in [`supreme/utils/unlearning/unlearning_utils.py`](../supreme/utils/unlearning/unlearning_utils.py)) - unlearning iterations. Used by [`random_labeling.py`](../supreme/methods/unlearning_methods/random_labeling.py), [`unsir.py`](../supreme/methods/unlearning_methods/unsir.py).
 
 Reference: [Lightning Fabric - Converting PyTorch Code](https://lightning.ai/docs/fabric/stable/fundamentals/convert.html).
 

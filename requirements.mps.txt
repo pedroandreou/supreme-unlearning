@@ -1,22 +1,22 @@
 datetime==5.5
-wandb==0.25.1  # 0.18.7 rejects new 86-char API keys (wandb_v1_... format); 0.25.1+ supports them
+wandb==0.26.1  # 0.18.7 rejects new 86-char API keys (wandb_v1_... format); 0.25.1+ supports them
 # tensorboard  # uncomment to enable Lightning Fabric TensorBoardLogger (-tensorboard_logging_flag)
-numpy<2.0
+numpy<3.0
 matplotlib==3.9.4
 scikit-learn==1.6.1
-transformers==4.35.0
+transformers==4.57.6
 scipy==1.13.1
-python-dotenv==1.1.0
+python-dotenv==1.2.1
 pytorch-lightning==2.1.0
 lightning==2.1.0
 # Default PyPI torch build includes MPS + CPU backends (no --extra-index-url needed)
 torch==2.1.0
 torchvision==0.16.0
 torchaudio==2.1.0
-requests==2.28.2
-urllib3<2.0.0
-chardet==4.0.0
-charset-normalizer==3.0.1
+requests==2.32.5
+urllib3<3.0.0
+chardet==5.2.0
+charset-normalizer==3.4.7
 psutil
 seaborn==0.13.2
 debugpy
@@ -24,5 +24,5 @@ debugpy
 # nvidia-ml-py: NVIDIA-only - omitted; code gracefully handles absence
 # deepspeed: CUDA-only, not supported on Apple Silicon - omitted
 # --- Developer tooling (enabled by default via `make dev`; see Makefile + .pre-commit-config.yaml) ---
-pre-commit==4.0.1  # manages the git hook that runs ruff/shfmt on commit
-ruff==0.6.9  # pinned to match the ruff rev in .pre-commit-config.yaml (used by `make quality`/`make style`)
+pre-commit==4.3.0  # manages the git hook that runs ruff/shfmt on commit
+ruff==0.15.15  # pinned to match the ruff rev in .pre-commit-config.yaml (used by `make quality`/`make style`)

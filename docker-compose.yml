@@ -41,9 +41,22 @@ services:
     image: framework-cuda-12-1:dev
     <<: *common-config # alias
 
+  # Pull a ready-made runtime image (published by .github/workflows/docker.yml)
+  # instead of building from the Dockerfile. For running experiments without a
+  # local build; not the dev container (see cuda_12_1_devcontainer below).
   cuda_12_1_pulled:
     container_name: framework_cuda_12_1_pulled
-    image: thedockerman99/mu-evals-cuda-12-1
+    image: ghcr.io/pedroandreou/supreme-unlearning:0.1.0
+    <<: *common-config # alias
+
+  # Prebuilt dev container image (CUDA Dockerfile + devcontainer features baked in),
+  # published by .github/workflows/devcontainer.yml. The dev container extends this
+  # service (see docker-compose.dev.yml) so "Reopen in Container" pulls a ready-made
+  # image instead of building locally. To build locally instead, point the dev
+  # override back at cuda_12_1_from_scratch.
+  cuda_12_1_devcontainer:
+    container_name: framework_cuda_12_1_devcontainer
+    image: ghcr.io/pedroandreou/supreme-unlearning-devcontainer:latest
     <<: *common-config # alias
 
   autoheal:

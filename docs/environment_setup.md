@@ -105,13 +105,15 @@ directory so `logs/` and checkpoints are created there.
 
 > **Requires an NVIDIA GPU.** Linux or Windows + WSL2 only. Apple Silicon and other non-NVIDIA hosts: use §3a instead.
 
-If you have VS Code and Docker installed, click the **Open in Dev Containers** badge in the README, or use the VS Code Dev Containers extension to reopen the repo in a container. You should see a prompt like this:
+With VS Code and Docker installed and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), open the Command Palette (`View → Command Palette`) and run **Dev Containers: Reopen in Container**. You should see a prompt like this:
 
 ![Dev Container Initial Prompt](../assets/dev-container-initial-prompt.png)
 
-If the prompt has disappeared, use `View → Command Palette → Developer: Reload Window`, or `Dev Containers: Rebuild without Cache and Reopen in Container`.
+By default this **pulls a prebuilt image** from the GitHub Container Registry (`ghcr.io/pedroandreou/supreme-unlearning-devcontainer`, published by [`.github/workflows/devcontainer.yml`](../.github/workflows/devcontainer.yml)), so the container is ready as fast as it downloads, with no local build. The `postCreateCommand` still runs on first open to finish provisioning.
 
-The first build takes several minutes; subsequent builds use Docker cache. You may need to rebuild if CUDA becomes unavailable after extended use.
+**Prefer to build locally instead?** In [`docker-compose.dev.yml`](../docker-compose.dev.yml) change the extended service from `cuda_12_1_devcontainer` back to `cuda_12_1_from_scratch`, then reopen. The first build takes several minutes; subsequent builds use Docker cache.
+
+If the prompt has disappeared, use `View → Command Palette → Developer: Reload Window`, or `Dev Containers: Rebuild Without Cache and Reopen in Container`. You may need to rebuild if CUDA becomes unavailable after extended use.
 
 **Why we recommend the virtual environment for long runs:** the NVIDIA container runtime occasionally fails with *"Failed to initialize NVML: Unknown Error"* after prolonged GPU access. The official workaround is to set `no-cgroups = false` in `/etc/nvidia-container-runtime/config.toml`, which requires sudo on the host. The virtual environment avoids this entirely.
 

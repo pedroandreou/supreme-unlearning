@@ -258,7 +258,7 @@
   <!-- Tagline - centred -->
   <text x="800" y="235" font-family="Arial, sans-serif" font-size="22"
         fill="#FFFFFF" letter-spacing="2" opacity="0.9" text-anchor="middle">
-    Standardised Unlearning Platform for Reproducible Method Evaluation
+    A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation
   </text>
 
   <!-- Feature badges. All share the same dark-fill + gold-outline style: they
@@ -307,7 +307,7 @@
   <!-- Lightning Fabric panel (info-panel scheme: gold outline, dark fill).
        The pulsing green dots are status indicators (semantic green = active),
        not seed colours - they stay green. -->
-  <g id="lightning-fabric" transform="translate(1250, 120)">
+  <g id="lightning-fabric" transform="translate(1280, 120)">
     <rect x="0" y="0" width="290" height="380" rx="10" fill="none"
           stroke="#FFD700" stroke-width="3" stroke-dasharray="8,4" opacity="0.8"/>
 

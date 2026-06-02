@@ -1,0 +1,43 @@
+# Dependabot keeps dependencies and CI actions up to date.
+# Docs: https://docs.github.com/code-security/dependabot/dependabot-version-updates
+version: 2
+updates:
+  # Python dependencies (reads pyproject.toml + requirements*.txt at the repo root).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      python-dependencies:
+        patterns:
+          - "*"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "deps"
+    # The PyTorch stack is version-locked: torch, torchvision, torchaudio and
+    # lightning must move together. Don't let Dependabot bump them in isolation
+    # (that breaks installs); upgrade the whole stack deliberately by hand.
+    ignore:
+      - dependency-name: "torch"
+      - dependency-name: "torchvision"
+      - dependency-name: "torchaudio"
+      - dependency-name: "lightning"
+      - dependency-name: "pytorch-lightning"
+
+  # GitHub Actions used across .github/workflows/.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "ci"
+      - "dependencies"
+    commit-message:
+      prefix: "ci"

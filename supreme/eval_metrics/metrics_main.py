@@ -53,7 +53,7 @@ def get_metric_scores(
     trainset,
     core_time_dict,
     memory_usage_dict,
-    power_consumption_dict,
+    compute_utilisation_dict,
     wandb_logging_flag,
     retrain_time_elapsed_dict,
     track_evaluation_resources=False,
@@ -74,7 +74,7 @@ def get_metric_scores(
     unlearning_method_resources = {
         "core_time_elapsed": core_time_dict,
         "memory_usage": memory_usage_dict,
-        "power_consumption": power_consumption_dict,
+        "compute_utilisation": compute_utilisation_dict,
     }
 
     """
@@ -153,8 +153,8 @@ def get_metric_scores(
                     "memory_usage": test_acc_loss_dict[
                         "memory_usage_dict"
                     ],  # we let it be the same with "Loss"
-                    "power_consumption": test_acc_loss_dict[
-                        "power_consumption_dict"
+                    "compute_utilisation": test_acc_loss_dict[
+                        "compute_utilisation_dict"
                     ],  # we let it be the same with "Loss"
                 },
             },
@@ -184,8 +184,8 @@ def get_metric_scores(
                     "memory_usage": test_acc_loss_dict[
                         "memory_usage_dict"
                     ],  # we let it be the same with "Accuracy"
-                    "power_consumption": test_acc_loss_dict[
-                        "power_consumption_dict"
+                    "compute_utilisation": test_acc_loss_dict[
+                        "compute_utilisation_dict"
                     ],  # we let it be the same with "Accuracy"
                 },
             },
@@ -244,15 +244,15 @@ def get_metric_scores(
                     "initial_zrf": {
                         "core_time_elapsed": test_initial_zrf_dict["core_time_dict"],
                         "memory_usage": test_initial_zrf_dict["memory_usage_dict"],
-                        "power_consumption": test_initial_zrf_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_initial_zrf_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "final_zrf": {
                         "core_time_elapsed": test_final_zrf_dict["core_time_dict"],
                         "memory_usage": test_final_zrf_dict["memory_usage_dict"],
-                        "power_consumption": test_final_zrf_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_final_zrf_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                 },
@@ -342,30 +342,24 @@ def get_metric_scores(
                 },
                 "eval_metric": {
                     "jsdiv_whole": {
-                        "core_time_elapsed": test_jsdiv_whole_dict[
-                            "core_time_dict"
-                        ],
+                        "core_time_elapsed": test_jsdiv_whole_dict["core_time_dict"],
                         "memory_usage": test_jsdiv_whole_dict["memory_usage_dict"],
-                        "power_consumption": test_jsdiv_whole_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_jsdiv_whole_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "jsdiv_retain": {
-                        "core_time_elapsed": test_jsdiv_retain_dict[
-                            "core_time_dict"
-                        ],
+                        "core_time_elapsed": test_jsdiv_retain_dict["core_time_dict"],
                         "memory_usage": test_jsdiv_retain_dict["memory_usage_dict"],
-                        "power_consumption": test_jsdiv_retain_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_jsdiv_retain_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "jsdiv_forget": {
-                        "core_time_elapsed": test_jsdiv_forget_dict[
-                            "core_time_dict"
-                        ],
+                        "core_time_elapsed": test_jsdiv_forget_dict["core_time_dict"],
                         "memory_usage": test_jsdiv_forget_dict["memory_usage_dict"],
-                        "power_consumption": test_jsdiv_forget_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_jsdiv_forget_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                 },
@@ -405,7 +399,7 @@ def get_metric_scores(
                 "eval_metric": {
                     "core_time_elapsed": test_mia_dict["core_time_dict"],
                     "memory_usage": test_mia_dict["memory_usage_dict"],
-                    "power_consumption": test_mia_dict["power_consumption_dict"],
+                    "compute_utilisation": test_mia_dict["compute_utilisation_dict"],
                 },
             },
         }
@@ -489,36 +483,24 @@ def get_metric_scores(
                 },
                 "eval_metric": {
                     "activation_distance_whole": {
-                        "core_time_elapsed": act_distance_whole_dict[
-                            "core_time_dict"
-                        ],
-                        "memory_usage": act_distance_whole_dict[
-                            "memory_usage_dict"
-                        ],
-                        "power_consumption": act_distance_whole_dict[
-                            "power_consumption_dict"
+                        "core_time_elapsed": act_distance_whole_dict["core_time_dict"],
+                        "memory_usage": act_distance_whole_dict["memory_usage_dict"],
+                        "compute_utilisation": act_distance_whole_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "activation_distance_retain": {
-                        "core_time_elapsed": act_distance_retain_dict[
-                            "core_time_dict"
-                        ],
-                        "memory_usage": act_distance_retain_dict[
-                            "memory_usage_dict"
-                        ],
-                        "power_consumption": act_distance_retain_dict[
-                            "power_consumption_dict"
+                        "core_time_elapsed": act_distance_retain_dict["core_time_dict"],
+                        "memory_usage": act_distance_retain_dict["memory_usage_dict"],
+                        "compute_utilisation": act_distance_retain_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "activation_distance_forget": {
-                        "core_time_elapsed": act_distance_forget_dict[
-                            "core_time_dict"
-                        ],
-                        "memory_usage": act_distance_forget_dict[
-                            "memory_usage_dict"
-                        ],
-                        "power_consumption": act_distance_forget_dict[
-                            "power_consumption_dict"
+                        "core_time_elapsed": act_distance_forget_dict["core_time_dict"],
+                        "memory_usage": act_distance_forget_dict["memory_usage_dict"],
+                        "compute_utilisation": act_distance_forget_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                 },
@@ -551,12 +533,17 @@ def get_metric_scores(
         # manager to temporarily gather full params on all ranks, and call
         # lay_dist() INSIDE the context so parameters remain unsharded during
         # the computation. Once the context exits, params revert to sharded state.
-        fsdp_active = _is_fsdp_wrapped(unlearned_model) or _is_fsdp_wrapped(reference_model)
+        fsdp_active = _is_fsdp_wrapped(unlearned_model) or _is_fsdp_wrapped(
+            reference_model
+        )
 
         def _compute_layerwise_distance():
             # Get all parameter pairs
             param_pairs = list(
-                zip(unlearned_model.named_parameters(), reference_model.named_parameters())
+                zip(
+                    unlearned_model.named_parameters(),
+                    reference_model.named_parameters(),
+                )
             )
             total_params = len(param_pairs)
 
@@ -567,7 +554,9 @@ def get_metric_scores(
             # Calculate which parameters this rank should process
             params_per_rank = total_params // world_size
             start_idx = rank * params_per_rank
-            end_idx = start_idx + params_per_rank if rank < world_size - 1 else total_params
+            end_idx = (
+                start_idx + params_per_rank if rank < world_size - 1 else total_params
+            )
 
             return lay_dist(
                 fabric=fabric,
@@ -581,8 +570,10 @@ def get_metric_scores(
         if fsdp_active:
             # summon_full_params gathers full (non-sharded) params on every rank for
             # correct element-wise parameter comparison. Memory spikes briefly.
-            with FSDP.summon_full_params(unlearned_model, writeback=False), \
-                 FSDP.summon_full_params(reference_model, writeback=False):
+            with (
+                FSDP.summon_full_params(unlearned_model, writeback=False),
+                FSDP.summon_full_params(reference_model, writeback=False),
+            ):
                 layerwise_distance_dict = _compute_layerwise_distance()
         else:
             layerwise_distance_dict = _compute_layerwise_distance()
@@ -599,7 +590,7 @@ def get_metric_scores(
             "eval_metric": {
                 "core_time_elapsed": layerwise_distance_dict["core_time_dict"],
                 "memory_usage": layerwise_distance_dict["memory_usage_dict"],
-                "power_consumption": layerwise_distance_dict["power_consumption_dict"],
+                "compute_utilisation": layerwise_distance_dict["compute_utilisation_dict"],
             },
         }
         result["layerwise_distance"]["unlearning_method"].update(
@@ -680,8 +671,8 @@ def get_metric_scores(
                     "completeness_whole": {
                         "core_time_elapsed": test_completeness_dict["core_time_dict"],
                         "memory_usage": test_completeness_dict["memory_usage_dict"],
-                        "power_consumption": test_completeness_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_completeness_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "completeness_retain": {
@@ -691,8 +682,8 @@ def get_metric_scores(
                         "memory_usage": test_completeness_retain_dict[
                             "memory_usage_dict"
                         ],
-                        "power_consumption": test_completeness_retain_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_completeness_retain_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                     "completeness_forget": {
@@ -702,8 +693,8 @@ def get_metric_scores(
                         "memory_usage": test_completeness_forget_dict[
                             "memory_usage_dict"
                         ],
-                        "power_consumption": test_completeness_forget_dict[
-                            "power_consumption_dict"
+                        "compute_utilisation": test_completeness_forget_dict[
+                            "compute_utilisation_dict"
                         ],
                     },
                 },
@@ -746,7 +737,7 @@ def get_metric_scores(
             "eval_metric": {
                 "core_time_elapsed": time_dict["core_time_dict"],
                 "memory_usage": time_dict["memory_usage_dict"],
-                "power_consumption": time_dict["power_consumption_dict"],
+                "compute_utilisation": time_dict["compute_utilisation_dict"],
             },
         }
         result["time"]["unlearning_method"].update(unlearning_method_resources)
@@ -761,7 +752,7 @@ def get_metric_scores(
     # with no edits to this file. External metrics are expected to be decorated
     # with @track_evaluation_metric and thus return the standard envelope
     # {"metric_value_dict", "core_time_dict", "memory_usage_dict",
-    #  "power_consumption_dict"}.
+    #  "compute_utilisation_dict"}.
     from supreme.registry import external_metric_names, resolve_metric_location
     from supreme.utils.generic_utils import dynamic_method_call
 
@@ -797,7 +788,7 @@ def get_metric_scores(
             "eval_metric": {
                 "core_time_elapsed": metric_output.get("core_time_dict"),
                 "memory_usage": metric_output.get("memory_usage_dict"),
-                "power_consumption": metric_output.get("power_consumption_dict"),
+                "compute_utilisation": metric_output.get("compute_utilisation_dict"),
             },
         }
         result[metric_name]["unlearning_method"].update(unlearning_method_resources)

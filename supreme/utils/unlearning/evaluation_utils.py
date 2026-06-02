@@ -2,8 +2,8 @@ import functools
 from supreme.eval_metrics.resource_consumption import (
     start_memory_tracking,
     track_memory_usage,
-    start_sm_util_tracking,
-    track_sm_util_usage,
+    start_compute_util_tracking,
+    track_compute_util_usage,
     start_cpu_util_tracking,
     track_cpu_util_usage,
 )
@@ -46,7 +46,7 @@ def track_resources(func, *args, **kwargs):
 
     # Start resource tracking
     start_memory_tracking()
-    start_sm_util_data = start_sm_util_tracking(fabric)
+    start_compute_util_data = start_compute_util_tracking(fabric)
     start_cpu_util_data = start_cpu_util_tracking(fabric)
 
     # Execute the function with memory tracking
@@ -57,9 +57,9 @@ def track_resources(func, *args, **kwargs):
     # Track resource usage
     memory_usage_dict = track_memory_usage(fabric, peak_mem_usage_gb)
     local_process_time = core_time_dict["per_process"][fabric.global_rank]
-    sm_util_dict = track_sm_util_usage(
+    compute_util_dict = track_compute_util_usage(
         fabric,
-        start_sm_util_data,
+        start_compute_util_data,
         local_process_time,
     )
     cpu_util_dict = track_cpu_util_usage(
@@ -67,12 +67,12 @@ def track_resources(func, *args, **kwargs):
         start_cpu_util_data,
         local_process_time,
     )
-    # Merge CPU util keys into sm_util_dict so downstream consumers
+    # Merge CPU util keys into compute_util_dict so downstream consumers
     # (and on-disk JSON) see a single combined resource dict without
     # any signature changes.
-    sm_util_dict.update(cpu_util_dict)
+    compute_util_dict.update(cpu_util_dict)
 
-    return result, core_time_dict, memory_usage_dict, sm_util_dict
+    return result, core_time_dict, memory_usage_dict, compute_util_dict
 
 
 class EvaluationMetricTracker:
@@ -91,14 +91,14 @@ class EvaluationMetricTracker:
                 metric_value_dict,
                 core_time_dict,
                 memory_usage_dict,
-                sm_util_dict,
+                compute_util_dict,
             ) = track_resources(self.func, *args, **kwargs)
 
             return {
                 "metric_value_dict": metric_value_dict,
                 "core_time_dict": core_time_dict,
                 "memory_usage_dict": memory_usage_dict,
-                "power_consumption_dict": sm_util_dict,  # Key kept for compatibility
+                "compute_utilisation_dict": compute_util_dict,  # Key kept for compatibility
             }
         else:
             # Run the evaluation metric WITHOUT resource tracking
@@ -108,7 +108,7 @@ class EvaluationMetricTracker:
                 "metric_value_dict": metric_value_dict,
                 "core_time_dict": None,
                 "memory_usage_dict": None,
-                "power_consumption_dict": None,  # Key kept for compatibility
+                "compute_utilisation_dict": None,  # Key kept for compatibility
             }
 
     def track_epoch_start(self, fabric, epoch, metric_name):

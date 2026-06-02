@@ -57,7 +57,7 @@ def start_memory_tracking():
         def _poll_mps_memory():
             global _mps_peak_memory_gb, _mps_memory_monitor_flag
             while _mps_memory_monitor_flag:
-                current_gb = torch.mps.current_allocated_memory() / (1024 ** 3)
+                current_gb = torch.mps.current_allocated_memory() / (1024**3)
                 if current_gb > _mps_peak_memory_gb:
                     _mps_peak_memory_gb = current_gb
                 time.sleep(0.1)
@@ -70,7 +70,9 @@ def track_memory_usage(fabric, peak_memory_used):
     """Track GPU and CPU memory usage across all processes."""
     global _mps_peak_memory_gb, _mps_memory_monitor_flag, _mps_memory_monitor_thread
     if torch.cuda.is_available():
-        max_gpu_memory = torch.cuda.max_memory_allocated() / (1024 ** 3)  # Convert bytes to GB
+        max_gpu_memory = torch.cuda.max_memory_allocated() / (
+            1024**3
+        )  # Convert bytes to GB
     elif torch.backends.mps.is_available():
         # Stop polling thread and capture peak
         _mps_memory_monitor_flag = False
@@ -128,54 +130,36 @@ def track_memory_usage(fabric, peak_memory_used):
 # =================================================================== #
 # ====================== SM UTILIZATION TRACKING =================== #
 # =================================================================== #
-sm_utilization_readings = []  # Stores SM utilization percentages
+compute_utilization_readings = []  # Stores SM utilization percentages
 monitor_flag = False  # Global flag for monitoring thread
 using_nvml_mode = False  # True: NVML SM-util mode; False: legacy fallback mode
 
 
 def get_visible_gpu_ids():
     """Get list of GPU IDs, supporting both standalone and SLURM environments."""
-    
+
     # Try CUDA_VISIBLE_DEVICES first (works on standalone + most SLURM setups)
     cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES")
-    
+
     if cuda_visible_devices:
         return [int(x.strip()) for x in cuda_visible_devices.split(",") if x.strip()]
-    
+
     # Fallback: Check SLURM-specific variables
-    slurm_gpus = os.environ.get("SLURM_STEP_GPUS") or os.environ.get("GPU_DEVICE_ORDINAL")
-    
+    slurm_gpus = os.environ.get("SLURM_STEP_GPUS") or os.environ.get(
+        "GPU_DEVICE_ORDINAL"
+    )
+
     if slurm_gpus:
         return [int(x.strip()) for x in slurm_gpus.split(",") if x.strip()]
-    
+
     # If nothing is set, check what's available
     import torch
+
     if torch.cuda.is_available():
         return list(range(torch.cuda.device_count()))
     elif torch.backends.mps.is_available():
         return [0]  # MPS is always a single device, index 0
     return []
-
-
-def _get_gpu_metric_fallback(gpu_id: int) -> float:
-    """Legacy fallback: Get GPU metric reading using nvidia-smi for a specific GPU.
-
-    Note: This is only used in fallback mode when NVML is not available.
-    Prefer NVML mode for accurate per-process SM utilization tracking.
-    """
-    try:
-        output = subprocess.check_output(
-            [
-                "nvidia-smi",
-                f"--id={gpu_id}",
-                "--query-gpu=power.draw",
-                "--format=csv,noheader,nounits",
-            ]
-        ).decode()
-        return float(output.strip())
-    except Exception as e:
-        print(f"Error reading GPU metric for GPU {gpu_id}: {e}")
-        return 0.0
 
 
 def _get_mps_gpu_utilization() -> float:
@@ -192,6 +176,7 @@ def _get_mps_gpu_utilization() -> float:
         ).decode()
         # Prefer Renderer Utilization (shader/compute cores, most relevant for ML)
         import re
+
         match = re.search(r'"Renderer Utilization %"\s*=\s*(\d+)', output)
         if not match:
             match = re.search(r'"Device Utilization %"\s*=\s*(\d+)', output)
@@ -202,14 +187,14 @@ def _get_mps_gpu_utilization() -> float:
     return 0.0
 
 
-def start_sm_util_tracking(fabric):
+def start_compute_util_tracking(fabric):
     """Initialize GPU SM utilization tracking for the current process.
 
     Uses NVML for per-process SM utilization when available,
     falls back to legacy mode otherwise.
     """
-    global sm_utilization_readings, monitor_flag, using_nvml_mode
-    sm_utilization_readings = []
+    global compute_utilization_readings, monitor_flag, using_nvml_mode
+    compute_utilization_readings = []
     monitor_flag = True
     using_nvml_mode = False
 
@@ -253,15 +238,15 @@ def start_sm_util_tracking(fabric):
                     f"Per-process utilization unsupported but REQUIRE_NVML_PER_PROCESS=1: {e}"
                 )
 
-        def monitor_sm_utilization(gpu_id: int, pid: int):
+        def monitor_compute_utilization(gpu_id: int, pid: int):
             """Continuously monitor SM utilization for this process using NVML."""
-            global monitor_flag, sm_utilization_readings
+            global monitor_flag, compute_utilization_readings
             handle_local = pynvml.nvmlDeviceGetHandleByIndex(gpu_id)
 
             while monitor_flag:
                 try:
                     # Get per-process SM utilization (percentage)
-                    sm_util_percent = 0.0
+                    compute_util_percent = 0.0
                     try:
                         # lastSeenTimeStamp=0 → most recent; sampling ~100ms
                         util_list = pynvml.nvmlDeviceGetProcessUtilization(
@@ -270,22 +255,22 @@ def start_sm_util_tracking(fabric):
                         for u in util_list:
                             if getattr(u, "pid", -1) == pid:
                                 # Direct SM utilization percentage (0-100)
-                                sm_util_percent = float(getattr(u, "smUtil", 0))
+                                compute_util_percent = float(getattr(u, "smUtil", 0))
                                 break
                     except Exception:
-                        sm_util_percent = 0.0
+                        compute_util_percent = 0.0
 
                     # Store the SM utilization percentage directly
-                    sm_utilization_readings.append(sm_util_percent)
-                    
+                    compute_utilization_readings.append(compute_util_percent)
+
                 except Exception:
                     # On any error, append 0 and continue
-                    sm_utilization_readings.append(0.0)
+                    compute_utilization_readings.append(0.0)
 
                 time.sleep(0.1)  # Sample every 100ms
 
         monitor_thread = Thread(
-            target=monitor_sm_utilization,
+            target=monitor_compute_utilization,
             args=(my_physical_gpu_id, os.getpid()),
             daemon=True,
         )
@@ -303,7 +288,7 @@ def start_sm_util_tracking(fabric):
             start_value = 0.0
 
         return {
-            "start_sm_util": start_value,
+            "start_compute_util": start_value,
             "monitor_thread": monitor_thread,
             "my_gpu_id": my_physical_gpu_id,
             "all_gpu_ids": all_physical_ids,
@@ -311,10 +296,11 @@ def start_sm_util_tracking(fabric):
 
     # MPS path: sample Renderer Utilization % via ioreg (no sudo required)
     if torch.backends.mps.is_available():
+
         def monitor_mps():
-            global monitor_flag, sm_utilization_readings
+            global monitor_flag, compute_utilization_readings
             while monitor_flag:
-                sm_utilization_readings.append(_get_mps_gpu_utilization())
+                compute_utilization_readings.append(_get_mps_gpu_utilization())
                 time.sleep(0.1)
 
         monitor_thread = Thread(target=monitor_mps, daemon=True)
@@ -322,49 +308,32 @@ def start_sm_util_tracking(fabric):
         start_metric = _get_mps_gpu_utilization()
 
         return {
-            "start_sm_util": start_metric,
+            "start_compute_util": start_metric,
             "monitor_thread": monitor_thread,
             "my_gpu_id": my_physical_gpu_id,
             "all_gpu_ids": all_physical_ids,
         }
 
-    # Legacy fallback: sampling via nvidia-smi (original behavior)
-    # NOTE: This fallback mode is less accurate in multi-user environments.
-    # Prefer NVML mode (set USE_NVML_PER_PROCESS=1) for process-specific SM utilization.
-    def monitor_fallback(gpu_id: int):
-        global monitor_flag, sm_utilization_readings
-        while monitor_flag:
-            metric = _get_gpu_metric_fallback(gpu_id)
-            sm_utilization_readings.append(metric)
-            time.sleep(0.1)  # 100 ms
-
-    monitor_thread = Thread(
-        target=monitor_fallback,
-        args=(my_physical_gpu_id,),
-        daemon=True,
-    )
-    monitor_thread.start()
-
-    start_metric = _get_gpu_metric_fallback(my_physical_gpu_id)
-
+    # No NVML and no MPS: per-process compute-utilisation tracking is unavailable
+    # on this host (e.g. CPU-only). Return a no-op handle - readings stay empty and
+    # aggregate to 0. (The legacy nvidia-smi/power.draw fallback has been removed.)
     return {
-        "start_sm_util": start_metric,
-        "monitor_thread": monitor_thread,
+        "start_compute_util": 0.0,
+        "monitor_thread": None,
         "my_gpu_id": my_physical_gpu_id,
         "all_gpu_ids": all_physical_ids,
     }
 
 
-def track_sm_util_usage(fabric, start_data: dict, process_time: float):
+def track_compute_util_usage(fabric, start_data: dict, process_time: float):
     """Aggregate SM utilization metrics from NVML or fallback mode.
 
     Returns a dictionary with SM utilization statistics.
     """
-    global monitor_flag, sm_utilization_readings, using_nvml_mode
+    global monitor_flag, compute_utilization_readings, using_nvml_mode
 
     # Unpack the data collected at the start
     monitor_thread = start_data["monitor_thread"]
-    my_gpu_id = start_data["my_gpu_id"]
     all_gpu_ids = start_data["all_gpu_ids"]
 
     # Stop monitoring thread if it exists
@@ -374,19 +343,19 @@ def track_sm_util_usage(fabric, start_data: dict, process_time: float):
 
     if using_nvml_mode:
         # NVML SM-util mode
-        if sm_utilization_readings:
-            avg_sm_util = sum(sm_utilization_readings) / len(sm_utilization_readings)
-            peak_sm_util = max(sm_utilization_readings)
+        if compute_utilization_readings:
+            avg_compute_util = sum(compute_utilization_readings) / len(compute_utilization_readings)
+            peak_compute_util = max(compute_utilization_readings)
         else:
-            avg_sm_util = start_data["start_sm_util"]
-            peak_sm_util = start_data["start_sm_util"]
+            avg_compute_util = start_data["start_compute_util"]
+            peak_compute_util = start_data["start_compute_util"]
 
-        compute_seconds = float(avg_sm_util) * process_time
+        compute_seconds = float(avg_compute_util) * process_time
 
-        all_start_util = fabric.all_gather(start_data["start_sm_util"])
-        all_end_util = fabric.all_gather(avg_sm_util)
-        all_avg_util = fabric.all_gather(avg_sm_util)
-        all_peak_util = fabric.all_gather(peak_sm_util)
+        all_start_util = fabric.all_gather(start_data["start_compute_util"])
+        all_end_util = fabric.all_gather(avg_compute_util)
+        all_avg_util = fabric.all_gather(avg_compute_util)
+        all_peak_util = fabric.all_gather(peak_compute_util)
         all_compute_seconds = fabric.all_gather(compute_seconds)
 
         total_avg_util = all_avg_util.mean().item()
@@ -395,49 +364,47 @@ def track_sm_util_usage(fabric, start_data: dict, process_time: float):
         max_peak_util = all_peak_util.max().item()
         total_compute_seconds = all_compute_seconds.sum().item()
 
-        sm_util_dict = {
+        compute_util_dict = {
             "gpu_ids": ",".join(map(str, all_gpu_ids)),
-            "start_sm_util": {
+            "start_compute_util": {
                 "total": all_start_util.sum().item(),
                 "max": all_start_util.max().item(),
                 "per_process": all_start_util.tolist(),
             },
-            "end_sm_util": {
+            "end_compute_util": {
                 "total": all_end_util.sum().item(),
                 "max": all_end_util.max().item(),
                 "per_process": all_end_util.tolist(),
             },
-            "total_avg_sm_util": total_avg_util,
-            "total_peak_sm_util": total_peak_util,
-            "max_avg_sm_util": max_avg_util,
-            "max_peak_sm_util": max_peak_util,
-            "total_sm_seconds": total_compute_seconds,
-            "total_sm_hours": total_compute_seconds / 3600,
+            "total_avg_compute_util": total_avg_util,
+            "total_peak_compute_util": total_peak_util,
+            "max_avg_compute_util": max_avg_util,
+            "max_peak_compute_util": max_peak_util,
+            "total_compute_seconds": total_compute_seconds,
+            "total_compute_hours": total_compute_seconds / 3600,
             "per_process": {
-                "avg_sm_util": all_avg_util.tolist(),
-                "peak_sm_util": all_peak_util.tolist(),
-                "sm_seconds": all_compute_seconds.tolist(),
-                "sm_hours": (all_compute_seconds / 3600).tolist(),
+                "avg_compute_util": all_avg_util.tolist(),
+                "peak_compute_util": all_peak_util.tolist(),
+                "compute_seconds": all_compute_seconds.tolist(),
+                "compute_hours": (all_compute_seconds / 3600).tolist(),
             },
         }
     else:
-        # Legacy fallback mode
-        if sm_utilization_readings:
-            avg_metric = sum(sm_utilization_readings) / len(sm_utilization_readings)
-            peak_metric = max(sm_utilization_readings)
+        # MPS (Apple Silicon) sampling mode, or no-tracking mode (no NVML/MPS).
+        # Aggregate the sampled readings; if none were collected, fall back to the
+        # start value. No legacy nvidia-smi/power.draw path.
+        if compute_utilization_readings:
+            avg_metric = sum(compute_utilization_readings) / len(compute_utilization_readings)
+            peak_metric = max(compute_utilization_readings)
         else:
-            if torch.backends.mps.is_available():
-                end_metric = _get_mps_gpu_utilization()
-            else:
-                end_metric = _get_gpu_metric_fallback(my_gpu_id)
-            avg_metric = (start_data["start_sm_util"] + end_metric) / 2
-            peak_metric = max(start_data["start_sm_util"], end_metric)
+            avg_metric = start_data["start_compute_util"]
+            peak_metric = start_data["start_compute_util"]
 
         derived_seconds = float(avg_metric) * process_time
         derived_hours = derived_seconds / 3600
 
-        all_start_metric = fabric.all_gather(start_data["start_sm_util"])
-        all_end_metric = fabric.all_gather(_get_gpu_metric_fallback(my_gpu_id))
+        all_start_metric = fabric.all_gather(start_data["start_compute_util"])
+        all_end_metric = fabric.all_gather(avg_metric)
         all_avg_metric = fabric.all_gather(avg_metric)
         all_peak_metric = fabric.all_gather(peak_metric)
         all_derived_seconds = fabric.all_gather(derived_seconds)
@@ -450,33 +417,33 @@ def track_sm_util_usage(fabric, start_data: dict, process_time: float):
         total_derived_seconds = all_derived_seconds.sum().item()
         total_derived_hours = all_derived_hours.sum().item()
 
-        sm_util_dict = {
+        compute_util_dict = {
             "gpu_ids": ",".join(map(str, all_gpu_ids)),
-            "start_sm_util": {
+            "start_compute_util": {
                 "total": all_start_metric.sum().item(),
                 "max": all_start_metric.max().item(),
                 "per_process": all_start_metric.tolist(),
             },
-            "end_sm_util": {
+            "end_compute_util": {
                 "total": all_end_metric.sum().item(),
                 "max": all_end_metric.max().item(),
                 "per_process": all_end_metric.tolist(),
             },
-            "total_avg_sm_util": total_avg_metric,
-            "total_peak_sm_util": total_peak_metric,
-            "max_avg_sm_util": max_avg_metric,
-            "max_peak_sm_util": max_peak_metric,
-            "total_sm_seconds": total_derived_seconds,
-            "total_sm_hours": total_derived_hours,
+            "total_avg_compute_util": total_avg_metric,
+            "total_peak_compute_util": total_peak_metric,
+            "max_avg_compute_util": max_avg_metric,
+            "max_peak_compute_util": max_peak_metric,
+            "total_compute_seconds": total_derived_seconds,
+            "total_compute_hours": total_derived_hours,
             "per_process": {
-                "avg_sm_util": all_avg_metric.tolist(),
-                "peak_sm_util": all_peak_metric.tolist(),
-                "sm_seconds": all_derived_seconds.tolist(),
-                "sm_hours": all_derived_hours.tolist(),
+                "avg_compute_util": all_avg_metric.tolist(),
+                "peak_compute_util": all_peak_metric.tolist(),
+                "compute_seconds": all_derived_seconds.tolist(),
+                "compute_hours": all_derived_hours.tolist(),
             },
         }
 
-    return sm_util_dict
+    return compute_util_dict
 
 
 # =================================================================== #
@@ -565,7 +532,7 @@ def start_cpu_util_tracking(fabric):
 def track_cpu_util_usage(fabric, start_data: dict, process_time: float):
     """Aggregate CPU utilisation metrics across all ranks.
 
-    Mirrors track_sm_util_usage: stops the monitor thread, computes local
+    Mirrors track_compute_util_usage: stops the monitor thread, computes local
     avg/peak, then all_gathers across ranks to produce a dict of the same
     shape as the SM util dict.
     """

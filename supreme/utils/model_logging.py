@@ -14,7 +14,7 @@ def initialize_paths(log_dir: str, method_name: str) -> Dict[str, str]:
         "model_path": f"{method_dir}/{method_name}_model.pth",
         "time_elapsed_path": f"{method_dir}/{method_name}_time_elapsed.json",
         "memory_path": f"{method_dir}/{method_name}_memory_usage.json",
-        "power_path": f"{method_dir}/{method_name}_power_consumption.json",
+        "power_path": f"{method_dir}/{method_name}_compute_utilisation.json",
     }
 
 
@@ -37,7 +37,7 @@ def save_logs_only(
     method_name,
     core_time_dict: Optional[Dict] = None,
     memory_usage_dict: Optional[Dict] = None,
-    power_consumption_dict: Optional[Dict] = None,
+    compute_utilisation_dict: Optional[Dict] = None,
 ):
     """Save only the time/memory/power log files (not the model).
 
@@ -49,17 +49,22 @@ def save_logs_only(
     paths = initialize_paths(log_dir, method_name)
     os.makedirs(paths["method_dir"], exist_ok=True)
 
-    if all(x is not None for x in [core_time_dict, memory_usage_dict, power_consumption_dict]):
+    if all(
+        x is not None
+        for x in [core_time_dict, memory_usage_dict, compute_utilisation_dict]
+    ):
         with open(paths["time_elapsed_path"], "w") as f:
             json.dump(core_time_dict, f, indent=4)
-        fabric.print(f'{method_name} core time data saved to {paths["time_elapsed_path"]}')
+        fabric.print(
+            f'{method_name} core time data saved to {paths["time_elapsed_path"]}'
+        )
 
         with open(paths["memory_path"], "w") as f:
             json.dump(memory_usage_dict, f, indent=4)
         fabric.print(f'{method_name} memory usage saved to {paths["memory_path"]}')
 
         with open(paths["power_path"], "w") as f:
-            json.dump(power_consumption_dict, f, indent=4)
+            json.dump(compute_utilisation_dict, f, indent=4)
         fabric.print(f'{method_name} power consumption saved to {paths["power_path"]}')
 
 
@@ -69,7 +74,7 @@ def save_model_and_logs(
     method_name=None,
     core_time_dict: Optional[Dict] = None,  # Optional for unlearning_teacher
     memory_usage_dict: Optional[Dict] = None,  # Optional for unlearning_teacher
-    power_consumption_dict: Optional[Dict] = None,  # Optional for unlearning_teacher
+    compute_utilisation_dict: Optional[Dict] = None,  # Optional for unlearning_teacher
     state_dict=None,  # Pre-extracted state_dict (needed for FSDP where all ranks must participate in state_dict())
 ):
     """
@@ -101,7 +106,7 @@ def save_model_and_logs(
     # Only save logs if they are provided (for unlearned models)
     if all(
         x is not None
-        for x in [core_time_dict, memory_usage_dict, power_consumption_dict]
+        for x in [core_time_dict, memory_usage_dict, compute_utilisation_dict]
     ):
         with open(paths["time_elapsed_path"], "w") as f:
             json.dump(core_time_dict, f, indent=4)
@@ -114,7 +119,7 @@ def save_model_and_logs(
         fabric.print(f'{method_name} memory usage saved to {paths["memory_path"]}')
 
         with open(paths["power_path"], "w") as f:
-            json.dump(power_consumption_dict, f, indent=4)
+            json.dump(compute_utilisation_dict, f, indent=4)
         fabric.print(f'{method_name} power consumption saved to {paths["power_path"]}')
 
 
@@ -156,9 +161,9 @@ def load_model_and_logs(
         memory_usage_dict = json.load(f)
 
     with open(paths["power_path"], "r") as f:
-        power_consumption_dict = json.load(f)
+        compute_utilisation_dict = json.load(f)
 
-    return net, core_time_dict, memory_usage_dict, power_consumption_dict
+    return net, core_time_dict, memory_usage_dict, compute_utilisation_dict
 
 
 def check_model_files_exist(
@@ -177,7 +182,7 @@ def check_model_files_exist(
         files_exist: Boolean indicating if files were found
         core_time_dict: Time data as a dictionary (if files exist and not unlearning_teacher)
         memory_usage_dict: Memory usage data (if files exist and not unlearning_teacher)
-        power_consumption_dict: Power consumption data (if files exist and not unlearning_teacher)
+        compute_utilisation_dict: Power consumption data (if files exist and not unlearning_teacher)
     """
     log_dir = os.environ.get("LOG_DIR")
     if not log_dir:
@@ -203,7 +208,7 @@ def check_model_files_exist(
 
     core_time_dict = None
     memory_usage_dict = None
-    power_consumption_dict = None
+    compute_utilisation_dict = None
 
     if files_exist:
         if method_name == "Unlearning_teacher":
@@ -217,7 +222,7 @@ def check_model_files_exist(
             model,
             core_time_dict,
             memory_usage_dict,
-            power_consumption_dict,
+            compute_utilisation_dict,
         ) = load_model_and_logs(
             fabric=fabric,
             net=model,
@@ -237,7 +242,7 @@ def check_model_files_exist(
         files_exist,
         core_time_dict,
         memory_usage_dict,
-        power_consumption_dict,
+        compute_utilisation_dict,
     )
 
 

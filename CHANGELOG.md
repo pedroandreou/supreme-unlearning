@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `nbstripout` pre-commit hook so committed notebooks stay output-free (prevents stale cell outputs being committed).
+
 ## [0.1.0] - 2026-06-02
 
 First public release of **SUPREME** — a registry-based, multi-GPU framework for

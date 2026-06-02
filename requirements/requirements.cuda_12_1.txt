@@ -6,7 +6,7 @@ matplotlib==3.9.4
 scikit-learn==1.6.1
 transformers==4.35.0  # Updated: 4.21.3 requires Rust to build tokenizers on Python 3.11
 scipy==1.13.1
-python-dotenv==1.1.0
+python-dotenv==1.2.2
 # pandas
 # openpyxl
 # xlsxwriter

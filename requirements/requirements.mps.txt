@@ -6,7 +6,7 @@ matplotlib==3.9.4
 scikit-learn==1.6.1
 transformers==4.35.0
 scipy==1.13.1
-python-dotenv==1.1.0
+python-dotenv==1.2.2
 pytorch-lightning==2.1.0
 lightning==2.1.0
 # Default PyPI torch build includes MPS + CPU backends (no --extra-index-url needed)

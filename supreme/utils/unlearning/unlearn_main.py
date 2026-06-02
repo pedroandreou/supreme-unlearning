@@ -1127,15 +1127,31 @@ def setup_unlearning(
                 "MaxGPUMemoryGB": memory_usage_dict["max_gpu_memory"],
                 "MaxCPUMemoryGB": memory_usage_dict["max_cpu_memory"],
                 "GPUIDs": compute_utilisation_dict["gpu_ids"],
-                "StartComputeUtilTotal": compute_utilisation_dict["start_compute_util"]["total"],
-                "StartComputeUtilMax": compute_utilisation_dict["start_compute_util"]["max"],
-                "EndComputeUtilTotal": compute_utilisation_dict["end_compute_util"]["total"],
-                "EndComputeUtilMax": compute_utilisation_dict["end_compute_util"]["max"],
-                "TotalAverageComputeUtil": compute_utilisation_dict["total_avg_compute_util"],
-                "TotalPeakComputeUtil": compute_utilisation_dict["total_peak_compute_util"],
-                "MaxAverageComputeUtil": compute_utilisation_dict["max_avg_compute_util"],
+                "StartComputeUtilTotal": compute_utilisation_dict["start_compute_util"][
+                    "total"
+                ],
+                "StartComputeUtilMax": compute_utilisation_dict["start_compute_util"][
+                    "max"
+                ],
+                "EndComputeUtilTotal": compute_utilisation_dict["end_compute_util"][
+                    "total"
+                ],
+                "EndComputeUtilMax": compute_utilisation_dict["end_compute_util"][
+                    "max"
+                ],
+                "TotalAverageComputeUtil": compute_utilisation_dict[
+                    "total_avg_compute_util"
+                ],
+                "TotalPeakComputeUtil": compute_utilisation_dict[
+                    "total_peak_compute_util"
+                ],
+                "MaxAverageComputeUtil": compute_utilisation_dict[
+                    "max_avg_compute_util"
+                ],
                 "MaxPeakComputeUtil": compute_utilisation_dict["max_peak_compute_util"],
-                "TotalComputeSeconds": compute_utilisation_dict["total_compute_seconds"],
+                "TotalComputeSeconds": compute_utilisation_dict[
+                    "total_compute_seconds"
+                ],
                 "TotalComputeHours": compute_utilisation_dict["total_compute_hours"],
                 "LogicalCPUCount": compute_utilisation_dict["logical_cpu_count"],
                 "TotalAverageCPUUtil": compute_utilisation_dict["total_avg_cpu_util"],
@@ -1159,27 +1175,27 @@ def setup_unlearning(
                         "StartComputeUtilPerProcess": compute_utilisation_dict[
                             "start_compute_util"
                         ]["per_process"],
-                        "EndComputeUtilPerProcess": compute_utilisation_dict["end_compute_util"][
-                            "per_process"
-                        ],
+                        "EndComputeUtilPerProcess": compute_utilisation_dict[
+                            "end_compute_util"
+                        ]["per_process"],
                         "PerProcessAverageComputeUtil": compute_utilisation_dict[
                             "per_process"
                         ]["avg_compute_util"],
-                        "PerProcessPeakComputeUtil": compute_utilisation_dict["per_process"][
-                            "peak_compute_util"
-                        ],
-                        "PerProcessComputeSeconds": compute_utilisation_dict["per_process"][
-                            "compute_seconds"
-                        ],
-                        "PerProcessComputeHours": compute_utilisation_dict["per_process"][
-                            "compute_hours"
-                        ],
+                        "PerProcessPeakComputeUtil": compute_utilisation_dict[
+                            "per_process"
+                        ]["peak_compute_util"],
+                        "PerProcessComputeSeconds": compute_utilisation_dict[
+                            "per_process"
+                        ]["compute_seconds"],
+                        "PerProcessComputeHours": compute_utilisation_dict[
+                            "per_process"
+                        ]["compute_hours"],
                         "PerProcessAverageCPUUtil": compute_utilisation_dict[
                             "per_process"
                         ]["avg_cpu_util"],
-                        "PerProcessPeakCPUUtil": compute_utilisation_dict["per_process"][
-                            "peak_cpu_util"
-                        ],
+                        "PerProcessPeakCPUUtil": compute_utilisation_dict[
+                            "per_process"
+                        ]["peak_cpu_util"],
                         "PerProcessCPUSeconds": compute_utilisation_dict["per_process"][
                             "cpu_seconds"
                         ],

@@ -590,7 +590,9 @@ def get_metric_scores(
             "eval_metric": {
                 "core_time_elapsed": layerwise_distance_dict["core_time_dict"],
                 "memory_usage": layerwise_distance_dict["memory_usage_dict"],
-                "compute_utilisation": layerwise_distance_dict["compute_utilisation_dict"],
+                "compute_utilisation": layerwise_distance_dict[
+                    "compute_utilisation_dict"
+                ],
             },
         }
         result["layerwise_distance"]["unlearning_method"].update(

@@ -344,16 +344,21 @@ def track_compute_util_usage(fabric, start_data: dict, process_time: float):
     if using_nvml_mode:
         # NVML SM-util mode
         if compute_utilization_readings:
-            avg_compute_util = sum(compute_utilization_readings) / len(compute_utilization_readings)
+            avg_compute_util = sum(compute_utilization_readings) / len(
+                compute_utilization_readings
+            )
             peak_compute_util = max(compute_utilization_readings)
+            # Instantaneous reading at end of run, mirroring start_compute_util.
+            end_compute_util = compute_utilization_readings[-1]
         else:
             avg_compute_util = start_data["start_compute_util"]
             peak_compute_util = start_data["start_compute_util"]
+            end_compute_util = start_data["start_compute_util"]
 
         compute_seconds = float(avg_compute_util) * process_time
 
         all_start_util = fabric.all_gather(start_data["start_compute_util"])
-        all_end_util = fabric.all_gather(avg_compute_util)
+        all_end_util = fabric.all_gather(end_compute_util)
         all_avg_util = fabric.all_gather(avg_compute_util)
         all_peak_util = fabric.all_gather(peak_compute_util)
         all_compute_seconds = fabric.all_gather(compute_seconds)
@@ -394,17 +399,22 @@ def track_compute_util_usage(fabric, start_data: dict, process_time: float):
         # Aggregate the sampled readings; if none were collected, fall back to the
         # start value. No legacy nvidia-smi/power.draw path.
         if compute_utilization_readings:
-            avg_metric = sum(compute_utilization_readings) / len(compute_utilization_readings)
+            avg_metric = sum(compute_utilization_readings) / len(
+                compute_utilization_readings
+            )
             peak_metric = max(compute_utilization_readings)
+            # Instantaneous reading at end of run, mirroring start_compute_util.
+            end_metric = compute_utilization_readings[-1]
         else:
             avg_metric = start_data["start_compute_util"]
             peak_metric = start_data["start_compute_util"]
+            end_metric = start_data["start_compute_util"]
 
         derived_seconds = float(avg_metric) * process_time
         derived_hours = derived_seconds / 3600
 
         all_start_metric = fabric.all_gather(start_data["start_compute_util"])
-        all_end_metric = fabric.all_gather(avg_metric)
+        all_end_metric = fabric.all_gather(end_metric)
         all_avg_metric = fabric.all_gather(avg_metric)
         all_peak_metric = fabric.all_gather(peak_metric)
         all_derived_seconds = fabric.all_gather(derived_seconds)

@@ -21,9 +21,9 @@ classifiers = [
 ]
 dynamic = ["version"]
 
-# Core dependencies mirror the cross-platform tested lock (requirements.mps.txt).
+# Core dependencies mirror the cross-platform tested lock (requirements/requirements.mps.txt).
 # For exact, reproducible CUDA reproduction of the paper's numbers, install from
-# requirements.cuda_12_1.txt (which pins the CUDA-12.1 PyTorch build via
+# requirements/requirements.cuda_12_1.txt (which pins the CUDA-12.1 PyTorch build via
 # --extra-index-url) plus the `cuda` extra below. See docs/reproducing_the_paper.md.
 dependencies = [
     "torch==2.1.0",

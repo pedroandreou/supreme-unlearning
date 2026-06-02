@@ -42,4 +42,4 @@ dist
 
 # --- CI / local config (not required at runtime) ---
 .github
-docker-compose.dev.yml
+docker/docker-compose.dev.yml

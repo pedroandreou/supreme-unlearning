@@ -1,6 +1,6 @@
 name: Docker image (ghcr.io)
 
-# Builds the CUDA 12.1 image from pure_pip.Dockerfile.cuda_12_1 and pushes it to
+# Builds the CUDA 12.1 image from docker/pure_pip.Dockerfile.cuda_12_1 and pushes it to
 # the GitHub Container Registry (ghcr.io) - this is what populates the repo's
 # "Packages" section. MANUAL only (workflow_dispatch): the CUDA-devel base + full
 # deps is a large, slow build, so it is deliberately decoupled from tag releases.
@@ -45,7 +45,7 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: pure_pip.Dockerfile.cuda_12_1
+          file: docker/pure_pip.Dockerfile.cuda_12_1
           push: true
           tags: |
             ${{ steps.img.outputs.name }}:${{ github.event.inputs.tag }}

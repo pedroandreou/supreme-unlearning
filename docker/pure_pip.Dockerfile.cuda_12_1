@@ -60,7 +60,7 @@ RUN pip3 install --upgrade pip setuptools wheel
 # Copy requirements first to leverage Docker cache.
 # This + the editable install below mirror `make cuda`/`make dev` for the container
 # (system Python, no venv). Keep in sync with the Makefile.
-COPY --chown=$USERNAME:$USERNAME requirements.cuda_12_1.txt /app/
+COPY --chown=$USERNAME:$USERNAME requirements/requirements.cuda_12_1.txt /app/
 RUN pip3 install -r requirements.cuda_12_1.txt
 
 # Copy the entire project directory into the container
@@ -84,8 +84,8 @@ RUN apt-get update && apt-get install -y dos2unix \
 
 # Install NVIDIA Management Library Python bindings for GPU monitoring
 # Required by Scalene profiler to track GPU memory usage and performance metrics
-# Disabled: scalene is not in requirements.cuda_12_1.txt, and nvidia-ml-py (newer official package) is already
-# installed via requirements. To re-enable Scalene profiling, add `scalene` to requirements.cuda_12_1.txt and
+# Disabled: scalene is not in requirements/requirements.cuda_12_1.txt, and nvidia-ml-py (newer official package) is already
+# installed via requirements. To re-enable Scalene profiling, add `scalene` to requirements/requirements.cuda_12_1.txt and
 # uncomment the RUN below.
 # RUN pip3 install nvidia-ml-py3 && \
 #     python3 -m scalene.set_nvidia_gpu_modes || true

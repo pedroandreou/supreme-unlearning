@@ -72,7 +72,7 @@
 2. **Unlearn** the chosen subset using the selected unlearning method.
 3. **Evaluate** the unlearned model against a from-scratch *retrained* baseline (trained only on the data that was kept), using a configurable set of metrics that cover forgetting, utility, privacy, behavioural/parametric equivalence, and efficiency.
 
-It ships ready-to-use implementations of **5 datasets, 2 model architectures, 11 unlearning methods, and 10 evaluation metrics**, all selectable through command-line flags.
+It ships ready-to-use implementations of **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, and 10 evaluation metrics**, all selectable through command-line flags.
 
 **What makes SUPREME different:**
 
@@ -170,7 +170,7 @@ bash supreme/run_local.sh \
 | `--training-seeds` | Comma-separated training seeds (outer loop, `I`). | `260`–`269` |
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
 | `--evaluation-seeds` | Space-separated indices for `K` | `"0"` (matched) |
-| `--methods` | Unlearning methods to run | all 15 |
+| `--methods` | Unlearning methods to run | all 11 (2 baselines + 9 methods) |
 | `--strategies` | `fullclass`, `subclass`, `random_` | all |
 | `--datasets` | Datasets to use | all 5 |
 | `--forget-percs` | Forget % for `random_` strategy | `0.001`–`0.10` |
@@ -263,7 +263,11 @@ Contributions are welcome - bug reports, new components, and documentation alike
   a row to the [leaderboard](community/leaderboard.md).
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lints, format-checks,
-and validates the package build on every push and PR.
+and validates the package build on every push and PR. A version tag like `v0.1.0`
+triggers [`.github/workflows/publish.yml`](.github/workflows/publish.yml) to build
+and publish the release to PyPI (a manual run targets TestPyPI as a dry-run), and
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml) builds the CUDA image
+to GHCR. Notable changes per release are tracked in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -272,6 +276,7 @@ and validates the package build on every push and PR.
 | Document | Covers |
 |---|---|
 | [`docs/contributing.md`](docs/contributing.md) | How to report issues, add components, and open a pull request |
+| [`CHANGELOG.md`](CHANGELOG.md) | Notable changes per release (Keep a Changelog / SemVer) |
 | [`community/`](community/README.md) | Community-contributed methods, templates, and the results leaderboard |
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
 | [`supreme/README.md`](supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
@@ -304,12 +309,20 @@ and validates the package build on every push and PR.
 
 This work was conducted at [Loughborough University](https://www.lboro.ac.uk/).
 
-<p>
-  <a href="https://www.lboro.ac.uk/"><img src="https://img.shields.io/badge/Loughborough_University-9B1B30?style=flat&logoColor=white" alt="Loughborough University"></a>
-</p>
-
 ---
 
 ## 📄 License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+## ⭐ Star History
+
+<a href="https://star-history.com/#pedroandreou/supreme-unlearning&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
+  </picture>
+</a>

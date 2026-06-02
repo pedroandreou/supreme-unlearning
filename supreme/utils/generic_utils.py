@@ -52,12 +52,10 @@ def get_root_directory(dataset):
             os.path.join(current_dir, "../datasets/data/105_classes_pins_dataset")
         )
     elif dataset == "Caltech101":
-        root = os.path.abspath(
-            os.path.join(current_dir, "../datasets/data")
-        )
+        root = os.path.abspath(os.path.join(current_dir, "../datasets/data"))
     else:
         root = os.path.abspath(os.path.join(current_dir, "../datasets/data/cifar"))
-    
+
     return root
 
 
@@ -126,9 +124,9 @@ def initialize_network(fabric, model_name, num_labels, device, **kwargs):
     # torch.distributed.broadcast_object_list. For DS3 we initialize on all
     # ranks instead; each rank receives its own shard naturally.
     from lightning.fabric.strategies.deepspeed import DeepSpeedStrategy
-    is_ds3 = (
-        isinstance(fabric.strategy, DeepSpeedStrategy)
-        and getattr(fabric.strategy, "zero_stage_3", False)
+
+    is_ds3 = isinstance(fabric.strategy, DeepSpeedStrategy) and getattr(
+        fabric.strategy, "zero_stage_3", False
     )
 
     if is_ds3:

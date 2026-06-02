@@ -21,7 +21,6 @@ Usage:
 """
 
 import argparse
-import os
 import sys
 import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -29,9 +28,12 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 try:
     import wandb
     from dotenv import find_dotenv, load_dotenv
+
     load_dotenv(find_dotenv())
 except ImportError:
-    print("Error: Required packages not installed. Run: pip install wandb python-dotenv")
+    print(
+        "Error: Required packages not installed. Run: pip install wandb python-dotenv"
+    )
     sys.exit(1)
 
 
@@ -42,7 +44,13 @@ DST_PREFIX = "M32_stale"
 SCALED_COMBOS = {
     "fullclass": {
         "Cifar100": ["rocket", "mushroom", "baby", "lamp", "sea"],
-        "Cifar20": ["vehicle2", "veg", "people", "electrical_devices", "natural_scenes"],
+        "Cifar20": [
+            "vehicle2",
+            "veg",
+            "people",
+            "electrical_devices",
+            "natural_scenes",
+        ],
     },
     "subclass": {
         "Cifar20": ["rocket", "mushroom", "baby", "lamp", "sea"],
@@ -91,11 +99,17 @@ def build_run_suffixes(training_seeds: list[int]) -> set[str]:
     return suffixes
 
 
-def find_runs(api, entity: str, project: str, run_names: set[str], match_suffixes: set[str] = None) -> list:
+def find_runs(
+    api, entity: str, project: str, run_names: set[str], match_suffixes: set[str] = None
+) -> list:
     try:
         all_runs = api.runs(f"{entity}/{project}", per_page=200)
         if match_suffixes:
-            return [r for r in all_runs if any(r.display_name.endswith(sfx) for sfx in match_suffixes)]
+            return [
+                r
+                for r in all_runs
+                if any(r.display_name.endswith(sfx) for sfx in match_suffixes)
+            ]
         return [r for r in all_runs if r.display_name in run_names]
     except wandb.errors.CommError:
         return []
@@ -128,7 +142,9 @@ def copy_run_to_stale(entity: str, src_run, dst_project: str, dry_run: bool) -> 
     tags = list(src_run.tags or []) + ["M32_stale"]
     config = dict(src_run.config)
     notes = (src_run.notes or "") + "\n[Archived from M32 - stale results prior to fix]"
-    summary = {k: to_plain(v) for k, v in src_run.summary.items() if not k.startswith("_")}
+    summary = {
+        k: to_plain(v) for k, v in src_run.summary.items() if not k.startswith("_")
+    }
 
     try:
         wandb.init(
@@ -155,7 +171,13 @@ def copy_run_to_stale(entity: str, src_run, dst_project: str, dry_run: bool) -> 
         return False
 
 
-def process_project(entity: str, src_project: str, target_run_names: set[str], dry_run: bool, match_suffixes: set[str] = None):
+def process_project(
+    entity: str,
+    src_project: str,
+    target_run_names: set[str],
+    dry_run: bool,
+    match_suffixes: set[str] = None,
+):
     """Process one project: find runs, copy to stale, delete originals. Returns (found, moved, failed)."""
     # Each worker process needs its own API instance to avoid shared state issues
     api = wandb.Api()
@@ -192,30 +214,40 @@ def process_project(entity: str, src_project: str, target_run_names: set[str], d
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Move retrain WandB runs from M32 to M32_stale")
+    parser = argparse.ArgumentParser(
+        description="Move retrain WandB runs from M32 to M32_stale"
+    )
     parser.add_argument(
-        "--training-seeds", required=True,
+        "--training-seeds",
+        required=True,
         help="Comma-separated training seeds (e.g. 1,2,3)",
     )
     parser.add_argument(
-        "--model", default="ResNet18",
+        "--model",
+        default="ResNet18",
         help="Model name (default: ResNet18)",
     )
     parser.add_argument(
-        "--entity", default=None,
+        "--entity",
+        default=None,
         help="WandB entity (default: your default entity)",
     )
     parser.add_argument(
-        "--methods", default="retrain",
+        "--methods",
+        default="retrain",
         help="Comma-separated method names (e.g. retrain,original,ssd) or 'all' to match every method (default: retrain)",
     )
     parser.add_argument(
-        "--workers", type=int, default=4,
+        "--workers",
+        type=int,
+        default=4,
         help="Number of parallel workers for project processing (default: 4)",
     )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true", help="List runs without moving")
-    mode.add_argument("--move", action="store_true", help="Copy to M32_stale then delete from M32")
+    mode.add_argument(
+        "--move", action="store_true", help="Copy to M32_stale then delete from M32"
+    )
     args = parser.parse_args()
 
     training_seeds = [int(s.strip()) for s in args.training_seeds.split(",")]
@@ -236,14 +268,18 @@ def main():
         method_label = ",".join(methods)
 
     mode_label = "DRY RUN" if args.dry_run else "MOVE"
-    print(f"=== {mode_label}: {method_label} runs for training seeds {training_seeds} ===")
+    print(
+        f"=== {mode_label}: {method_label} runs for training seeds {training_seeds} ==="
+    )
     print(f"Entity:        {entity}")
     print(f"Source prefix: {SRC_PREFIX}  →  Dest prefix: {DST_PREFIX}")
     print(f"Projects:      {len(src_projects)}")
     if target_run_names:
         print(f"Run names:     {len(target_run_names)}")
     else:
-        print(f"Match suffixes: {len(match_suffixes)} (any method matching *_tseed{{ts}}_useed{{useed}})")
+        print(
+            f"Match suffixes: {len(match_suffixes)} (any method matching *_tseed{{ts}}_useed{{useed}})"
+        )
     print(f"Workers:       {args.workers}")
     print()
 
@@ -253,7 +289,14 @@ def main():
 
     with ProcessPoolExecutor(max_workers=args.workers) as executor:
         futures = {
-            executor.submit(process_project, entity, proj, target_run_names, args.dry_run, match_suffixes): proj
+            executor.submit(
+                process_project,
+                entity,
+                proj,
+                target_run_names,
+                args.dry_run,
+                match_suffixes,
+            ): proj
             for proj in src_projects
         }
         for future in as_completed(futures):
@@ -264,9 +307,13 @@ def main():
 
     print()
     verb = "would be moved" if args.dry_run else "moved"
-    print(f"=== Found: {total_found}  |  {verb}: {total_moved}  |  Errors: {total_failed} ===")
+    print(
+        f"=== Found: {total_found}  |  {verb}: {total_moved}  |  Errors: {total_failed} ==="
+    )
     if total_failed > 0:
-        print("WARNING: Some runs failed - check above. Originals were NOT deleted for failed copies.")
+        print(
+            "WARNING: Some runs failed - check above. Originals were NOT deleted for failed copies."
+        )
         sys.exit(1)
 
 

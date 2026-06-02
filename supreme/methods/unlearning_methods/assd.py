@@ -34,8 +34,12 @@ class ParameterPerturber:
         self.max_layer = parameters["max_layer"]  # unused
         self.forget_threshold = parameters["forget_threshold"]  # unused
         self.dampening_constant = parameters["dampening_constant"]  # Lambda from paper
-        self.selection_weighting = parameters["selection_weighting"]  # Alpha from paper (will be adaptive)
-        self.adaptive_percentile = parameters.get("adaptive_percentile", True)  # Enable adaptive selection
+        self.selection_weighting = parameters[
+            "selection_weighting"
+        ]  # Alpha from paper (will be adaptive)
+        self.adaptive_percentile = parameters.get(
+            "adaptive_percentile", True
+        )  # Enable adaptive selection
 
     def get_layer_num(self, layer_name: str) -> int:
         """
@@ -214,20 +218,20 @@ class ParameterPerturber:
         """
         Compute adaptive percentile threshold based on importance ratio distribution.
         This implements the adaptive selection logic from error_unlearning.ipynb.
-        
+
         Parameters:
         original_importance: Importance values for the full dataset
         forget_importance: Importance values for the forget set
         forget_set_size: Number of samples in forget set
         total_set_size: Total number of samples (forget + retain)
-        
+
         Returns:
         percentile: The computed percentile threshold value
         """
-        
+
         # Collect all relative importance values (forget/original ratio)
         all_relative_values = []
-        
+
         with torch.no_grad():
             for (n, p), (oimp_n, oimp), (fimp_n, fimp) in zip(
                 self.model.named_parameters(),
@@ -236,30 +240,30 @@ class ParameterPerturber:
             ):
                 # Calculate ratio of forget importance to original importance
                 divs_ = fimp.div(oimp)
-                
+
                 # Remove NaN and Inf values
                 divs_ = divs_[~torch.isnan(divs_)]
                 divs_ = divs_[~torch.isinf(divs_)]
-                
+
                 if divs_.numel() > 0:
                     all_relative_values.append(divs_.reshape(-1).cpu().numpy())
-        
+
         # Concatenate all relative values
         if len(all_relative_values) > 0:
             all_relative_values = np.concatenate(all_relative_values)
         else:
             self.fabric.print("WARNING: No valid relative importance values found!")
             return 99.0  # Default fallback
-        
+
         # Calculate percentile based on dataset sizes
         # This uses logarithmic scaling to determine the percentile
         len_forget = forget_set_size
         len_all = total_set_size
-        
+
         # Adaptive percentile calculation from the notebook
         share_off = np.log(1 + (len_forget / len_all) * 100)
         percentile_value = 100 - share_off
-        
+
         self.fabric.print(f"Forget set size: {len_forget}, Total size: {len_all}")
         self.fabric.print(f"Computed adaptive percentile: {percentile_value:.2f}")
 
@@ -274,7 +278,7 @@ class ParameterPerturber:
         threshold_tensor = self.fabric.broadcast(threshold_tensor, src=0)
         threshold = threshold_tensor.item()
         self.fabric.print(f"Adaptive selection threshold value: {threshold:.6f}")
-        
+
         return threshold
 
     def modify_weight(
@@ -287,13 +291,13 @@ class ParameterPerturber:
         """
         Perturb weights based on the SSD equations given in the paper.
         If adaptive_percentile is enabled, computes the selection_weighting dynamically.
-        
+
         Parameters:
         original_importance: Importance values for original dataset
         forget_importance: Importance values for forget sample
         forget_set_size: Number of samples in forget set (required for adaptive mode)
         total_set_size: Total number of samples (required for adaptive mode)
-        
+
         Returns:
         None
         """
@@ -304,7 +308,7 @@ class ParameterPerturber:
                 raise ValueError(
                     "forget_set_size and total_set_size must be provided for adaptive percentile calculation"
                 )
-            
+
             # Compute and update selection_weighting based on importance distribution
             self.selection_weighting = self.compute_adaptive_percentile(
                 original_importance,
@@ -312,10 +316,14 @@ class ParameterPerturber:
                 forget_set_size,
                 total_set_size,
             )
-            
-            self.fabric.print(f"Using adaptive selection_weighting (alpha): {self.selection_weighting:.6f}")
+
+            self.fabric.print(
+                f"Using adaptive selection_weighting (alpha): {self.selection_weighting:.6f}"
+            )
         else:
-            self.fabric.print(f"Using fixed selection_weighting (alpha): {self.selection_weighting:.6f}")
+            self.fabric.print(
+                f"Using fixed selection_weighting (alpha): {self.selection_weighting:.6f}"
+            )
 
         # if self.fabric.global_rank == 0:
         #     self.fabric.call("on_modification_epoch_start", fabric=self.fabric)
@@ -392,7 +400,9 @@ class ParameterPerturber:
         # Log modification statistics
         if self.fabric.global_rank == 0:
             modification_rate = (total_modified.float() / total_params) * 100
-            self.fabric.print(f"Modified {total_modified}/{total_params} parameters ({modification_rate:.2f}%)")
+            self.fabric.print(
+                f"Modified {total_modified}/{total_params} parameters ({modification_rate:.2f}%)"
+            )
 
 
 ###############################################
@@ -411,10 +421,10 @@ def assd(  # Adaptive Selective Synaptic Dampening
 ):
     """
     Adaptive Selective Synaptic Dampening (ASSD) for machine unlearning.
-    
+
     This method extends SSD by automatically adapting the selection_weighting (alpha)
     parameter based on the importance ratio distribution and dataset characteristics.
-    
+
     Parameters:
     fabric: Lightning Fabric instance
     num_gpus: Number of GPUs
@@ -425,7 +435,7 @@ def assd(  # Adaptive Selective Synaptic Dampening
     dampening_constant: Lambda parameter from SSD paper
     selection_weighting: Initial alpha parameter (will be overridden by adaptive computation)
     """
-    
+
     parameters = {
         "lower_bound": 1,
         "exponent": 1,
@@ -483,16 +493,20 @@ def assd(  # Adaptive Selective Synaptic Dampening
 
     # Debug: Check importance statistics for first few layers
     if fabric.global_rank == 0:
-        fabric.print("="*80)
+        fabric.print("=" * 80)
         fabric.print("ASSD IMPORTANCE STATISTICS:")
         for idx, (name, fimp) in enumerate(forget_importances.items()):
             if idx >= 3:  # Only first 3 layers
                 break
             oimp = original_importances[name]
             fabric.print(f"\n{name}:")
-            fabric.print(f"  Forget  - min: {fimp.min().item():.8f}, max: {fimp.max().item():.8f}, mean: {fimp.mean().item():.8f}")
-            fabric.print(f"  Original - min: {oimp.min().item():.8f}, max: {oimp.max().item():.8f}, mean: {oimp.mean().item():.8f}")
-        fabric.print("="*80)
+            fabric.print(
+                f"  Forget  - min: {fimp.min().item():.8f}, max: {fimp.max().item():.8f}, mean: {fimp.mean().item():.8f}"
+            )
+            fabric.print(
+                f"  Original - min: {oimp.min().item():.8f}, max: {oimp.max().item():.8f}, mean: {oimp.mean().item():.8f}"
+            )
+        fabric.print("=" * 80)
 
     # Dampen selected parameters with adaptive selection weighting
     fabric.print("Computing adaptive parameters and applying weight dampening...")
@@ -502,11 +516,11 @@ def assd(  # Adaptive Selective Synaptic Dampening
         forget_set_size=forget_set_size,
         total_set_size=total_set_size,
     )
-    
+
     # Log final selection weighting to wandb
     if fabric.global_rank == 0 and wandb_logging_flag:
         wandb.config.update({"selection_weighting_final": pdr.selection_weighting})
-    
+
     fabric.print("ASSD unlearning complete.")
 
     # Return the post-fabric.setup() wrapped model (see ssd.py for rationale).

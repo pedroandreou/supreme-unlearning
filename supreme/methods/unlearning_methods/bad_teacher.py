@@ -189,7 +189,9 @@ def bad_teacher(  # in the bad teacher repo this method is named as blindspot bu
     optimizer = torch.optim.Adam(raw_model.parameters(), lr=lr)
     model, optimizer = fabric.setup(raw_model, optimizer)
 
-    full_trained_teacher = setup_model_for_inference(fabric, teacher_copy, distributed_strategy_name)
+    full_trained_teacher = setup_model_for_inference(
+        fabric, teacher_copy, distributed_strategy_name
+    )
 
     b_s = 256
 
@@ -207,7 +209,9 @@ def bad_teacher(  # in the bad teacher repo this method is named as blindspot bu
         indices_tensor = torch.tensor(indices, device=fabric.device)
     else:
         # Create placeholder tensor on other ranks
-        indices_tensor = torch.zeros(subset_size, dtype=torch.long, device=fabric.device)
+        indices_tensor = torch.zeros(
+            subset_size, dtype=torch.long, device=fabric.device
+        )
 
     # Broadcast indices from rank 0 to all other ranks
     indices_tensor = fabric.broadcast(indices_tensor, src=0)

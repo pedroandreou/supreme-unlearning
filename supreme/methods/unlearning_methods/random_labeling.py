@@ -75,10 +75,14 @@ def random_labeling(
                 random_labels.append(rnd)
         else:
             # For fullclass/subclass, pick any random label from available labels
-            random_labels = [random.choice(unlearninglabels) for _ in range(num_forget_samples)]
+            random_labels = [
+                random.choice(unlearninglabels) for _ in range(num_forget_samples)
+            ]
         random_labels_tensor = torch.tensor(random_labels, device=fabric.device)
     else:
-        random_labels_tensor = torch.zeros(num_forget_samples, dtype=torch.long, device=fabric.device)
+        random_labels_tensor = torch.zeros(
+            num_forget_samples, dtype=torch.long, device=fabric.device
+        )
 
     # Broadcast random labels from rank 0 to all ranks
     random_labels_tensor = fabric.broadcast(random_labels_tensor, src=0)

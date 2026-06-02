@@ -31,11 +31,13 @@ METHOD_ALIASES = {
     "lfssd": {"lfssd"},
 }
 
+
 # Derived path configuration based on experiment prefix
 # Extracts short prefix (e.g., "R7" from "R7_UNLEARNING") for directory naming
 def _get_prefix_short(prefix: str = DEFAULT_EXPERIMENT_PREFIX) -> str:
     """Extract short prefix (R6/R7) from full experiment prefix."""
     return prefix.split("_")[0]
+
 
 # Path configuration for data directories (relative to results_extraction/)
 COMBINED_RESULTS_DIR = f"combined_results_{_get_prefix_short()}"
@@ -77,14 +79,44 @@ TABLE_SECTION_BREAKS = {
 
 # Dataset-strategy-class mappings (for all-possible mode in export script)
 DATASET_CLASSES = {
-    "Cifar20_fullclass": ["electrical_devices", "natural_scenes", "people", "vehicle2", "veg"],
-    "Cifar20_subclass": ["baby", "lamp", "mushroom", "rocket", "sea"],  # CIFAR100 classes
+    "Cifar20_fullclass": [
+        "electrical_devices",
+        "natural_scenes",
+        "people",
+        "vehicle2",
+        "veg",
+    ],
+    "Cifar20_subclass": [
+        "baby",
+        "lamp",
+        "mushroom",
+        "rocket",
+        "sea",
+    ],  # CIFAR100 classes
     "Cifar100_fullclass": ["baby", "lamp", "mushroom", "rocket", "sea"],
     "PinsFaceRecognition_fullclass": ["1", "10", "20", "30", "40"],
-    "PinsFaceRecognition_random_": ["0.001", "0.005", "0.01", "0.05", "0.1"],  # 5 forget percentages
-    "Cifar10_random_": ["0.001", "0.005", "0.01", "0.05", "0.1"],  # 5 forget percentages
+    "PinsFaceRecognition_random_": [
+        "0.001",
+        "0.005",
+        "0.01",
+        "0.05",
+        "0.1",
+    ],  # 5 forget percentages
+    "Cifar10_random_": [
+        "0.001",
+        "0.005",
+        "0.01",
+        "0.05",
+        "0.1",
+    ],  # 5 forget percentages
     "Caltech101_fullclass": ["airplanes", "car_side", "chair", "elephant", "lamp"],
-    "Caltech101_random_": ["0.001", "0.005", "0.01", "0.05", "0.1"],  # 5 forget percentages
+    "Caltech101_random_": [
+        "0.001",
+        "0.005",
+        "0.01",
+        "0.05",
+        "0.1",
+    ],  # 5 forget percentages
 }
 
 # Dataset-strategy mappings
@@ -210,4 +242,3 @@ EXISTING_PROJECTS = [
     ("ViT", "Caltech101", "random_", "0.05", "32-true"),
     ("ViT", "Caltech101", "random_", "0.1", "32-true"),
 ]
-

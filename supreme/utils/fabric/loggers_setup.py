@@ -24,6 +24,7 @@ def build_fabric_loggers(config) -> List:
 
     if config.get("csv_logging_flag"):
         from lightning.fabric.loggers import CSVLogger
+
         loggers.append(
             CSVLogger(
                 root_dir=config["logging_root_dir"],
@@ -33,6 +34,7 @@ def build_fabric_loggers(config) -> List:
 
     if config.get("tensorboard_logging_flag"):
         from lightning.fabric.loggers import TensorBoardLogger
+
         try:
             loggers.append(
                 TensorBoardLogger(

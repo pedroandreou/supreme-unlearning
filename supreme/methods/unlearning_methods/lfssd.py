@@ -175,7 +175,7 @@ class ParameterPerturber:
             )  # this is for the loss-free ssd
             # NOTE: Using fabric.backward() for consistency with other methods
             # and to ensure proper gradient handling across all precision modes.
-            # While we don't call optimizer.step() (only using gradients for 
+            # While we don't call optimizer.step() (only using gradients for
             # importance measurement), fabric.backward() ensures:
             # Use fabric.backward() for gradient handling (mixed precision, sync).
             # For non-DDP strategies (parameter-surgery methods skip wrapping

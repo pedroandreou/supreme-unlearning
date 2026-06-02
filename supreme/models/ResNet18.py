@@ -7,7 +7,6 @@
 """
 # Based on https://github.com/weiaicunzai/pytorch-cifar100
 
-import torch
 import torch.nn as nn
 
 

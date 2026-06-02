@@ -4,10 +4,9 @@ from typing import Any, Dict
 import torch
 from lightning.fabric import Fabric
 from lightning.fabric.plugins import BitsandbytesPrecision
-from lightning.fabric.plugins.environments import LightningEnvironment, SLURMEnvironment
+from lightning.fabric.plugins.environments import SLURMEnvironment
 from lightning.fabric.strategies.ddp import DDPStrategy
 from lightning.fabric.strategies.fsdp import FSDPStrategy
-from lightning.fabric.accelerators.cuda import is_cuda_available
 from lightning.fabric.accelerators.mps import MPSAccelerator
 from lightning.fabric.accelerators.xla import XLAAccelerator
 
@@ -106,7 +105,9 @@ class FlexibleSLURMEnvironment(SLURMEnvironment):
 def get_slurm_node_count():
     """Get the number of nodes from SLURM environment, defaulting to 1 for standalone."""
     # SLURM sets SLURM_NNODES or SLURM_JOB_NUM_NODES
-    slurm_nnodes = os.environ.get("SLURM_NNODES") or os.environ.get("SLURM_JOB_NUM_NODES")
+    slurm_nnodes = os.environ.get("SLURM_NNODES") or os.environ.get(
+        "SLURM_JOB_NUM_NODES"
+    )
     if slurm_nnodes:
         return int(slurm_nnodes)
     return 1  # Standalone mode
@@ -130,6 +131,7 @@ def _create_distributed_strategy(config, is_slurm, device):
     if device == "tpu":
         if distributed_strategy not in (None, "ddp", "auto", "xla"):
             import warnings
+
             warnings.warn(
                 f"Distributed strategy '{distributed_strategy}' is not supported on TPU. "
                 "Overriding with 'xla'.",
@@ -180,10 +182,13 @@ def _create_distributed_strategy(config, is_slurm, device):
             size_based_auto_wrap_policy,
             min_num_params=1_000_000,
         )
-        return FSDPStrategy(
-            auto_wrap_policy=auto_wrap_policy,
-            state_dict_type="full",  # Save full (non-sharded) state dict as a single file
-        ), "fsdp"
+        return (
+            FSDPStrategy(
+                auto_wrap_policy=auto_wrap_policy,
+                state_dict_type="full",  # Save full (non-sharded) state dict as a single file
+            ),
+            "fsdp",
+        )
 
     elif distributed_strategy == "deepspeed":
         try:
@@ -195,7 +200,9 @@ def _create_distributed_strategy(config, is_slurm, device):
             )
         # ZeRO stages: 1 = optimizer sharding, 2 = optimizer+gradient, 3 = full parameter sharding
         deepspeed_stage = config.get("deepspeed_stage", 2)
-        return DeepSpeedStrategy(stage=deepspeed_stage), f"deepspeed_stage{deepspeed_stage}"
+        return DeepSpeedStrategy(
+            stage=deepspeed_stage
+        ), f"deepspeed_stage{deepspeed_stage}"
 
     else:
         raise ValueError(
@@ -252,12 +259,17 @@ def initialize_fabric(config):
     is_slurm = os.environ.get("SLURM_JOB_ID") is not None
 
     # Create the distributed strategy (ddp, fsdp, deepspeed, auto, or xla)
-    fabric_strategy, distributed_strategy_name = _create_distributed_strategy(config, is_slurm, device)
+    fabric_strategy, distributed_strategy_name = _create_distributed_strategy(
+        config, is_slurm, device
+    )
 
     # Warn if FSDP/DeepSpeed is selected but only 1 GPU is available
-    multi_gpu = config.get("num_gpus", 1) > 1 or os.environ.get("SLURM_NTASKS", "1") != "1"
+    multi_gpu = (
+        config.get("num_gpus", 1) > 1 or os.environ.get("SLURM_NTASKS", "1") != "1"
+    )
     if not multi_gpu and distributed_strategy_name.startswith(("fsdp", "deepspeed")):
         import warnings
+
         warnings.warn(
             f"Distributed strategy '{distributed_strategy_name}' is selected but only 1 GPU is available. "
             f"FSDP and DeepSpeed are designed for multi-GPU training. "
@@ -304,12 +316,15 @@ def initialize_fabric(config):
         # Create list of plugins, including FlexibleSLURMEnvironment
         plugin_list = [FlexibleSLURMEnvironment()]
         if plugins is not None:
-            plugin_list.append(plugins) if not isinstance(plugins, list) else plugin_list.extend(plugins)
+            plugin_list.append(plugins) if not isinstance(
+                plugins, list
+            ) else plugin_list.extend(plugins)
         plugins = plugin_list
 
     # Build Fabric-native CSV/TensorBoard loggers from flags in `config`.
     # WandbLogger is appended later in `initialize_wandb` (requires auth).
     from supreme.utils.fabric.loggers_setup import build_fabric_loggers
+
     fabric_loggers = build_fabric_loggers(config)
 
     # Use SLURMAwareFabric under SLURM to fix print() behavior
@@ -352,11 +367,19 @@ def initialize_fabric(config):
             slurm_ntasks_per_node = os.environ.get("SLURM_NTASKS_PER_NODE", "?")
             slurm_gpus_per_node = os.environ.get("SLURM_GPUS_PER_NODE", "?")
             slurm_info = f", SLURM[ntasks={slurm_ntasks}, ntasks_per_node={slurm_ntasks_per_node}, gpus_per_node={slurm_gpus_per_node}]"
-        fabric.print(f"Distributed training: distributed_strategy={distributed_strategy_name}, world_size={fabric.world_size}, num_nodes={num_nodes}, devices_per_node={config['num_gpus']}, global_rank={fabric.global_rank}{slurm_info}")
+        fabric.print(
+            f"Distributed training: distributed_strategy={distributed_strategy_name}, world_size={fabric.world_size}, num_nodes={num_nodes}, devices_per_node={config['num_gpus']}, global_rank={fabric.global_rank}{slurm_info}"
+        )
 
     fabric.launch()
 
-    return fabric, device, fabric_strategy, use_sync_batchnorm, distributed_strategy_name
+    return (
+        fabric,
+        device,
+        fabric_strategy,
+        use_sync_batchnorm,
+        distributed_strategy_name,
+    )
 
 
 def setup_model_for_inference(fabric, model, distributed_strategy_name):
@@ -460,6 +483,7 @@ def gather_full_state_dict(model, world_size=None):
     if world_size is None:
         try:
             import torch.distributed as dist
+
             world_size = dist.get_world_size() if dist.is_initialized() else 1
         except Exception:
             world_size = 1

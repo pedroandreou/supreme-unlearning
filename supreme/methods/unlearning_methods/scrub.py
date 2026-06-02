@@ -30,7 +30,7 @@ from supreme.utils.fabric.fabric_setup import setup_model_for_inference
 
 class DistillKL(nn.Module):
     """Distilling the Knowledge in a Neural Network (matching original lines 11-21)"""
-    
+
     def __init__(self, T):
         super(DistillKL, self).__init__()
         self.T = T
@@ -40,16 +40,18 @@ class DistillKL(nn.Module):
         p_s = F.log_softmax(y_s / self.T, dim=1)
         p_t = F.softmax(y_t / self.T, dim=1)
         # Modern equivalent of: F.kl_div(..., size_average=False) * (T**2) / batch_size
-        loss = F.kl_div(p_s, p_t, reduction="batchmean") * (self.T ** 2)
+        loss = F.kl_div(p_s, p_t, reduction="batchmean") * (self.T**2)
         return loss
 
 
-def sgda_adjust_learning_rate(epoch, sgda_learning_rate, lr_decay_epochs, lr_decay_rate, optimizer):
+def sgda_adjust_learning_rate(
+    epoch, sgda_learning_rate, lr_decay_epochs, lr_decay_rate, optimizer
+):
     """Sets the learning rate to the initial LR decayed by decay rate every steep step"""
     steps = np.sum(epoch > np.asarray(lr_decay_epochs))
     new_lr = sgda_learning_rate
     if steps > 0:
-        new_lr = sgda_learning_rate * (lr_decay_rate ** steps)
+        new_lr = sgda_learning_rate * (lr_decay_rate**steps)
         for param_group in optimizer.param_groups:
             param_group["lr"] = new_lr
     return new_lr
@@ -68,7 +70,7 @@ def disable_unused_parameters(model):
     disabled_count = 0
     for name, param in model.named_parameters():
         # ViT pooler is not used when taking last_hidden_state[:, 0] directly
-        if 'pooler' in name:
+        if "pooler" in name:
             param.requires_grad = False
             disabled_count += 1
     return disabled_count
@@ -77,11 +79,11 @@ def disable_unused_parameters(model):
 def param_dist(model, model_ref, smoothing_weight):
     """
     Calculate parameter distance for smoothing regularization (matching original lines 45-50)
-    
+
     NOTE: Original has a bug at line 106 where it calls param_dist(model_s, model_s, opt.smoothing)
     comparing the student with itself (distance always 0). This version correctly compares
     student with teacher as intended by the parameter names and smoothing logic.
-    
+
     Args:
         model: Current model being trained (student)
         model_ref: Reference model (teacher, gradients will be detached)
@@ -148,7 +150,9 @@ def scrub(
 
     # Log any extra kwargs that were passed but not used
     if kwargs:
-        fabric.print(f"SCRUB: Ignoring extra framework arguments: {list(kwargs.keys())}")
+        fabric.print(
+            f"SCRUB: Ignoring extra framework arguments: {list(kwargs.keys())}"
+        )
 
     # Set lr_decay_epochs default
     if lr_decay_epochs is None:
@@ -158,7 +162,9 @@ def scrub(
     # MEMORY OPTIMIZATION: Set requires_grad=False to avoid storing activations
     raw_model = model.module if hasattr(model, "module") else model
     distributed_strategy_name = kwargs.get("distributed_strategy_name", "ddp")
-    model_t = setup_model_for_inference(fabric, copy.deepcopy(raw_model), distributed_strategy_name)
+    model_t = setup_model_for_inference(
+        fabric, copy.deepcopy(raw_model), distributed_strategy_name
+    )
     model_t.eval()
     for param in model_t.parameters():
         param.requires_grad = False
@@ -171,7 +177,9 @@ def scrub(
     # This prevents DDP "marked ready twice" errors from param_dist
     disabled = disable_unused_parameters(raw_model)
     if disabled > 0:
-        fabric.print(f"Disabled gradients on {disabled} unused parameters (e.g., pooler)")
+        fabric.print(
+            f"Disabled gradients on {disabled} unused parameters (e.g., pooler)"
+        )
 
     # Create optimizer for student model
     if optimizer_type == "sgd":
@@ -201,7 +209,9 @@ def scrub(
     model_s, optimizer = fabric.setup(raw_model, optimizer)  # type: ignore
 
     fabric.print(f"Starting SCRUB unlearning for {sgda_epochs} epochs")
-    fabric.print(f"optimizer={optimizer_type}, lr={sgda_learning_rate}, msteps={msteps}")
+    fabric.print(
+        f"optimizer={optimizer_type}, lr={sgda_learning_rate}, msteps={msteps}"
+    )
     fabric.print(f"gamma={gamma}, alpha={alpha}, smoothing={smoothing}")
 
     # Training loop
@@ -215,7 +225,7 @@ def scrub(
         # ============ MAXIMIZE PHASE ============
         # Maximize loss on forget set (gradient ascent) for first msteps epochs
         if epoch <= msteps:
-            fabric.print(f"  Maximizing divergence on forget set...")
+            fabric.print("  Maximizing divergence on forget set...")
             model_s.train()
 
             running_loss = 0.0
@@ -252,12 +262,14 @@ def scrub(
             fabric.all_reduce(running_loss_tensor)
             fabric.all_reduce(num_batches_tensor)
 
-            avg_maximize_loss = running_loss_tensor.item() / max(num_batches_tensor.item(), 1)
+            avg_maximize_loss = running_loss_tensor.item() / max(
+                num_batches_tensor.item(), 1
+            )
             fabric.print(f"  Maximize Loss: {avg_maximize_loss:.4f}")
 
         # ============ MINIMIZE PHASE ============
         # Minimize loss on retain set (gradient descent)
-        fabric.print(f"  Minimizing loss on retain set...")
+        fabric.print("  Minimizing loss on retain set...")
         model_s.train()
 
         running_loss = 0.0
@@ -295,7 +307,9 @@ def scrub(
         fabric.all_reduce(running_loss_tensor)
         fabric.all_reduce(num_batches_tensor)
 
-        avg_minimize_loss = running_loss_tensor.item() / max(num_batches_tensor.item(), 1)
+        avg_minimize_loss = running_loss_tensor.item() / max(
+            num_batches_tensor.item(), 1
+        )
         fabric.print(f"  Minimize Loss: {avg_minimize_loss:.4f}")
 
     fabric.print("SCRUB unlearning completed")

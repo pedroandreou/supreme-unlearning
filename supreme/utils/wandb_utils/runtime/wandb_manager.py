@@ -51,15 +51,18 @@ import sys
 import json
 import os
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple
 from datetime import datetime
 
 try:
     import wandb
     from dotenv import find_dotenv, load_dotenv
+
     load_dotenv(find_dotenv())
 except ImportError:
-    print("Error: Required packages not installed. Run: pip install wandb python-dotenv")
+    print(
+        "Error: Required packages not installed. Run: pip install wandb python-dotenv"
+    )
     sys.exit(1)
 
 
@@ -97,8 +100,12 @@ METRIC_NAME_MAPPING = {
         "zrf.test.unlearning_method.final_zrf",
     ],
     "jsdiv": ["jsdiv.test.unlearning_method.jsdiv"],
-    "membership_inference_attack": ["membership_inference_attack.test.unlearning_method.mia"],
-    "activation_distance": ["activation_distance.unlearning_method.activation_distance"],
+    "membership_inference_attack": [
+        "membership_inference_attack.test.unlearning_method.mia"
+    ],
+    "activation_distance": [
+        "activation_distance.unlearning_method.activation_distance"
+    ],
     "layerwise_distance": ["layerwise_distance.unlearning_method.layerwise_distance"],
     "completeness": [
         "completeness.test.unlearning_method.completeness_whole",
@@ -137,12 +144,23 @@ PRECISION = "32-true"
 
 # Core methods (the main methods typically used in experiments)
 METHODS_CORE = [
-    "original", "retrain",  # baselines
-    "finetune", "bad_teacher", "random_labeling", "unsir", "ssd", "lfssd",  # core unlearning methods
+    "original",
+    "retrain",  # baselines
+    "finetune",
+    "bad_teacher",
+    "random_labeling",
+    "unsir",
+    "ssd",
+    "lfssd",  # core unlearning methods
 ]
 METHODS_CORE_RANDOM = [
-    "original", "retrain",  # baselines
-    "finetune", "bad_teacher", "random_labeling", "ssd", "lfssd",  # core unlearning methods (no UNSIR for random)
+    "original",
+    "retrain",  # baselines
+    "finetune",
+    "bad_teacher",
+    "random_labeling",
+    "ssd",
+    "lfssd",  # core unlearning methods (no UNSIR for random)
 ]
 
 # All methods including additional ones
@@ -175,9 +193,10 @@ def get_methods_for_strategy(strategy: str, methods_mode: str = "all") -> List[s
 # Utility Functions
 # ==============================================================================
 
+
 def check_nested_key(dictionary: dict, key_path: str) -> bool:
     """Check if a nested key exists in a dictionary using dot notation."""
-    keys = key_path.split('.')
+    keys = key_path.split(".")
     current = dictionary
     for key in keys:
         if isinstance(current, dict) and key in current:
@@ -187,11 +206,11 @@ def check_nested_key(dictionary: dict, key_path: str) -> bool:
     return True
 
 
-def flatten_dict(d: dict, parent_key: str = '', sep: str = '.') -> dict:
+def flatten_dict(d: dict, parent_key: str = "", sep: str = ".") -> dict:
     """Flatten nested dictionary using dot notation."""
     items = []
     for k, v in d.items():
-        new_key = f'{parent_key}{sep}{k}' if parent_key else k
+        new_key = f"{parent_key}{sep}{k}" if parent_key else k
         if isinstance(v, dict):
             items.extend(flatten_dict(v, new_key, sep=sep).items())
         else:
@@ -204,37 +223,39 @@ def extract_evaluation_metrics(summary: dict) -> dict:
     flat_summary = flatten_dict(summary)
 
     key_patterns = [
-        'accuracy.test.unlearning_method.whole_acc',
-        'accuracy.test.unlearning_method.retain_acc',
-        'accuracy.test.unlearning_method.forget_acc',
-        'zrf.test.unlearning_method.initial_zrf',
-        'zrf.test.unlearning_method.final_zrf',
-        'jsdiv.test.unlearning_method.jsdiv',
-        'membership_inference_attack.test.unlearning_method.mia',
-        'activation_distance.unlearning_method.activation_distance',
-        'layerwise_distance.unlearning_method.layerwise_distance',
-        'completeness.test.unlearning_method.completeness_whole',
-        'completeness.test.unlearning_method.completeness_retain',
-        'completeness.test.unlearning_method.completeness_forget',
-        'time.unlearning_method.speedup',
+        "accuracy.test.unlearning_method.whole_acc",
+        "accuracy.test.unlearning_method.retain_acc",
+        "accuracy.test.unlearning_method.forget_acc",
+        "zrf.test.unlearning_method.initial_zrf",
+        "zrf.test.unlearning_method.final_zrf",
+        "jsdiv.test.unlearning_method.jsdiv",
+        "membership_inference_attack.test.unlearning_method.mia",
+        "activation_distance.unlearning_method.activation_distance",
+        "layerwise_distance.unlearning_method.layerwise_distance",
+        "completeness.test.unlearning_method.completeness_whole",
+        "completeness.test.unlearning_method.completeness_retain",
+        "completeness.test.unlearning_method.completeness_forget",
+        "time.unlearning_method.speedup",
     ]
 
     metrics = {}
     for pattern in key_patterns:
         for key, value in flat_summary.items():
-            if pattern in key and ('final_value' in key or key == pattern):
+            if pattern in key and ("final_value" in key or key == pattern):
                 base_key = pattern
-                if base_key not in metrics or 'final_value' in key:
+                if base_key not in metrics or "final_value" in key:
                     # Extract actual value if nested in {'final_value': X}
-                    if isinstance(value, dict) and 'final_value' in value:
-                        metrics[base_key] = value['final_value']
+                    if isinstance(value, dict) and "final_value" in value:
+                        metrics[base_key] = value["final_value"]
                     else:
                         metrics[base_key] = value
 
     return metrics
 
 
-def compare_metrics(metrics1: dict, metrics2: dict, tolerance: float = 1e-6) -> Tuple[bool, List[str]]:
+def compare_metrics(
+    metrics1: dict, metrics2: dict, tolerance: float = 1e-6
+) -> Tuple[bool, List[str]]:
     """Compare two metric dictionaries.
 
     Args:
@@ -247,8 +268,8 @@ def compare_metrics(metrics1: dict, metrics2: dict, tolerance: float = 1e-6) -> 
     """
     # Keys to skip when comparing (timing varies between runs)
     SKIP_KEYS = {
-        'time.unlearning_method.core_time_elapsed',
-        'time.unlearning_method.speedup',
+        "time.unlearning_method.core_time_elapsed",
+        "time.unlearning_method.speedup",
     }
 
     all_keys = set(metrics1.keys()) | set(metrics2.keys())
@@ -303,8 +324,21 @@ def has_evaluation_metrics(run, eval_metrics: List[str] = None) -> bool:
 
         # Fallback: check for metric-like keys
         summary_keys = list(summary.keys())
-        metric_indicators = ['acc', 'loss', 'zrf', 'mia', 'distance', 'completeness', 'time', 'jsdiv']
-        if any(key for key in summary_keys if any(ind in key.lower() for ind in metric_indicators)):
+        metric_indicators = [
+            "acc",
+            "loss",
+            "zrf",
+            "mia",
+            "distance",
+            "completeness",
+            "time",
+            "jsdiv",
+        ]
+        if any(
+            key
+            for key in summary_keys
+            if any(ind in key.lower() for ind in metric_indicators)
+        ):
             return True
 
         return False
@@ -323,19 +357,25 @@ def generate_all_project_names(prefix: str = None) -> List[str]:
     for dataset, classes in DATASETS_FULLCLASS.items():
         for model in MODELS:
             for forget_class in classes:
-                projects.append(f"{prefix}_UNLEARNING_{model}_{dataset}_fullclass_{forget_class}_precision_{PRECISION}")
+                projects.append(
+                    f"{prefix}_UNLEARNING_{model}_{dataset}_fullclass_{forget_class}_precision_{PRECISION}"
+                )
 
     # Subclass projects
     for dataset, classes in DATASETS_SUBCLASS.items():
         for model in MODELS:
             for forget_class in classes:
-                projects.append(f"{prefix}_UNLEARNING_{model}_{dataset}_subclass_{forget_class}_precision_{PRECISION}")
+                projects.append(
+                    f"{prefix}_UNLEARNING_{model}_{dataset}_subclass_{forget_class}_precision_{PRECISION}"
+                )
 
     # Random projects
     for dataset, percs in DATASETS_RANDOM.items():
         for model in MODELS:
             for perc in percs:
-                projects.append(f"{prefix}_UNLEARNING_{model}_{dataset}_random_{perc}perc_precision_{PRECISION}")
+                projects.append(
+                    f"{prefix}_UNLEARNING_{model}_{dataset}_random_{perc}perc_precision_{PRECISION}"
+                )
 
     return projects
 
@@ -351,6 +391,7 @@ def get_api_and_entity(entity: str = None):
 # ==============================================================================
 # Command: cleanup-empty
 # ==============================================================================
+
 
 def cmd_cleanup_empty(args):
     """Find and delete empty WandB runs."""
@@ -415,6 +456,7 @@ def cmd_cleanup_empty(args):
 # Command: find-duplicates
 # ==============================================================================
 
+
 def cmd_find_duplicates(args):
     """Find duplicate runs."""
     api, entity = get_api_and_entity(args.entity)
@@ -444,7 +486,11 @@ def cmd_find_duplicates(args):
             for run in runs:
                 runs_by_name[run.name].append(run)
 
-            duplicates = {name: runs_list for name, runs_list in runs_by_name.items() if len(runs_list) > 1}
+            duplicates = {
+                name: runs_list
+                for name, runs_list in runs_by_name.items()
+                if len(runs_list) > 1
+            }
 
             if duplicates:
                 projects_with_duplicates.append((project_name, duplicates))
@@ -455,7 +501,9 @@ def cmd_find_duplicates(args):
                     for run_name, runs_list in duplicates.items():
                         print(f"  {run_name}: {len(runs_list)} duplicate(s)")
                         for run in runs_list:
-                            print(f"    - {run.id} (created: {run.created_at}, state: {run.state})")
+                            print(
+                                f"    - {run.id} (created: {run.created_at}, state: {run.state})"
+                            )
         except (wandb.errors.CommError, ValueError):
             pass  # Project doesn't exist
 
@@ -472,6 +520,7 @@ def cmd_find_duplicates(args):
 # ==============================================================================
 # Command: delete-duplicates
 # ==============================================================================
+
 
 def cmd_delete_duplicates(args):
     """Delete identical duplicate runs (keep oldest)."""
@@ -511,7 +560,11 @@ def cmd_delete_duplicates(args):
             for run in runs:
                 runs_by_name[run.name].append(run)
 
-            duplicates = {name: runs_list for name, runs_list in runs_by_name.items() if len(runs_list) > 1}
+            duplicates = {
+                name: runs_list
+                for name, runs_list in runs_by_name.items()
+                if len(runs_list) > 1
+            }
 
             if duplicates:
                 print(f"\n{project_name}:")
@@ -524,7 +577,7 @@ def cmd_delete_duplicates(args):
                             summary = run.summary._json_dict
                             metrics = extract_evaluation_metrics(summary)
                             run_metrics.append((run, metrics))
-                        except:
+                        except Exception:
                             run_metrics.append((run, {}))
 
                     # Check if all identical
@@ -544,7 +597,9 @@ def cmd_delete_duplicates(args):
                         oldest = runs_sorted[0]
                         to_delete = runs_sorted[1:]
 
-                        print(f"  {run_name}: {len(runs_list)} duplicates (all identical)")
+                        print(
+                            f"  {run_name}: {len(runs_list)} duplicates (all identical)"
+                        )
                         print(f"    Keep: {oldest.id}")
                         total_kept += 1
 
@@ -560,7 +615,9 @@ def cmd_delete_duplicates(args):
                                 print(f"    Would delete: {run.id}")
                                 total_deleted += 1
                     else:
-                        print(f"  {run_name}: {len(runs_list)} duplicates (DIFFERENT - skipped)")
+                        print(
+                            f"  {run_name}: {len(runs_list)} duplicates (DIFFERENT - skipped)"
+                        )
         except (wandb.errors.CommError, ValueError):
             pass  # Project doesn't exist
 
@@ -576,6 +633,7 @@ def cmd_delete_duplicates(args):
 # ==============================================================================
 # Command: generate-report
 # ==============================================================================
+
 
 def cmd_generate_report(args):
     """Generate detailed duplicate report."""
@@ -600,7 +658,11 @@ def cmd_generate_report(args):
             for run in runs:
                 runs_by_name[run.name].append(run)
 
-            duplicates = {name: runs_list for name, runs_list in runs_by_name.items() if len(runs_list) > 1}
+            duplicates = {
+                name: runs_list
+                for name, runs_list in runs_by_name.items()
+                if len(runs_list) > 1
+            }
 
             if duplicates:
                 for run_name, runs_list in duplicates.items():
@@ -610,7 +672,7 @@ def cmd_generate_report(args):
                             summary = run.summary._json_dict
                             metrics = extract_evaluation_metrics(summary)
                             run_metrics.append((run, metrics))
-                        except:
+                        except Exception:
                             run_metrics.append((run, {}))
 
                     # Check if identical
@@ -630,20 +692,20 @@ def cmd_generate_report(args):
                     to_delete = runs_sorted[1:]
 
                     entry = {
-                        'project': project_name,
-                        'run_name': run_name,
-                        'total_duplicates': len(runs_list),
-                        'identical': all_identical,
-                        'oldest_run_id': oldest.id,
-                        'oldest_created': str(oldest.created_at),
-                        'runs_to_delete': [
+                        "project": project_name,
+                        "run_name": run_name,
+                        "total_duplicates": len(runs_list),
+                        "identical": all_identical,
+                        "oldest_run_id": oldest.id,
+                        "oldest_created": str(oldest.created_at),
+                        "runs_to_delete": [
                             {
-                                'run_id': run.id,
-                                'created': str(run.created_at),
-                                'state': run.state
+                                "run_id": run.id,
+                                "created": str(run.created_at),
+                                "state": run.state,
                             }
                             for run in to_delete
-                        ]
+                        ],
                     }
 
                     if all_identical:
@@ -655,22 +717,27 @@ def cmd_generate_report(args):
 
     # Build report
     report = {
-        'generated_at': datetime.now().isoformat(),
-        'entity': entity,
-        'projects_scanned': len(project_names),
-        'summary': {
-            'identical_duplicate_groups': len(identical_duplicates),
-            'different_duplicate_groups': len(different_duplicates),
-            'runs_to_delete': sum(d['total_duplicates'] - 1 for d in identical_duplicates),
+        "generated_at": datetime.now().isoformat(),
+        "entity": entity,
+        "projects_scanned": len(project_names),
+        "summary": {
+            "identical_duplicate_groups": len(identical_duplicates),
+            "different_duplicate_groups": len(different_duplicates),
+            "runs_to_delete": sum(
+                d["total_duplicates"] - 1 for d in identical_duplicates
+            ),
         },
-        'identical_duplicates': identical_duplicates,
-        'different_duplicates': different_duplicates,
+        "identical_duplicates": identical_duplicates,
+        "different_duplicates": different_duplicates,
     }
 
     # Output
-    output_file = args.output or f"wandb_duplicate_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    output_file = (
+        args.output
+        or f"wandb_duplicate_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+    )
 
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(report, f, indent=2)
 
     print(f"Report saved to: {output_file}\n")
@@ -688,6 +755,7 @@ def cmd_generate_report(args):
 # Command: list-projects
 # ==============================================================================
 
+
 def cmd_list_projects(args):
     """List all expected project names."""
     print("=" * 70)
@@ -701,21 +769,27 @@ def cmd_list_projects(args):
         for dataset, classes in DATASETS_FULLCLASS.items():
             for model in MODELS:
                 for forget_class in classes:
-                    print(f"  {prefix}_UNLEARNING_{model}_{dataset}_fullclass_{forget_class}_precision_{PRECISION}")
+                    print(
+                        f"  {prefix}_UNLEARNING_{model}_{dataset}_fullclass_{forget_class}_precision_{PRECISION}"
+                    )
 
     if args.strategy == "all" or args.strategy == "subclass":
         print(f"\nSUBCLASS PROJECTS ({prefix}):")
         for dataset, classes in DATASETS_SUBCLASS.items():
             for model in MODELS:
                 for forget_class in classes:
-                    print(f"  {prefix}_UNLEARNING_{model}_{dataset}_subclass_{forget_class}_precision_{PRECISION}")
+                    print(
+                        f"  {prefix}_UNLEARNING_{model}_{dataset}_subclass_{forget_class}_precision_{PRECISION}"
+                    )
 
     if args.strategy == "all" or args.strategy == "random":
         print(f"\nRANDOM PROJECTS ({prefix}):")
         for dataset, percs in DATASETS_RANDOM.items():
             for model in MODELS:
                 for perc in percs:
-                    print(f"  {prefix}_UNLEARNING_{model}_{dataset}_random_{perc}perc_precision_{PRECISION}")
+                    print(
+                        f"  {prefix}_UNLEARNING_{model}_{dataset}_random_{perc}perc_precision_{PRECISION}"
+                    )
 
     projects = generate_all_project_names(prefix)
     print(f"\nTotal: {len(projects)} projects")
@@ -726,6 +800,7 @@ def cmd_list_projects(args):
 # ==============================================================================
 # Command: find-missing
 # ==============================================================================
+
 
 def parse_seeds(seeds_str: str, exclude_str: str = None) -> List[int]:
     """
@@ -738,21 +813,21 @@ def parse_seeds(seeds_str: str, exclude_str: str = None) -> List[int]:
     """
     seeds = set()
 
-    for part in seeds_str.split(','):
+    for part in seeds_str.split(","):
         part = part.strip()
-        if '-' in part:
+        if "-" in part:
             # Range format
-            start, end = part.split('-')
+            start, end = part.split("-")
             seeds.update(range(int(start), int(end) + 1))
         else:
             seeds.add(int(part))
 
     # Handle exclusions
     if exclude_str:
-        for part in exclude_str.split(','):
+        for part in exclude_str.split(","):
             part = part.strip()
-            if '-' in part:
-                start, end = part.split('-')
+            if "-" in part:
+                start, end = part.split("-")
                 for s in range(int(start), int(end) + 1):
                     seeds.discard(s)
             else:
@@ -761,7 +836,9 @@ def parse_seeds(seeds_str: str, exclude_str: str = None) -> List[int]:
     return sorted(seeds)
 
 
-def get_project_name_for_missing(prefix: str, model: str, dataset: str, strategy: str, class_name: str) -> str:
+def get_project_name_for_missing(
+    prefix: str, model: str, dataset: str, strategy: str, class_name: str
+) -> str:
     """Generate WandB project name for find-missing command."""
     if strategy in ["random", "random_"]:
         # Note: random_ uses double underscore in project names: random__
@@ -782,7 +859,7 @@ def cmd_find_missing(args):
         return 1
 
     print("=" * 80)
-    print(f"FINDING MISSING WANDB RUNS")
+    print("FINDING MISSING WANDB RUNS")
     print(f"Entity: {entity}")
     print(f"Project prefix: {prefix}")
     print(f"Seeds: {seeds}")
@@ -818,14 +895,18 @@ def cmd_find_missing(args):
         for dataset, config in datasets.items():
             for model in config["models"]:
                 for class_name in config["classes"]:
-                    project_name = get_project_name_for_missing(prefix, model, dataset, strategy, class_name)
+                    project_name = get_project_name_for_missing(
+                        prefix, model, dataset, strategy, class_name
+                    )
                     project_path = f"{entity}/{project_name}"
 
                     try:
                         runs = api.runs(project_path)
                         for run in runs:
                             existing_runs[project_name].add(run.name)
-                        print(f"  Found {len(existing_runs[project_name])} runs in {project_name}")
+                        print(
+                            f"  Found {len(existing_runs[project_name])} runs in {project_name}"
+                        )
                     except (wandb.errors.CommError, ValueError):
                         print(f"  Project not found or empty: {project_name}")
 
@@ -836,7 +917,7 @@ def cmd_find_missing(args):
     print("=" * 80)
 
     # Determine methods mode
-    methods_mode = getattr(args, 'methods', 'core')  # default to core
+    methods_mode = getattr(args, "methods", "core")  # default to core
     print(f"Methods mode: {methods_mode}")
 
     missing = []
@@ -846,17 +927,23 @@ def cmd_find_missing(args):
         for dataset, config in datasets.items():
             for model in config["models"]:
                 for class_name in config["classes"]:
-                    project_name = get_project_name_for_missing(prefix, model, dataset, strategy, class_name)
+                    project_name = get_project_name_for_missing(
+                        prefix, model, dataset, strategy, class_name
+                    )
                     project_runs = existing_runs.get(project_name, set())
 
                     for method in methods:
                         for seed in seeds:
                             run_name = f"{method}_seed{seed}"
                             if run_name not in project_runs:
-                                missing.append((strategy, dataset, model, class_name, method, seed))
+                                missing.append(
+                                    (strategy, dataset, model, class_name, method, seed)
+                                )
 
     if not missing:
-        print(f"\nNo missing runs found! All experiments for seeds {seeds} are complete.")
+        print(
+            f"\nNo missing runs found! All experiments for seeds {seeds} are complete."
+        )
         return 0
 
     # Summary
@@ -932,7 +1019,9 @@ def cmd_find_missing(args):
         print("=" * 80)
         print(f"DETAILED MISSING RUNS (first 50 of {len(missing)})")
         print("=" * 80)
-        for i, (strategy, dataset, model, class_name, method, seed) in enumerate(missing[:50]):
+        for i, (strategy, dataset, model, class_name, method, seed) in enumerate(
+            missing[:50]
+        ):
             print(f"  {strategy}/{dataset}/{model}/{class_name}/{method}_seed{seed}")
         if len(missing) > 50:
             print(f"  ... and {len(missing) - 50} more (use --verbose to see all)")
@@ -944,70 +1033,103 @@ def cmd_find_missing(args):
 # Main Entry Point
 # ==============================================================================
 
+
 def main():
     parser = argparse.ArgumentParser(
         description="Unified WandB Management Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
+        epilog=__doc__,
     )
 
-    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # -------------------------------------------------------------------------
     # INFORMATIONAL COMMANDS (discovery/read-only)
     # -------------------------------------------------------------------------
 
     # list-projects
-    p_list = subparsers.add_parser('list-projects', help='List expected project names')
-    p_list.add_argument('--prefix', default=PROJECT_PREFIX, help='Project prefix')
-    p_list.add_argument('--strategy', choices=['all', 'fullclass', 'subclass', 'random'], default='all')
+    p_list = subparsers.add_parser("list-projects", help="List expected project names")
+    p_list.add_argument("--prefix", default=PROJECT_PREFIX, help="Project prefix")
+    p_list.add_argument(
+        "--strategy", choices=["all", "fullclass", "subclass", "random"], default="all"
+    )
 
     # find-duplicates
-    p_find = subparsers.add_parser('find-duplicates', help='Find duplicate runs')
-    p_find.add_argument('--project', help='Specific project')
-    p_find.add_argument('--all', action='store_true', help='Scan all projects')
-    p_find.add_argument('--entity', help='WandB entity')
-    p_find.add_argument('--prefix', default=PROJECT_PREFIX, help='Project prefix (R6, R7)')
-    p_find.add_argument('--verbose', '-v', action='store_true', help='Show details')
+    p_find = subparsers.add_parser("find-duplicates", help="Find duplicate runs")
+    p_find.add_argument("--project", help="Specific project")
+    p_find.add_argument("--all", action="store_true", help="Scan all projects")
+    p_find.add_argument("--entity", help="WandB entity")
+    p_find.add_argument(
+        "--prefix", default=PROJECT_PREFIX, help="Project prefix (R6, R7)"
+    )
+    p_find.add_argument("--verbose", "-v", action="store_true", help="Show details")
 
     # find-missing
-    p_missing = subparsers.add_parser('find-missing', help='Find missing runs for specified seeds')
-    p_missing.add_argument('--training-seeds', dest='training_seeds', required=True,
-                          help='Training seeds to check (e.g., "60,61,62" or "60-69" or "60-65,67-69")')
-    p_missing.add_argument('--exclude', help='Seeds to exclude (e.g., "66" or "66,67")')
-    p_missing.add_argument('--strategy', choices=['all', 'fullclass', 'subclass', 'random'], default='all',
-                          help='Filter by strategy')
-    p_missing.add_argument('--methods', choices=['core', 'all'], default='core',
-                          help='Methods to check: "core" (8 main methods) or "all" (includes neg_grad)')
-    p_missing.add_argument('--entity', help='WandB entity')
-    p_missing.add_argument('--prefix', default=PROJECT_PREFIX, help='Project prefix (R6, R7)')
-    p_missing.add_argument('--verbose', '-v', action='store_true', help='Show all missing runs')
+    p_missing = subparsers.add_parser(
+        "find-missing", help="Find missing runs for specified seeds"
+    )
+    p_missing.add_argument(
+        "--training-seeds",
+        dest="training_seeds",
+        required=True,
+        help='Training seeds to check (e.g., "60,61,62" or "60-69" or "60-65,67-69")',
+    )
+    p_missing.add_argument("--exclude", help='Seeds to exclude (e.g., "66" or "66,67")')
+    p_missing.add_argument(
+        "--strategy",
+        choices=["all", "fullclass", "subclass", "random"],
+        default="all",
+        help="Filter by strategy",
+    )
+    p_missing.add_argument(
+        "--methods",
+        choices=["core", "all"],
+        default="core",
+        help='Methods to check: "core" (8 main methods) or "all" (includes neg_grad)',
+    )
+    p_missing.add_argument("--entity", help="WandB entity")
+    p_missing.add_argument(
+        "--prefix", default=PROJECT_PREFIX, help="Project prefix (R6, R7)"
+    )
+    p_missing.add_argument(
+        "--verbose", "-v", action="store_true", help="Show all missing runs"
+    )
 
     # generate-report
-    p_report = subparsers.add_parser('generate-report', help='Generate duplicate report (JSON)')
-    p_report.add_argument('--output', '-o', help='Output JSON file')
-    p_report.add_argument('--entity', help='WandB entity')
-    p_report.add_argument('--prefix', default=PROJECT_PREFIX, help='Project prefix')
+    p_report = subparsers.add_parser(
+        "generate-report", help="Generate duplicate report (JSON)"
+    )
+    p_report.add_argument("--output", "-o", help="Output JSON file")
+    p_report.add_argument("--entity", help="WandB entity")
+    p_report.add_argument("--prefix", default=PROJECT_PREFIX, help="Project prefix")
 
     # -------------------------------------------------------------------------
     # ACTION COMMANDS (modify/delete)
     # -------------------------------------------------------------------------
 
     # cleanup-empty
-    p_cleanup = subparsers.add_parser('cleanup-empty', help='Delete runs with no evaluation metrics')
-    p_cleanup.add_argument('--project', required=True, help='WandB project name')
-    p_cleanup.add_argument('--run-name', help='Filter by run name')
-    p_cleanup.add_argument('--entity', help='WandB entity')
-    p_cleanup.add_argument('--delete', action='store_true', help='Actually delete (default: dry run)')
+    p_cleanup = subparsers.add_parser(
+        "cleanup-empty", help="Delete runs with no evaluation metrics"
+    )
+    p_cleanup.add_argument("--project", required=True, help="WandB project name")
+    p_cleanup.add_argument("--run-name", help="Filter by run name")
+    p_cleanup.add_argument("--entity", help="WandB entity")
+    p_cleanup.add_argument(
+        "--delete", action="store_true", help="Actually delete (default: dry run)"
+    )
 
     # delete-duplicates
-    p_del_dup = subparsers.add_parser('delete-duplicates', help='Delete identical duplicates')
-    p_del_dup.add_argument('--project', help='Specific project')
-    p_del_dup.add_argument('--all', action='store_true', help='Process all projects')
-    p_del_dup.add_argument('--entity', help='WandB entity')
-    p_del_dup.add_argument('--prefix', default=PROJECT_PREFIX, help='Project prefix')
-    p_del_dup.add_argument('--confirm', action='store_true', help='Actually delete')
-    p_del_dup.add_argument('--yes', '-y', action='store_true', help='Skip confirmation prompt')
+    p_del_dup = subparsers.add_parser(
+        "delete-duplicates", help="Delete identical duplicates"
+    )
+    p_del_dup.add_argument("--project", help="Specific project")
+    p_del_dup.add_argument("--all", action="store_true", help="Process all projects")
+    p_del_dup.add_argument("--entity", help="WandB entity")
+    p_del_dup.add_argument("--prefix", default=PROJECT_PREFIX, help="Project prefix")
+    p_del_dup.add_argument("--confirm", action="store_true", help="Actually delete")
+    p_del_dup.add_argument(
+        "--yes", "-y", action="store_true", help="Skip confirmation prompt"
+    )
 
     args = parser.parse_args()
 
@@ -1016,12 +1138,12 @@ def main():
         return 1
 
     commands = {
-        'list-projects': cmd_list_projects,
-        'find-duplicates': cmd_find_duplicates,
-        'find-missing': cmd_find_missing,
-        'generate-report': cmd_generate_report,
-        'cleanup-empty': cmd_cleanup_empty,
-        'delete-duplicates': cmd_delete_duplicates,
+        "list-projects": cmd_list_projects,
+        "find-duplicates": cmd_find_duplicates,
+        "find-missing": cmd_find_missing,
+        "generate-report": cmd_generate_report,
+        "cleanup-empty": cmd_cleanup_empty,
+        "delete-duplicates": cmd_delete_duplicates,
     }
 
     return commands[args.command](args)

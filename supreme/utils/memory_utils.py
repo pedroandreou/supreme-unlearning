@@ -13,7 +13,9 @@ import time
 
 
 def load_weights_efficiently(model, weight_path, device):
-    checkpoint = torch.load(weight_path, map_location=device, weights_only=True, mmap=True)
+    checkpoint = torch.load(
+        weight_path, map_location=device, weights_only=True, mmap=True
+    )
     # Handle both formats: raw state_dict (legacy) and {"model": state_dict} (FSDP/DeepSpeed)
     if isinstance(checkpoint, dict) and "model" in checkpoint:
         state_dict = checkpoint["model"]
@@ -68,7 +70,7 @@ def memory_usage_in_gb(func, *args, **kwargs):
 
     # Gather all process times
     core_time_elapsed_per_process = fabric.all_gather(execution_time)
-    
+
     # Handle single GPU case where all_gather returns a 0-d tensor
     if fabric.world_size == 1:
         # Single GPU: wrap in list to maintain consistent structure
@@ -76,7 +78,7 @@ def memory_usage_in_gb(func, *args, **kwargs):
     else:
         # Multi-GPU: convert tensor to list
         per_process_times = core_time_elapsed_per_process.tolist()
-    
+
     core_time_dict = {
         "final_value": core_time_elapsed_per_process.max().item(),
         "per_process": per_process_times,
@@ -85,7 +87,9 @@ def memory_usage_in_gb(func, *args, **kwargs):
     return peak_mem_usage_gb, result, core_time_dict
 
 
-def cleanup_unlearning_checkpoint(fabric, method_name: str, cleanup_enabled: bool = False):
+def cleanup_unlearning_checkpoint(
+    fabric, method_name: str, cleanup_enabled: bool = False
+):
     """
     Remove the unlearning method model checkpoint after evaluation to save disk space.
     These files can be large (~45MB+ per model) and accumulate quickly across experiments.
@@ -105,7 +109,9 @@ def cleanup_unlearning_checkpoint(fabric, method_name: str, cleanup_enabled: boo
     # Skip baseline methods that are needed as reference models for evaluation
     protected_methods = {"retrain", "original"}
     if method_name.lower() in protected_methods:
-        fabric.print(f"Cleanup: Skipping {method_name} (needed as reference model for evaluation)")
+        fabric.print(
+            f"Cleanup: Skipping {method_name} (needed as reference model for evaluation)"
+        )
         return
 
     log_dir = os.environ.get("LOG_DIR")
@@ -122,11 +128,15 @@ def cleanup_unlearning_checkpoint(fabric, method_name: str, cleanup_enabled: boo
         try:
             file_size = os.path.getsize(model_path)
             os.remove(model_path)
-            fabric.print(f"Cleanup: Removed {method_capitalized}_model.pth ({file_size / (1024**2):.2f} MB)")
+            fabric.print(
+                f"Cleanup: Removed {method_capitalized}_model.pth ({file_size / (1024**2):.2f} MB)"
+            )
         except Exception as e:
             fabric.print(f"Warning: Could not remove {model_path}: {e}")
     else:
-        fabric.print(f"Cleanup: {method_capitalized}_model.pth not found (already removed or doesn't exist)")
+        fabric.print(
+            f"Cleanup: {method_capitalized}_model.pth not found (already removed or doesn't exist)"
+        )
 
 
 def cleanup(fabric, returned_variables=None):
@@ -166,7 +176,7 @@ def cleanup(fabric, returned_variables=None):
                     fabric.print(f"Warning: Could not clear {key}: {e}")
             try:
                 del returned_variables
-            except:
+            except Exception:
                 pass
 
         # Force garbage collection to cleanup Python objects NOW
@@ -194,7 +204,7 @@ def cleanup(fabric, returned_variables=None):
         try:
             fabric.barrier()
             fabric.print("✓ Cleanup completed successfully - safe to exit")
-        except:
+        except Exception:
             pass
 
         # Destroy distributed process group explicitly before interpreter shutdown
@@ -219,6 +229,7 @@ def cleanup(fabric, returned_variables=None):
         #    Fabric's automatic teardown in multi-GPU training/unlearning scenarios
         try:
             import torch.distributed as dist
+
             if dist.is_initialized():
                 fabric.print("Destroying distributed process group...")
                 dist.destroy_process_group()

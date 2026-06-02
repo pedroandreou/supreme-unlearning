@@ -27,7 +27,7 @@ def disable_inplace_operations(module):
     """
     for child in module.children():
         disable_inplace_operations(child)
-    if hasattr(module, 'inplace'):
+    if hasattr(module, "inplace"):
         module.inplace = False
 
 
@@ -43,9 +43,7 @@ class AddGaussianNoise(object):
         _max = tensor.max()
         _min = tensor.min()
         tensor = (
-            tensor
-            + torch.randn(tensor.size()).to(self.device) * self.std
-            + self.mean
+            tensor + torch.randn(tensor.size()).to(self.device) * self.std + self.mean
         )
         tensor = torch.clamp(tensor, min=_min, max=_max)
         return tensor
@@ -115,12 +113,16 @@ def jit(
     model_for_perturbation.eval()  # Always in eval mode - inference only
 
     # Use Gaussian noise for perturbations
-    transforms = v2.Compose([
-        AddGaussianNoise(0.0, jit_weighting, device=device),
-    ])
+    transforms = v2.Compose(
+        [
+            AddGaussianNoise(0.0, jit_weighting, device=device),
+        ]
+    )
 
     fabric.print(f"Starting JIT unlearning for {n_epochs} epoch(s)")
-    fabric.print(f"n_samples={n_samples}, learning_rate={learning_rate}, jit_weighting={jit_weighting}")
+    fabric.print(
+        f"n_samples={n_samples}, learning_rate={learning_rate}, jit_weighting={jit_weighting}"
+    )
     fabric.print(f"DEBUG: Device = {device}")
 
     # Training loop
@@ -140,7 +142,9 @@ def jit(
 
         for batch_idx, (x, _, _) in enumerate(forget_train_dataloader):
             if batch_idx == 0 or batch_idx % 20 == 0:
-                fabric.print(f"DEBUG: Epoch {epoch+1}, Batch {batch_idx}/{num_forget_batches}")
+                fabric.print(
+                    f"DEBUG: Epoch {epoch+1}, Batch {batch_idx}/{num_forget_batches}"
+                )
 
             image = x.unsqueeze(0) if x.dim() == 3 else x
             if batch_idx == 0:
@@ -195,15 +199,17 @@ def jit(
             out_n /= n_samples
 
             if batch_idx == 0:
-                fabric.print(f"DEBUG: loss = {loss.item():.6f}, in_n = {in_n.item():.6f}, out_n = {out_n.item():.6f}")
+                fabric.print(
+                    f"DEBUG: loss = {loss.item():.6f}, in_n = {in_n.item():.6f}, out_n = {out_n.item():.6f}"
+                )
 
             # Backward and optimize using fabric.backward()
             fabric.backward(loss)
             if batch_idx == 0:
-                fabric.print(f"DEBUG: Backward done")
+                fabric.print("DEBUG: Backward done")
             optimizer.step()
             if batch_idx == 0:
-                fabric.print(f"DEBUG: Optimizer step done")
+                fabric.print("DEBUG: Optimizer step done")
 
             running_loss += loss.item()
             running_in_n += in_n.item()
@@ -217,18 +223,20 @@ def jit(
         running_out_n_tensor = torch.tensor([running_out_n], device=device)
         num_batches_tensor = torch.tensor([num_batches], device=device)
 
-        fabric.print(f"DEBUG: Before all_reduce")
+        fabric.print("DEBUG: Before all_reduce")
         fabric.all_reduce(running_loss_tensor)
         fabric.all_reduce(running_in_n_tensor)
         fabric.all_reduce(running_out_n_tensor)
         fabric.all_reduce(num_batches_tensor)
-        fabric.print(f"DEBUG: After all_reduce")
+        fabric.print("DEBUG: After all_reduce")
 
         avg_loss = running_loss_tensor.item() / max(num_batches_tensor.item(), 1)
         avg_in_n = running_in_n_tensor.item() / max(num_batches_tensor.item(), 1)
         avg_out_n = running_out_n_tensor.item() / max(num_batches_tensor.item(), 1)
 
-        fabric.print(f"Epoch {epoch+1} - Avg Loss: {avg_loss:.6f}, Avg In Norm: {avg_in_n:.6f}, Avg Out Norm: {avg_out_n:.6f}")
+        fabric.print(
+            f"Epoch {epoch+1} - Avg Loss: {avg_loss:.6f}, Avg In Norm: {avg_in_n:.6f}, Avg Out Norm: {avg_out_n:.6f}"
+        )
 
     fabric.print("JIT unlearning completed")
 

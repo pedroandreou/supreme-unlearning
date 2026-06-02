@@ -12,7 +12,9 @@ from contextlib import contextmanager
 import logging
 import sys
 
-output_dir_name = os.path.join(project_config.PROJECT_ROOT, "logs", "dataset_distributions")
+output_dir_name = os.path.join(
+    project_config.PROJECT_ROOT, "logs", "dataset_distributions"
+)
 
 
 ############################################################################
@@ -595,12 +597,12 @@ def handle_distributed_error(fabric, error, epoch=None):
             import torch
 
             if torch.cuda.is_available():
-                print(f"  √ CUDA available: True")
+                print("  √ CUDA available: True")
                 print(f"  √ CUDA version: {torch.version.cuda}")
             elif torch.backends.mps.is_available():
-                print(f"  √ MPS (Apple Silicon) available: True")
+                print("  √ MPS (Apple Silicon) available: True")
             else:
-                print(f"  × No GPU available (CUDA: False, MPS: False)")
+                print("  × No GPU available (CUDA: False, MPS: False)")
         except Exception as e:
             print(f"  × GPU check failed: {e}")
 

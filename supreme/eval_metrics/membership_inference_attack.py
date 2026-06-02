@@ -76,11 +76,11 @@ def collect_prob(fabric, num_gpus, dataloader, model):
             # get_membership_attack_prob.track_batch_end(
             #    fabric, batch_idx, 0, batch_prob.mean().item()
             # )
-    
+
     # CRITICAL: Explicitly delete the temporary Fabric-wrapped dataloader
     # to prevent segfault during Python's exit cleanup
     del temp_dataloader
-    
+
     return torch.cat(prob)
 
 
@@ -110,13 +110,15 @@ def get_membership_attack_data(
     # MPS does not support float64 - cast to float32 on Apple Silicon only
     _dtype = np.float32 if torch.backends.mps.is_available() else np.float64
     Y_r = torch.from_numpy(
-        np.concatenate([np.ones(len(retain_prob)), np.zeros(len(test_prob))]).astype(_dtype)
+        np.concatenate([np.ones(len(retain_prob)), np.zeros(len(test_prob))]).astype(
+            _dtype
+        )
     ).to(fabric.device)
 
     X_f = entropy(forget_prob).reshape(-1, 1)
-    Y_f = torch.from_numpy(np.concatenate([np.ones(len(forget_prob))]).astype(_dtype)).to(
-        fabric.device
-    )
+    Y_f = torch.from_numpy(
+        np.concatenate([np.ones(len(forget_prob))]).astype(_dtype)
+    ).to(fabric.device)
 
     return X_f, Y_f, X_r, Y_r
 
@@ -196,5 +198,5 @@ def get_membership_attack_prob(
         "final_value": final_mean,
         "per_process": gathered_mia.tolist(),
     }
-    
+
     return mia_dict

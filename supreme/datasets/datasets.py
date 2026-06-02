@@ -3,9 +3,13 @@ Datasets used for the experiments (CIFAR and Celebrity Faces)
 """
 
 import os
-import random
 from typing import Any, Tuple
-from torchvision.datasets import CIFAR100, CIFAR10, ImageFolder, Caltech101 as TorchCaltech101
+from torchvision.datasets import (
+    CIFAR100,
+    CIFAR10,
+    ImageFolder,
+    Caltech101 as TorchCaltech101,
+)
 from torchvision.datasets.utils import download_and_extract_archive
 import torch
 from torch.utils.data import Dataset
@@ -43,16 +47,18 @@ CALTECH_STD = (0.2954096496105194, 0.2890913784503937, 0.3031054437160492)
 IMAGENET_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_STD = (0.229, 0.224, 0.225)
 
+
 # Custom transform to convert grayscale to RGB (picklable, unlike lambda)
 class GrayscaleToRGB:
     """Convert grayscale images to RGB by repeating channels."""
+
     def __call__(self, x):
         if x.size(0) == 1:
             return x.repeat(3, 1, 1)
         return x
 
     def __repr__(self):
-        return self.__class__.__name__ + '()'
+        return self.__class__.__name__ + "()"
 
 
 # ============================================================================
@@ -68,6 +74,7 @@ def _build_train_transforms(mean, std):
         transforms.Normalize(mean, std),
     ]
 
+
 def _build_unlearning_transforms(mean, std):
     """Unlearning transforms (no augmentation)."""
     return [
@@ -75,12 +82,14 @@ def _build_unlearning_transforms(mean, std):
         transforms.Normalize(mean, std),
     ]
 
+
 def _build_test_transforms(mean, std):
     """Test/eval transforms (no augmentation)."""
     return [
         transforms.ToTensor(),
         transforms.Normalize(mean, std),
     ]
+
 
 # ViT-specific transforms: resize first to 256 then crop to 224 (standard ViT fine-tuning recipe)
 # Always uses ImageNet normalization to match the pretrained google/vit-base-patch16-224 backbone
@@ -104,7 +113,7 @@ class PinsFaceRecognition(ImageFolder):
     def __init__(self, root, train, unlearning, download, img_size=32, model_name=None):
         self.root = root
 
-        is_vit = (model_name == "ViT")
+        is_vit = model_name == "ViT"
         if is_vit:
             if train and not unlearning:
                 transform = list(transform_train_vit)
@@ -149,7 +158,7 @@ class PinsFaceRecognition(ImageFolder):
 
 class Cifar100(CIFAR100):
     def __init__(self, root, train, unlearning, download, img_size=32, model_name=None):
-        is_vit = (model_name == "ViT")
+        is_vit = model_name == "ViT"
         if is_vit:
             if train and not unlearning:
                 transform = list(transform_train_vit)
@@ -158,7 +167,9 @@ class Cifar100(CIFAR100):
         else:
             if train:
                 if unlearning:
-                    transform = _build_unlearning_transforms(CIFAR100_MEAN, CIFAR100_STD)
+                    transform = _build_unlearning_transforms(
+                        CIFAR100_MEAN, CIFAR100_STD
+                    )
                 else:
                     transform = _build_train_transforms(CIFAR100_MEAN, CIFAR100_STD)
             else:
@@ -175,7 +186,7 @@ class Cifar100(CIFAR100):
 
 class Cifar20(CIFAR100):
     def __init__(self, root, train, unlearning, download, img_size=32, model_name=None):
-        is_vit = (model_name == "ViT")
+        is_vit = model_name == "ViT"
         if is_vit:
             if train and not unlearning:
                 transform = list(transform_train_vit)
@@ -227,7 +238,9 @@ class Cifar20(CIFAR100):
 
         # Create coarse_targets attribute for fast classwise indexing (line 55 in unlearning_utils.py)
         # This ensures the fast path in get_classwise_indices uses coarse labels, not fine labels
-        self.coarse_targets = [self.fine_to_coarse[fine_label] for fine_label in self.targets]
+        self.coarse_targets = [
+            self.fine_to_coarse[fine_label] for fine_label in self.targets
+        ]
 
     def __getitem__(self, index):
         x, y = super().__getitem__(index)
@@ -247,7 +260,7 @@ class Cifar20(CIFAR100):
 
 class Cifar10(CIFAR10):
     def __init__(self, root, train, unlearning, download, img_size=32, model_name=None):
-        is_vit = (model_name == "ViT")
+        is_vit = model_name == "ViT"
         if is_vit:
             if train and not unlearning:
                 transform = list(transform_train_vit)
@@ -272,15 +285,28 @@ class Cifar10(CIFAR10):
 
 
 class Caltech101(TorchCaltech101):
-    def __init__(self, root, train, unlearning, download, img_size=32, train_split=0.8, model_name=None):
-        is_vit = (model_name == "ViT")
+    def __init__(
+        self,
+        root,
+        train,
+        unlearning,
+        download,
+        img_size=32,
+        train_split=0.8,
+        model_name=None,
+    ):
+        is_vit = model_name == "ViT"
         if is_vit:
             if train and not unlearning:
                 transform = list(transform_train_vit)
             else:
                 transform = list(transform_test_vit)
             # Caltech101 has some grayscale images - insert GrayscaleToRGB after ToTensor but before Normalize
-            normalize_idx = next(i for i, t in enumerate(transform) if isinstance(t, transforms.Normalize))
+            normalize_idx = next(
+                i
+                for i, t in enumerate(transform)
+                if isinstance(t, transforms.Normalize)
+            )
             transform.insert(normalize_idx, GrayscaleToRGB())
         else:
             if train:
@@ -292,7 +318,11 @@ class Caltech101(TorchCaltech101):
                 transform = _build_test_transforms(CALTECH_MEAN, CALTECH_STD)
             # Caltech101 has variable-size images, so resize to fixed size first
             transform.insert(0, transforms.Resize((36, 36), antialias=True))
-            normalize_idx = next(i for i, t in enumerate(transform) if isinstance(t, transforms.Normalize))
+            normalize_idx = next(
+                i
+                for i, t in enumerate(transform)
+                if isinstance(t, transforms.Normalize)
+            )
             transform.insert(normalize_idx, GrayscaleToRGB())
             transform.append(transforms.Resize((img_size, img_size), antialias=True))
         transform = transforms.Compose(transform)
@@ -317,9 +347,9 @@ class Caltech101(TorchCaltech101):
             print("Files already downloaded and verified")
             return
 
-        print("="*80)
+        print("=" * 80)
         print("Downloading Caltech101 dataset...")
-        print("="*80)
+        print("=" * 80)
 
         os.makedirs(self.root, exist_ok=True)
 
@@ -329,18 +359,14 @@ class Caltech101(TorchCaltech101):
         filename = "caltech-101.zip"
         md5_hash = "3138e1922a9193bfa496528edbbc45d0"
 
-        print(f"Downloading from official Caltech repository...")
+        print("Downloading from official Caltech repository...")
         print(f"URL: {url}")
-        print(f"File size: ~137 MB")
+        print("File size: ~137 MB")
         print()
 
         try:
             download_and_extract_archive(
-                url,
-                self.root,
-                filename=filename,
-                md5=md5_hash,
-                remove_finished=True
+                url, self.root, filename=filename, md5=md5_hash, remove_finished=True
             )
             print("✓ Main dataset downloaded and extracted successfully!")
 
@@ -354,10 +380,12 @@ class Caltech101(TorchCaltech101):
                 import tarfile
 
                 # Extract 101_ObjectCategories.tar.gz
-                categories_tar = os.path.join(extracted_dir, "101_ObjectCategories.tar.gz")
+                categories_tar = os.path.join(
+                    extracted_dir, "101_ObjectCategories.tar.gz"
+                )
                 if os.path.exists(categories_tar):
                     print("Extracting 101_ObjectCategories.tar.gz...")
-                    with tarfile.open(categories_tar, 'r:gz') as tar:
+                    with tarfile.open(categories_tar, "r:gz") as tar:
                         tar.extractall(self.root)
                     print("✓ Extracted 101_ObjectCategories")
                     os.remove(categories_tar)
@@ -366,7 +394,7 @@ class Caltech101(TorchCaltech101):
                 annotations_tar = os.path.join(extracted_dir, "Annotations.tar")
                 if os.path.exists(annotations_tar):
                     print("Extracting Annotations.tar...")
-                    with tarfile.open(annotations_tar, 'r') as tar:
+                    with tarfile.open(annotations_tar, "r") as tar:
                         tar.extractall(self.root)
                     print("✓ Extracted Annotations")
                     os.remove(annotations_tar)
@@ -381,7 +409,7 @@ class Caltech101(TorchCaltech101):
             # Verify the download
             if self._check_integrity():
                 print("✓ Dataset verified successfully!")
-                print("="*80)
+                print("=" * 80)
                 return
             else:
                 raise RuntimeError("Download completed but verification failed")
@@ -437,7 +465,9 @@ class Caltech101(TorchCaltech101):
         else:
             self.data_indices = test_indices
 
-        print(f"Caltech101 {'Train' if self.train else 'Test'} split: {len(self.data_indices)} samples")
+        print(
+            f"Caltech101 {'Train' if self.train else 'Test'} split: {len(self.data_indices)} samples"
+        )
 
     def __len__(self):
         return len(self.data_indices)

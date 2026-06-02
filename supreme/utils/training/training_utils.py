@@ -11,7 +11,6 @@ from supreme.utils.debug_utils import (
     export_train_test_data,
     # benchmark_dataloader,
 )
-import supreme.datasets.datasets as datasets
 from supreme.registry import resolve_dataset_class
 from supreme.utils import project_config
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
@@ -59,7 +58,9 @@ def prepare_dataloaders(
         # This ensures trainset.pt/testset.pt are saved in the same location that
         # unlearning_utils.py expects to find them.
         log_dir = os.getenv("LOG_DIR")
-        assert log_dir is not None, "LOG_DIR environment variable must be set for unlearning"
+        assert (
+            log_dir is not None
+        ), "LOG_DIR environment variable must be set for unlearning"
         dataset_path = project_config.get_dataset_path_from_log_dir(log_dir, model_name)
     else:
         # Training mode: use centralized path construction
@@ -349,7 +350,7 @@ def fit_one_learning_cycle(
     # Define the loss function
     criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
-    is_vit = (model_name == "ViT")
+    is_vit = model_name == "ViT"
 
     if is_vit:
         vit_lr = getattr(project_config, "ViT_LR", 5e-5)
@@ -380,7 +381,9 @@ def fit_one_learning_cycle(
             optimizer, T_max=epochs - vit_warm
         )
         warmup_scheduler = WarmUpLR(optimizer, len(train_dataloader) * vit_warm)
-        fabric.print(f"fit_one_learning_cycle: ViT CosineAnnealingLR (T_max={epochs - vit_warm})")
+        fabric.print(
+            f"fit_one_learning_cycle: ViT CosineAnnealingLR (T_max={epochs - vit_warm})"
+        )
     elif milestones:
         train_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=milestones, gamma=0.2

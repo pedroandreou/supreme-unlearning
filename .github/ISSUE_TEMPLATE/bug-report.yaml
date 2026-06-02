@@ -1,0 +1,95 @@
+name: "\U0001F41B Bug report"
+description: Report something that is broken or behaving unexpectedly in SUPREME
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a report! Please first **search the
+        existing issues** to make sure this hasn't already been raised, and try
+        to confirm the bug is in SUPREME itself rather than in your own code or
+        custom components.
+
+  - type: checkboxes
+    id: pipeline-stage
+    attributes:
+      label: Pipeline stage
+      description: "Which stage of the train → unlearn → evaluate pipeline does the problem occur in?"
+      options:
+        - label: "Train (baseline / retrain)"
+        - label: "Unlearn"
+        - label: "Evaluate (metrics)"
+        - label: "Setup / install / environment"
+        - label: "Other"
+
+  - type: checkboxes
+    id: how-invoked
+    attributes:
+      label: How are you running SUPREME?
+      options:
+        - label: "Local runner (`supreme/run_local.sh`)"
+        - label: "SLURM runner (`supreme/run_slurm.sh`)"
+        - label: "Library / Python API (`import supreme`)"
+        - label: "My own modified scripts or custom-registered components"
+
+  - type: textarea
+    id: reproduction
+    validations:
+      required: true
+    attributes:
+      label: Reproduction
+      description: |
+        Provide the **exact command or code** that reproduces the problem,
+        including the CLI flags you passed (`--models`, `--methods`,
+        `--strategies`, `--datasets`, `--training-seeds`, etc.) or the
+        `supreme.run_*` call.
+
+        Use code blocks (not screenshots) so others can copy-and-paste. See
+        https://help.github.com/en/github/writing-on-github/creating-and-highlighting-code-blocks
+      placeholder: |
+        Steps to reproduce:
+
+        1.
+        2.
+        3.
+
+        ```bash
+        bash supreme/run_local.sh --gpu 0 --models ViT \
+          --methods retrain,ssd --strategies random_ \
+          --datasets Cifar10 --forget-percs 0.01
+        ```
+
+  - type: textarea
+    id: traceback
+    validations:
+      required: false
+    attributes:
+      label: Error / full traceback
+      description: "Paste the complete traceback or error output. Use a code block."
+      render: shell
+
+  - type: textarea
+    id: expected
+    validations:
+      required: true
+    attributes:
+      label: Expected behaviour
+      description: "A clear and concise description of what you expected to happen."
+
+  - type: textarea
+    id: environment
+    validations:
+      required: true
+    attributes:
+      label: Environment
+      description: |
+        Please include:
+        - SUPREME version (`pip show supreme-unlearning` or the commit SHA)
+        - OS (Linux / WSL2 / macOS) and how you installed (`make cuda`, `make mps`, `pip install`, Docker)
+        - Accelerator (CUDA + GPU model / MPS / CPU / TPU), number of GPUs
+        - Python and PyTorch versions
+      placeholder: |
+        - SUPREME: 0.1.0 (or commit abc1234)
+        - OS / install: Ubuntu 22.04, `make cuda`
+        - Accelerator: 2x NVIDIA A100, CUDA 12.1
+        - Python 3.9, PyTorch 2.x

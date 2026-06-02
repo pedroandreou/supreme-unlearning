@@ -51,6 +51,8 @@
 
 <p>
   <strong>📦 Repository</strong><br>
+  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI" alt="PyPI"></a>
+  <a href="https://test.pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/badge/TestPyPI-supreme--unlearning-orange?logo=pypi&logoColor=white" alt="TestPyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
 </p>
 
@@ -241,10 +243,36 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome - bug reports, new components, and documentation alike.
+
+- **Found a bug or want a feature?** Open an issue - the
+  [bug-report and feature-request templates](.github/ISSUE_TEMPLATE) appear
+  automatically at
+  [New issue → choose a template](https://github.com/pedroandreou/supreme-unlearning/issues/new/choose).
+- **Adding a dataset, model, method, or metric?** Most components register from
+  your own package with no framework edits - see
+  [`docs/extending.md`](docs/extending.md). You can ship it as a `pip`-installable
+  plugin or upstream it via a pull request.
+- **Opening a pull request?** Run `make style` then `make quality` (the same
+  `ruff` lint + format checks CI runs), and follow the
+  [PR template](.github/PULL_REQUEST_TEMPLATE.md). Full workflow in the
+  [contributing guide](docs/contributing.md).
+- **Share your method and results** in [`community/`](community/README.md) and add
+  a row to the [leaderboard](community/leaderboard.md).
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lints, format-checks,
+and validates the package build on every push and PR.
+
+---
+
 ## 📚 Documentation
 
 | Document | Covers |
 |---|---|
+| [`docs/contributing.md`](docs/contributing.md) | How to report issues, add components, and open a pull request |
+| [`community/`](community/README.md) | Community-contributed methods, templates, and the results leaderboard |
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
 | [`supreme/README.md`](supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |

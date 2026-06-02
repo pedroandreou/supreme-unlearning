@@ -1,0 +1,59 @@
+name: Dev container image (ghcr.io)
+
+# Builds the FULL dev container (the CUDA 12.1 Dockerfile plus the devcontainer
+# features in .devcontainer/devcontainer.json) with the Dev Containers CLI and
+# pushes it to ghcr.io, so "Reopen in Container" pulls a ready-made image instead
+# of building locally. Sibling of docker.yml (which publishes the plain runtime
+# image); this one bakes the dev tooling on top. MANUAL only (workflow_dispatch):
+# the CUDA-devel base + full deps is a large, slow build. Uses the built-in
+# GITHUB_TOKEN. After the first push, set the package's visibility to Public in
+# the repo's Packages settings so contributors can pull it without auth.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Image tag to publish (e.g. 0.1.0 or latest)"
+        default: "latest"
+        required: true
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  devcontainer:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The CUDA-devel image is large; reclaim runner disk before building.
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          df -h
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # docker-compose.yml references `.env` (gitignored, absent on a fresh
+      # checkout); seed it so the Dev Containers CLI can parse the compose file.
+      - name: Seed .env for compose parsing
+        run: cp -n .env.example .env || true
+
+      - name: Lowercase the image name
+        id: img
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}-devcontainer" >> "$GITHUB_OUTPUT"
+
+      # Builds the devcontainer (Dockerfile + features) and pushes it. The image's
+      # devcontainer.metadata label lets clients skip re-applying features on open;
+      # postCreateCommand (setup.sh) still runs at open time by design.
+      - name: Build and push dev container
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ${{ steps.img.outputs.name }}
+          imageTag: ${{ github.event.inputs.tag }}
+          cacheFrom: ${{ steps.img.outputs.name }}
+          push: always

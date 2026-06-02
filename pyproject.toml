@@ -26,7 +26,7 @@ dynamic = ["version"]
 # requirements.cuda_12_1.txt (which pins the CUDA-12.1 PyTorch build via
 # --extra-index-url) plus the `cuda` extra below. See docs/reproducing_the_paper.md.
 dependencies = [
-    "torch==2.1.0",
+    "torch==2.8.0",
     "torchvision==0.16.0",
     "torchaudio==2.1.0",
     "lightning==2.1.0",

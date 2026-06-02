@@ -14,7 +14,7 @@ python-dotenv==1.1.0
 pytorch-lightning==2.1.0  # Specify version
 lightning==2.1.0  # Match pytorch-lightning version
 --extra-index-url https://download.pytorch.org/whl/cu121
-torch==2.1.0  # Match with Lightning version
+torch==2.8.0  # Match with Lightning version
 torchvision==0.16.0
 torchaudio==2.1.0
 requests==2.28.2

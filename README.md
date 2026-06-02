@@ -51,7 +51,7 @@
 
 <p>
   <strong>📦 Repository</strong><br>
-  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI" alt="PyPI"></a>
+  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI&cacheSeconds=3600" alt="PyPI"></a>
   <a href="https://test.pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/badge/TestPyPI-supreme--unlearning-orange?logo=pypi&logoColor=white" alt="TestPyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
 </p>

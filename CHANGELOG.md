@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-02
+
+### Added
+
+- CPU-only pytest suite covering the registry resolution contract, eval-metric
+  math, model forward shapes, and an import smoke test over every module, wired
+  into CI as a dedicated `tests` job alongside lint and build.
+- CI status badge in the README.
+
+### Changed
+
+- The `supreme` package now lives under `src/` (src-layout). The import name
+  (`import supreme`) and distribution name (`supreme-unlearning`) are unchanged
+  and the built wheel is identical; only the on-disk source location differs.
+- Committed notebooks now retain their outputs: removed the `nbstripout`
+  pre-commit hook added in 0.1.1.
+
 ## [0.1.1] - 2026-06-02
 
 Documentation, packaging, and developer-tooling release. No functional changes

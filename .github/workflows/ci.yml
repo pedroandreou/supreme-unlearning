@@ -1,0 +1,40 @@
+name: CI
+
+# Lint + format check on every push to main and every PR. Mirrors `make quality`
+# (ruff pinned to match .pre-commit-config.yaml). Fast - no torch needed.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install ruff (pinned)
+        run: python -m pip install ruff==0.6.9
+      - name: Lint
+        run: ruff check supreme setup.py
+      - name: Format check
+        run: ruff format --check supreme setup.py
+
+  build-check:
+    # Confirms the package still builds and its metadata is valid (catches
+    # pyproject/version/README-render regressions before a release).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          python -m twine check dist/*

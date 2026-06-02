@@ -1,0 +1,67 @@
+name: Publish to PyPI
+
+# Fires when you push a release tag like `v0.1.0`. Hyphenated tags (e.g. the
+# `v0.1.0-paper` reference tag, or `v0.1.0-rc1`) are intentionally skipped so they
+# don't publish - see the `if:` guard on the build job.
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Skip pre-release / reference tags (anything with a hyphen). Final releases
+    # are plain semver: v0.1.0, v1.2.3, ...
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Build sdist + wheel and validate
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build                 # reads version from supreme.__version__ (torch-free)
+          python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  pypi-publish:
+    needs: build
+    runs-on: ubuntu-latest
+    # Trusted Publishing (OIDC) - no token stored in the repo. Configure a matching
+    # publisher on PyPI (see repo CI notes). The environment name must match there.
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        # To use an API token instead of Trusted Publishing, delete the
+        # `permissions`/`environment` above and uncomment:
+        # with:
+        #   password: ${{ secrets.PYPI_API_TOKEN }}
+
+  github-release:
+    needs: pypi-publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

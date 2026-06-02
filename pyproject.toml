@@ -3,7 +3,10 @@ requires = ["setuptools>=64", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "supreme"
+# Distribution name on PyPI. The import package stays `supreme` (see
+# [tool.setuptools.packages.find]); installing this distribution exposes
+# `import supreme`, mirroring the scikit-learn -> sklearn convention.
+name = "supreme-unlearning"
 description = "A registry-based, multi-GPU framework for reproducible image-unlearning evaluation."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -73,6 +76,19 @@ supreme-unlearn = "supreme.utils.unlearning.unlearn_main:main"
 #   mymethod = "my_pkg.mymethod:mymethod"
 #   [project.entry-points."supreme.plugins"]   # setup callable; for datasets/bulk
 #   my_plugin = "my_pkg.register:setup"
+
+# Ruff config (lint + format). Version is pinned to match .pre-commit-config.yaml
+# so `make quality`/`make style` and the pre-commit hook agree.
+[tool.ruff.lint.per-file-ignores]
+# These entry points deliberately run _fix_slurm_gpu_binding() at module top,
+# BEFORE any torch/CUDA import, so the later imports are intentionally not at the
+# top of the file. Silence E402 (module-import-not-at-top) for them only.
+"supreme/utils/unlearning/unlearn_main.py" = ["E402"]
+"supreme/utils/training/train_main.py" = ["E402"]
+# Teaching notebooks use normal notebook idioms ruff shouldn't enforce: grouped
+# imports (E401), imports after an intro/setup line (E402), and each section
+# re-importing torch/nn so cells are self-contained (F811).
+"*.ipynb" = ["E401", "E402", "F811"]
 
 [tool.setuptools.dynamic]
 version = { attr = "supreme.__version__" }

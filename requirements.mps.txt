@@ -23,3 +23,6 @@ debugpy
 # bitsandbytes: CUDA-only, not supported on Apple Silicon - omitted
 # nvidia-ml-py: NVIDIA-only - omitted; code gracefully handles absence
 # deepspeed: CUDA-only, not supported on Apple Silicon - omitted
+# --- Developer tooling (enabled by default via `make dev`; see Makefile + .pre-commit-config.yaml) ---
+pre-commit==4.0.1  # manages the git hook that runs ruff/shfmt on commit
+ruff==0.6.9  # pinned to match the ruff rev in .pre-commit-config.yaml (used by `make quality`/`make style`)

@@ -30,7 +30,7 @@ walkthroughs document those interfaces in detail; Option A simply changes
 > demonstrates this whole flow - installing SUPREME via pip and registering your
 > own components - with a GPU-free proof cell you can run immediately.
 
-Install SUPREME (`pip install supreme`) and your own package alongside it, then
+Install SUPREME (`pip install supreme-unlearning`, imported as `supreme`) and your own package alongside it, then
 register your components. Resolution order is **runtime overrides -> entry
 points -> built-in convention**, so your registrations never collide with or
 alter built-in components.
@@ -114,8 +114,12 @@ def setup():
 > built in is resolved through the registry and invoked automatically, so your
 > metric runs with no edits to that file. Decorate it with
 > `@track_evaluation_metric` (as the built-ins do) so it returns the standard
-> result envelope and gets memory/power/time tracking; its result is recorded
-> under its registered name.
+> result envelope (`{"metric_value_dict": ..., "core_time_dict": ..., ...}`); its
+> `metric_value_dict` is recorded under its registered name. When invoked with
+> `track_evaluation_resources=True` (default `False`) the decorator also profiles
+> the metric function's **own** time/memory/utilisation - for comparing the
+> evaluation metrics against each other by cost, not for the unlearning-method
+> comparison.
 
 The component interfaces themselves (signatures, Fabric-integration rules,
 distributed-synchronisation requirements) are identical to the in-tree path and
@@ -206,14 +210,14 @@ Use them in the `Normalize` transform inside your dataset class. **Do not reuse 
 In [`supreme/datasets/datasets.py`](../supreme/datasets/datasets.py):
 
 ```python
-class YourNewDataset(Dataset):
-    def __init__(self, ...):
-        # Your implementation
-        pass
+class YourNewDataset(SomeTorchvisionDataset):   # e.g. ImageFolder, CIFAR10, ...
+    def __init__(self, root, train, unlearning, download, img_size=32, model_name=None):
+        # Build transforms (often model_name-aware, e.g. ViT vs ResNet), then:
+        super().__init__(root, transform=...)
 
     def __getitem__(self, idx):
-        # Return data samples
-        pass
+        x, y = super().__getitem__(idx)
+        return x, torch.Tensor([]), y   # 3-tuple: (x, placeholder, y)
 ```
 
 Reference: see the `PinsFaceRecognition` class in [`supreme/datasets/datasets.py`](../supreme/datasets/datasets.py) for a complete example. For dataset-specific setup (e.g. manual downloads), see [`docs/adding_pinsfacerecognition.md`](adding_pinsfacerecognition.md).
@@ -274,9 +278,14 @@ The file name, the entry function name, and the registration name **must match**
 `supreme/methods/unlearning_methods/your_method.py`:
 
 ```python
-def your_method(fabric, model, optimizer, retain_loader, forget_loader, **kwargs):
-    # Your unlearning logic. Nothing needs to be returned.
+def your_method(fabric, model, retain_train_dataloader, forget_train_dataloader,
+                num_gpus=1, wandb_logging_flag=False, **kwargs):
+    # Your unlearning logic, then RETURN the unlearned model - the framework
+    # captures the return value (compare finetune.py / scrub.py, which end with
+    # `return model`). Accept **kwargs; the dispatcher passes fabric, num_gpus,
+    # wandb_logging_flag, model, and the retain/forget train+test dataloaders.
     ...
+    return model
 ```
 
 ### 3. Lightning Fabric integration
@@ -292,12 +301,12 @@ from lightning.fabric import Fabric
 **Step 2 - set up models and optimisers.** Always pair a model with its optimiser; never set up the optimiser alone.
 
 ```python
-# Single model, single optimiser (most common)
-model, optimizer = fabric.setup(model, optimizer)
-
-# Switching optimisers mid-process
+# In an unlearning method, `model` arrives ALREADY set up by the framework, so do
+# NOT pass it to fabric.setup() again (that raises "A model should be passed only
+# once to the `setup` method"). Unwrap to the raw module, then re-set it up
+# together with your optimiser - this is exactly what built-in finetune/ssd/scrub do:
 raw_model = model.module if hasattr(model, "module") else model
-model, new_optimizer = fabric.setup(raw_model, new_optimizer)
+model, optimizer = fabric.setup(raw_model, optimizer)
 
 # Multiple models - set up separately
 model1 = fabric.setup(model1)
@@ -459,14 +468,16 @@ metrics_requiring_retrain = {
 ```python
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
 
-@track_evaluation_metric  # enables automatic memory/power/time tracking
-def your_metric(fabric, unlearned_model, test_loader, **kwargs):
-    result = ...  # compute metric
+# Wraps the result in the standard envelope; opt-in resource profiling of the
+# metric itself via track_evaluation_resources=True (default False).
+@track_evaluation_metric
+def your_metric(fabric, num_gpus, model, retain_dataloader,
+                forget_dataloader, test_dataloader, **kwargs):
+    value = ...  # compute your metric
 
     # Aggregate across distributed processes
-    gathered_result = fabric.all_gather(result)
-    final_result = gathered_result.mean()  # or .max() / .sum()
-    return final_result
+    value = fabric.all_gather(value).mean()  # or .max() / .sum()
+    return {"your_metric": value.item()}     # metrics return a dict of named results
 ```
 
 ### 3. Import the metric

@@ -4,7 +4,7 @@ Two supported flows: a **virtual environment** (recommended for stable multi-day
 
 ## Prerequisites
 
-- Python 3.9
+- Python 3.9 (if `python3.9` isn't on your PATH, a version manager such as [pyenv](https://github.com/pyenv/pyenv) works — see §3a)
 - One of: NVIDIA GPU with CUDA 12.1, Apple Silicon (MPS), or CPU
 - Hugging Face Hub token (required for automatic ViT model downloads)
 - Weights & Biases account + API key (evaluation results are logged exclusively to W&B)
@@ -39,49 +39,61 @@ xcopy .env.example .env
 Update `.env` with your credentials.
 
 **Required:**
-- `HF_TOKEN` - Hugging Face Hub token for ViT downloads
-- `WANDB_API_KEY` and W&B username - results are logged exclusively to W&B; no standalone JSON/CSV export
+- `HUGGING_FACE_HUB_TOKEN` - Hugging Face Hub token for ViT downloads
+- `WANDB_KEY` and `WANDB_USERNAME` - results are logged exclusively to W&B; no standalone JSON/CSV export
 
 **Optional (Docker Dev Container only):**
-- `GIT_USER_NAME`, `GIT_USER_EMAIL` - used to configure git inside the container
+- `GITHUB_USERNAME`, `GITHUB_EMAIL` - used to configure git inside the container
+- `SSH_KEY` - private key for `git push` over SSH from inside the container (auto-generated if left empty)
 
 The Docker Dev container reads `.env` during the build, so create it **before** the build.
 
 ## 3a. Virtual environment (recommended)
 
+The `Makefile` is the single entry point for setup: it **creates** the virtual
+environment (named `unlearning` by default - hardware-neutral; override with
+`VENV=<name>`), installs the pinned dependencies + SUPREME (editable), and
+enables the pre-commit git hook. Pick the target matching your hardware:
+
 ```bash
-# Ensure Python 3.9 is on PATH (use pyenv if needed)
-python3.9 -m venv gpu_env
-source gpu_env/bin/activate
+make cuda      # NVIDIA GPU (CUDA 12.1) - Linux / WSL2
+make mps       # Apple Silicon (MPS - M1/M2/M3/M4) / CPU
 ```
 
-Install dependencies - pick the file matching your hardware:
+`make` builds the venv with a Python 3.9 interpreter, preferring `python3.9` on
+your PATH and falling back to the newest installed pyenv 3.9.x. If neither is
+available, or you want a specific interpreter, point it there explicitly:
 
 ```bash
-# NVIDIA GPU (CUDA 12.1) - Linux/cluster
-pip install -r requirements.cuda_12_1.txt
-
-# Apple Silicon Mac (MPS - M1/M2/M3/M4)
-pip install -r requirements.mps.txt
+make mps BASE_PYTHON=$HOME/.pyenv/versions/3.9.12/bin/python
 ```
 
-The MPS requirements file uses the standard PyPI PyTorch build, which includes MPS support natively. `bitsandbytes` and `nvidia-ml-py` are omitted as they are CUDA-only.
+If the venv directory already exists, `make` asks whether to **reuse** (reinstall
+into it) or **delete and recreate** it. Skip the prompt with `ON_EXISTING=reuse`
+or `ON_EXISTING=recreate` (e.g. in notebooks or CI).
 
-Install the framework. For development inside this repository, use an editable
-install:
+A Makefile can't activate the venv for your shell, so activate it yourself for
+interactive use (running experiments, `python`, etc.):
 
 ```bash
-pip install -e .
+source unlearning/bin/activate      # or: source <your VENV name>/bin/activate
+python --version                    # confirm 3.9.x
 ```
 
-SUPREME is also a regular pip package, so to reuse it from another project you
-can install it directly (optionally with the CUDA extra for the DeepSpeed ZeRO
-strategy, bitsandbytes precision, and NVIDIA telemetry):
+Run `make help` to list every target - e.g. `make quality` / `make style`
+(lint + format), `make build` (sdist + wheel), `make clean`. The MPS requirements
+file uses the standard PyPI PyTorch build, which includes MPS support natively;
+`bitsandbytes` and `nvidia-ml-py` are omitted as they are CUDA-only.
+
+SUPREME is also a regular pip package — published on PyPI as `supreme-unlearning`
+and imported as `supreme` — so to reuse it from another project you can install
+it directly (optionally with the CUDA extra for the DeepSpeed ZeRO strategy,
+bitsandbytes precision, and NVIDIA telemetry):
 
 ```bash
-pip install supreme            # core (CPU / MPS)
-pip install "supreme[cuda]"    # + deepspeed, bitsandbytes, nvidia-ml-py (NVIDIA only)
-pip install "supreme[tensorboard]"   # + TensorBoard logger
+pip install supreme-unlearning            # core (CPU / MPS)
+pip install "supreme-unlearning[cuda]"    # + deepspeed, bitsandbytes, nvidia-ml-py (NVIDIA only)
+pip install "supreme-unlearning[tensorboard]"   # + TensorBoard logger
 ```
 
 This installs the `supreme-train` and `supreme-unlearn` console scripts and the

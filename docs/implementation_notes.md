@@ -175,7 +175,7 @@ SUPREME exports class distributions and sample-level details for each forget and
 
 ## Unlearning Method DataLoader Implementation
 
-The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR materialised the entire training set into a Python list before any training step began. On ViT experiments this consumed ~30 GB of CPU memory and added several hours of wall-clock time with zero GPU utilisation, inflating the measured `time_elapsed`, `TotalCPUMemoryGB`, and `TotalAverageSMUtil` metrics without affecting model weights.
+The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR materialised the entire training set into a Python list before any training step began. On ViT experiments this consumed ~30 GB of CPU memory and added several hours of wall-clock time with zero GPU utilisation, inflating the measured `time_elapsed`, `TotalCPUMemoryGB`, and `TotalAverageComputeUtil` metrics without affecting model weights.
 
 **Fix:** We replaced the list-building loops with `torch.utils.data.Dataset` wrappers (`RandomLabelDataset`, `NoisyRetainDataset`, `RetainRelabelDataset`, `torch.utils.data.Subset`) that load samples on-the-fly via `__getitem__`. This reduces peak CPU memory to ~1 GB and brings runtimes down to under 10 minutes.
 

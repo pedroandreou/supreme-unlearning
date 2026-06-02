@@ -80,5 +80,5 @@ The W&B export step is described in more detail in [`docs/wandb_integration.md`]
 
 - **Pins Face Recognition is missing.** The dataset must be downloaded manually from Kaggle; follow [`docs/adding_pinsfacerecognition.md`](adding_pinsfacerecognition.md).
 - **A run fails partway through.** Re-run the same `supreme/run_local.sh` command; completed stages are skipped. Use `--force-retraining` to force a fresh retrain if you suspect corruption.
-- **The W&B export does not find your runs.** Confirm that `WANDB_API_KEY` is in `.env` and that the project prefix (default `R32`) matches the one your runs were logged under.
+- **The W&B export does not find your runs.** Confirm that `WANDB_KEY` is in `.env` and that the project prefix (default `R32`) matches the one your runs were logged under.
 - **The notebook reports missing CSVs.** Re-run the export step; the notebook looks for CSVs under `supreme/utils/wandb_utils/results_extraction/wandb_metrics_summary/`.

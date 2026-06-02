@@ -44,7 +44,7 @@
 
 <p>
   <strong>📄 Publication</strong><br>
-  <a href="#"><img src="https://img.shields.io/badge/arXiv-TBA-lightgrey" alt="arXiv Preprint (TBA)"></a>
+  <a href="https://arxiv.org/abs/2606.00380"><img src="https://img.shields.io/badge/arXiv-2606.00380-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Preprint"></a>
   <a href="https://aiimlab.org/events/ECML_PKDD_2026_WIPE-OUT_2_Workshop_on_Machine_Unlearning_and_Privacy_Preservation.html"><img src="https://img.shields.io/badge/Under_Review-WIPE--OUT_2_(ECML--PKDD_2026)-yellow" alt="Under double-blind review at the WIPE-OUT 2 Workshop, ECML-PKDD 2026"></a>
   <a href="https://pedroandreou.github.io/supreme-unlearning-page/"><img src="https://img.shields.io/badge/Project_Page-Live-2ea44f?logo=githubpages&logoColor=white" alt="Project Page"></a>
 </p>
@@ -118,15 +118,16 @@ Registry-based components are **user-extensible** - implement the relevant inter
 git clone https://github.com/pedroandreou/supreme-unlearning.git
 cd supreme-unlearning
 
-# 2. Set up environment
-python3.9 -m venv gpu_env
-source gpu_env/bin/activate
-pip install -r requirements.cuda_12_1.txt   # NVIDIA GPU (Linux / WSL2). Apple Silicon: use requirements.mps.txt
-pip install -e .
+# 2. Set up environment - the Makefile is the single entry point: it creates the
+#    venv (named `unlearning` by default; override with VENV=<name>), installs the
+#    pinned deps + SUPREME (editable), and enables the git hook. (Prompts if it
+#    already exists; pass ON_EXISTING=reuse to skip.)
+make cuda                  # NVIDIA GPU (Linux / WSL2).  Apple Silicon / CPU: `make mps`
+source unlearning/bin/activate
 
 # 3. Configure W&B + HF tokens
 cp .env.example .env
-# edit .env with your WANDB_API_KEY and HF_TOKEN
+# edit .env with your WANDB_KEY, WANDB_USERNAME and HUGGING_FACE_HUB_TOKEN
 
 # 4. Smoke test - one seed, one method, one dataset
 bash supreme/run_local.sh \
@@ -203,7 +204,8 @@ Reproducing the paper's numbers is a two-step process: run the experiment grid o
 
 ## ➕ Extending SUPREME
 
-SUPREME is pip-installable (`pip install supreme`) and reusable as a library.
+SUPREME is pip-installable (`pip install supreme-unlearning`, imported as
+`supreme`) and reusable as a library.
 Register your own components from your own package - no edits to framework code:
 
 ```python
@@ -219,7 +221,7 @@ supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
 ```
 
 A runnable, end-to-end walkthrough from an external user's point of view -
-`pip install supreme` then register your own method/metric/model/dataset - is in
+`pip install supreme-unlearning` then register your own method/metric/model/dataset - is in
 the notebook [`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
 
 Components can equivalently be advertised by an installed plugin package via
@@ -265,15 +267,17 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
   title  = {SUPREME: Standardised Unlearning Platform for REproducible Method Evaluation},
   author = {Petros Andreou, Jamie Lanyon, Axel Finke, Georgina Cosma},
   year   = {2026},
-  howpublished = {}
+  eprint = {2606.00380},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url    = {https://arxiv.org/abs/2606.00380}
 }
 ```
 
-This work was conducted at [Loughborough University](https://www.lboro.ac.uk/) and supported by a PhD studentship from [Darktrace](https://darktrace.com/).
+This work was conducted at [Loughborough University](https://www.lboro.ac.uk/).
 
 <p>
   <a href="https://www.lboro.ac.uk/"><img src="https://img.shields.io/badge/Loughborough_University-9B1B30?style=flat&logoColor=white" alt="Loughborough University"></a>
-  <a href="https://darktrace.com/"><img src="https://img.shields.io/badge/Darktrace-0F1923?style=flat&logoColor=white" alt="Darktrace"></a>
 </p>
 
 ---

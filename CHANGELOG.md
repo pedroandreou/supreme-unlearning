@@ -5,6 +5,8 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
 ## [0.1.0] - 2026-06-02
 
 First public release of **SUPREME** — a registry-based, multi-GPU framework for
@@ -60,4 +62,5 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
   untracked dataset images), anchored venv ignores, `.dockerignore` /
   `.vscode/tasks.json` paths, and added `SLURM_ACCOUNT` to `.env.example`.
 
+[Unreleased]: https://github.com/pedroandreou/supreme-unlearning/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.0

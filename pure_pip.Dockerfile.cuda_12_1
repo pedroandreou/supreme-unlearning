@@ -76,9 +76,9 @@ USER root
 # Make scripts executable and convert line endings
 RUN apt-get update && apt-get install -y dos2unix \
     && dos2unix /app/host/supreme/MAIN.sh \
-    && find /app/host/src -type f -iname "*.sh" -exec dos2unix {} \; \
+    && find /app/host/supreme -type f -iname "*.sh" -exec dos2unix {} \; \
     && chmod +x /app/host/supreme/MAIN.sh \
-    && find /app/host/src -type f -iname "*.sh" -exec chmod +x {} \; \
+    && find /app/host/supreme -type f -iname "*.sh" -exec chmod +x {} \; \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -91,7 +91,7 @@ RUN apt-get update && apt-get install -y dos2unix \
 #     python3 -m scalene.set_nvidia_gpu_modes || true
 
 # Set the working directory
-WORKDIR /app/host/src
+WORKDIR /app/host/supreme
 # Switch back to vscode user for final operations
 USER $USERNAME
 

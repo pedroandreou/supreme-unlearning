@@ -39,7 +39,7 @@ If you use this work, please cite:
 <YOUR CITATION bibtex>
 
 @misc{supreme2026,
-  title  = {SUPREME: Standardised Unlearning Platform for REproducible Method Evaluation},
+  title  = {SUPREME: A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation},
   author = {Petros Andreou, Jamie Lanyon, Axel Finke, Georgina Cosma},
   year   = {2026},
   eprint = {2606.00380},

@@ -5,6 +5,35 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-06-02
+
+Documentation, packaging, and developer-tooling release. No functional changes
+to the `supreme` package.
+
+### Added
+
+- Prebuilt dev container image on GHCR (`supreme-unlearning-devcontainer`);
+  "Reopen in Container" now pulls a ready-made image instead of building locally.
+- `nbstripout` pre-commit hook so committed notebooks stay output-free.
+- Security policy (`.github/SECURITY.md`) with private vulnerability reporting.
+
+### Fixed
+
+- CUDA Docker image now builds: pinned the Python 3.9 `get-pip` bootstrap URL and
+  corrected stale `/app/host/src` paths left from the `src -> supreme` rename.
+- Stale documentation references: the dead "Open in Dev Containers" badge link, an
+  incorrect claim that a version tag publishes the Docker image to GHCR, wrong
+  function/line-anchor references, the wandb results notebook name, and
+  undocumented logging CLI flags in `docs/script_arguments.md`.
+- PyPI version badge no longer shows "package or version not found" (Camo cache bust).
+
+### Changed
+
+- README overhaul and tagline rebrand to "A Multi-GPU Framework for Reproducible
+  Image Unlearning Method Evaluation" (wordmark SVG and citations updated to match).
+- Consolidated lint/build recipes into the Makefile as the single source of truth,
+  mirrored by CI, the Docker image, and the dev container.
+
 ## [0.1.0] - 2026-06-02
 
 First public release of **SUPREME** — a registry-based, multi-GPU framework for
@@ -60,4 +89,5 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
   untracked dataset images), anchored venv ignores, `.dockerignore` /
   `.vscode/tasks.json` paths, and added `SLURM_ACCOUNT` to `.env.example`.
 
+[0.1.1]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.1
 [0.1.0]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.0

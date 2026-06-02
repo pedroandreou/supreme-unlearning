@@ -19,9 +19,3 @@ repos:
     rev: v3.10.0-1
     hooks:
     -   id: shfmt
-
--   repo: https://github.com/kynan/nbstripout  # Strip notebook outputs/exec counts so they aren't committed
-    rev: 0.7.1
-    hooks:
-    -   id: nbstripout
-        args: [--keep-id]  # strip outputs only; don't renumber cell ids

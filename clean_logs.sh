@@ -26,9 +26,9 @@ delete_seed_directories() {
 	# Collect unique seed numbers found anywhere under precision_<p>/.
 	# Match both current ("train_seed_<X>") and legacy ("seed_<X>") layouts.
 	readarray -t available_seeds < <(
-		find "$precision_root" -type d \( -name "train_seed_*" -o -name "seed_*" \) 2>/dev/null \
-			| sed -E 's|.*/(train_)?seed_||' \
-			| sort -u
+		find "$precision_root" -type d \( -name "train_seed_*" -o -name "seed_*" \) 2>/dev/null |
+			sed -E 's|.*/(train_)?seed_||' |
+			sort -u
 	)
 
 	if [ ${#available_seeds[@]} -eq 0 ]; then

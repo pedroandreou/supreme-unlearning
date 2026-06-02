@@ -23,7 +23,7 @@
 #   --gpus N               GPUs per cell (default: 1)
 #   --time HH:MM:SS        Time limit per cell (default: 48:00:00)
 #   --partition NAME       SLURM partition (default: gpu)
-#   --account NAME         SLURM account (default: cosma2026a)
+#   --account NAME         SLURM account (default: $SLURM_ACCOUNT, from .env)
 #   --max-concurrent N     Max concurrent array tasks (default: 12)
 #   --wandb-prefix STR     WandB project prefix (default: R32)
 #   --precision MODE       Precision (default: 32-true)
@@ -66,7 +66,13 @@ SUBCLASS_CLASSES_OVERRIDE=""
 GPUS=1
 TIME_LIMIT="48:00:00"
 PARTITION="gpu"
-ACCOUNT="cosma2026a"
+# SLURM account: from the SLURM_ACCOUNT env var, or the SLURM_ACCOUNT entry in the
+# repo-root .env if present. Override per-run with --account.
+_REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if [[ -z "${SLURM_ACCOUNT:-}" && -f "$_REPO_ROOT/.env" ]]; then
+    SLURM_ACCOUNT="$(grep -E '^SLURM_ACCOUNT=' "$_REPO_ROOT/.env" | head -1 | cut -d= -f2- | tr -d '"')"
+fi
+ACCOUNT="${SLURM_ACCOUNT:-}"
 MAX_CONCURRENT=12
 WANDB_PROJECT_PREFIX="R32"
 PRECISION="32-true"
@@ -113,6 +119,11 @@ done
 
 if [ -n "$SLURM_JOB_ID" ]; then
     echo "ERROR: This script must be run from the login node, not inside a SLURM job."
+    exit 1
+fi
+
+if [[ -z "$ACCOUNT" && "$DRY_RUN" != true ]]; then
+    echo "ERROR: No SLURM account set. Add SLURM_ACCOUNT to .env or pass --account NAME."
     exit 1
 fi
 
@@ -203,8 +214,8 @@ echo "Models: ${MODEL_ARRAY[*]}"
 echo "Methods: $METHODS"
 echo "Eval Metrics: $EVAL_METRICS"
 echo "Forget Percentages (random_): ${FORGET_PERC_ARRAY[*]}"
-echo "Unlearning seed indices (J=$(echo $UNLEARNING_SEEDS_J | wc -w)): $UNLEARNING_SEEDS_J"
-echo "Evaluation seed indices  (K=$(echo $EVALUATION_SEEDS_K | wc -w)): $EVALUATION_SEEDS_K"
+echo "Unlearning seed indices (J=$(echo $UNLEARNING_SEEDS_J | wc -w | tr -d ' ')): $UNLEARNING_SEEDS_J"
+echo "Evaluation seed indices  (K=$(echo $EVALUATION_SEEDS_K | wc -w | tr -d ' ')): $EVALUATION_SEEDS_K"
 echo "Total cells: $TOTAL_JOBS"
 echo "Max concurrent: $MAX_CONCURRENT"
 echo "GPUs per cell: $GPUS"

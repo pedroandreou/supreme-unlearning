@@ -152,9 +152,16 @@ fi
 script_dir=$(dirname "$(realpath "$0")")
 root_dir=$(realpath "${script_dir}/..")  # script_dir = supreme/ → .. = project root
 
-VENV_PATH="${root_dir}/gpu_env"
-if [ -f "${VENV_PATH}/bin/activate" ]; then
-    source "${VENV_PATH}/bin/activate"
+# Activate the project venv if one isn't already active. Honor $SUPREME_VENV,
+# otherwise probe common names (the Makefile default is `unlearning`). Harmless if
+# none is found - falls back to whatever python is already on PATH.
+if [ -z "${VIRTUAL_ENV:-}" ]; then
+    for _venv in "${SUPREME_VENV:-}" unlearning .venv gpu_env venv env; do
+        if [ -n "$_venv" ] && [ -f "${root_dir}/${_venv}/bin/activate" ]; then
+            source "${root_dir}/${_venv}/bin/activate"
+            break
+        fi
+    done
 fi
 
 # GPU setup
@@ -193,11 +200,9 @@ IFS=',' read -r -a method_array <<< "$METHODS"
 # Export environment
 [ "$use_nvml_per_process" = true ] && export USE_NVML_PER_PROCESS=1 || unset USE_NVML_PER_PROCESS
 [ "$require_nvml_per_process" = true ] && export REQUIRE_NVML_PER_PROCESS=1 || unset REQUIRE_NVML_PER_PROCESS
-export SAMPLE_SCALING="false"
 export LOG_PER_PROCESS_DATA="false"
 export USE_FABRIC_CALLBACKS="false"
 export WANDB_LOG_EVALUATION="$wandb_logging_flag_evaluation"
-export SCALABLE_EXPERIMENT_SCENARIO=""
 
 WANDB_PROJECT_PREFIX="${WANDB_PROJECT_PREFIX:-R32}"
 export WANDB_PROJECT_PREFIX
@@ -231,7 +236,6 @@ find_checkpoint() {
         -precision "$training_precision" \
         -training_seed "$TRAINING_SEED" \
         -unlearning_seed "$TRAINING_SEED" \
-        -experiment_scenario "" \
         -num_gpus "$NUM_GPUS" \
         -include_gpus_in_path "$include_gpus_in_path" \
         -net "$net_type" \
@@ -284,7 +288,7 @@ run_unlearning_method() {
         local existing_model_path="$existing_method_dir/${method_capitalized}_model.pth"
         local existing_time_path="$existing_method_dir/${method_capitalized}_time_elapsed.json"
         local existing_memory_path="$existing_method_dir/${method_capitalized}_memory_usage.json"
-        local existing_power_path="$existing_method_dir/${method_capitalized}_power_consumption.json"
+        local existing_power_path="$existing_method_dir/${method_capitalized}_compute_utilisation.json"
 
         if [[ -e "$existing_model_path" && -e "$existing_time_path" && -e "$existing_memory_path" && -e "$existing_power_path" ]]; then
             echo "SKIP UNLEARNING: '$method' checkpoint exists at $existing_method_dir"
@@ -423,31 +427,63 @@ mkdir -p "$LOCK_DIR"
 LOCK_FILE="${LOCK_DIR}/train_seed_${TRAINING_SEED}_${MODEL}_${DATASET}.lock"
 TRAINING_DONE_MARKER="${LOCK_DIR}/train_seed_${TRAINING_SEED}_${MODEL}_${DATASET}.done"
 
+# Training body, factored so it can run under either lock implementation below.
+# Robust by design: it does NOT rely on `set -e` (bash suppresses `set -e` inside
+# the `||`-guarded mkdir-lock path below, and historically that let a failed train
+# fall through and write the "done" marker with no checkpoint). It marks training
+# complete only when the trainer exits 0 AND a real *-best.pth checkpoint exists.
+_train_if_needed() {
+    if [ -f "$TRAINING_DONE_MARKER" ] && [ "$force_retraining" = false ]; then
+        local existing_checkpoint
+        existing_checkpoint=$(find_checkpoint "$MODEL" "$DATASET" 2>/dev/null || true)
+        echo "Training already complete for $MODEL/$DATASET (seed=$TRAINING_SEED). Skipping."
+        echo "  Path: $existing_checkpoint"
+        return 0
+    fi
+
+    echo "Training $MODEL on $DATASET with seed=$TRAINING_SEED..."
+    if ! train_model "$MODEL" "$DATASET" "$n_classes" "$training_purpose"; then
+        echo "ERROR: training failed for $MODEL/$DATASET (seed=$TRAINING_SEED); not marking complete."
+        return 1
+    fi
+
+    # Confirm the trainer actually produced a checkpoint before marking done -
+    # otherwise a future run would skip training yet find no checkpoint (deadlock).
+    local base_ckpt_dir ts_dir final_ckpt
+    base_ckpt_dir="${root_dir}/logs/training/precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/${MODEL}/${DATASET}"
+    ts_dir=$(ls -td "${base_ckpt_dir}"/*/ 2>/dev/null | head -1)
+    final_ckpt=""
+    [ -n "$ts_dir" ] && final_ckpt=$(ls -t "${ts_dir}"*-best.pth 2>/dev/null | head -1)
+    if [ -z "$final_ckpt" ]; then
+        echo "ERROR: training reported success but no *-best.pth was produced under"
+        echo "       $base_ckpt_dir - not marking complete."
+        return 1
+    fi
+
+    # Only now is the run guaranteed a usable checkpoint: stamp both markers.
+    printf '%s\n' "$final_ckpt" > "${ts_dir}TRAINING_DONE"
+    echo "Wrote TRAINING_DONE marker → ${ts_dir}TRAINING_DONE"
+    touch "$TRAINING_DONE_MARKER"
+}
+
 if [ "$do_training" = true ]; then
-    (
-        flock -x 200
-        if [ -f "$TRAINING_DONE_MARKER" ] && [ "$force_retraining" = false ]; then
-            existing_checkpoint=$(find_checkpoint "$MODEL" "$DATASET" 2>/dev/null || true)
-            echo "Training already complete for $MODEL/$DATASET (seed=$TRAINING_SEED). Skipping."
-            echo "  Path: $existing_checkpoint"
-        else
-            echo "Training $MODEL on $DATASET with seed=$TRAINING_SEED..."
-            train_model "$MODEL" "$DATASET" "$n_classes" "$training_purpose"
-
-            # Stamp the just-trained checkpoint dir with TRAINING_DONE so find_checkpoint trusts it.
-            base_ckpt_dir="${root_dir}/logs/training/precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/${MODEL}/${DATASET}"
-            ts_dir=$(ls -td "${base_ckpt_dir}"/*/ 2>/dev/null | head -1)
-            if [ -n "$ts_dir" ]; then
-                final_ckpt=$(ls -t "${ts_dir}"*-best.pth 2>/dev/null | head -1)
-                printf '%s\n' "$final_ckpt" > "${ts_dir}TRAINING_DONE"
-                echo "Wrote TRAINING_DONE marker → ${ts_dir}TRAINING_DONE"
-            else
-                echo "WARNING: could not locate checkpoint dir under $base_ckpt_dir to write TRAINING_DONE"
-            fi
-
-            touch "$TRAINING_DONE_MARKER"
-        fi
-    ) 200>"$LOCK_FILE"
+    # Serialize trainers of the same (seed, model, dataset). Real flock(1) on
+    # Linux is released automatically when the subshell's fd 200 closes. On hosts
+    # without flock - e.g. macOS - fall back to a portable mkdir spinlock (mkdir
+    # is atomic), released explicitly so a failed train cannot deadlock later runs.
+    if command -v flock >/dev/null 2>&1; then
+        (
+            flock -x 200
+            _train_if_needed
+        ) 200>"$LOCK_FILE"
+    else
+        _lockdir="${LOCK_FILE}.d"
+        while ! mkdir "$_lockdir" 2>/dev/null; do sleep 0.2; done
+        _train_rc=0
+        ( _train_if_needed ) || _train_rc=$?
+        rmdir "$_lockdir" 2>/dev/null || true
+        [ "$_train_rc" -eq 0 ] || exit "$_train_rc"
+    fi
 fi
 
 weight_path=$(find_checkpoint "$MODEL" "$DATASET" 2>/dev/null || true)

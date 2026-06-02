@@ -4,6 +4,7 @@
 # =============================================================================
 import os as _os
 
+
 def _fix_slurm_gpu_binding():
     """Fix GPU binding when SLURM doesn't set CUDA_VISIBLE_DEVICES per task.
 
@@ -23,10 +24,15 @@ def _fix_slurm_gpu_binding():
                 assigned_gpu = gpu_list[local_id]
                 _os.environ["CUDA_VISIBLE_DEVICES"] = assigned_gpu
 
+
 _fix_slurm_gpu_binding()
 # =============================================================================
 
-from supreme.utils.generic_utils import set_seeds, initialize_network, dynamic_method_call
+from supreme.utils.generic_utils import (
+    set_seeds,
+    initialize_network,
+    dynamic_method_call,
+)
 from supreme.utils.debug_utils import handle_distributed_error, create_debugger_session
 from supreme.utils.unlearning.unlearning_utils import prepare_classwise_dataloaders
 from supreme.utils.parsers.common_args import get_common_parser
@@ -57,8 +63,15 @@ import warnings
 import signal
 import sys
 from supreme.utils.unlearning.evaluation_utils import track_resources
-from supreme.utils.fabric.fabric_setup import initialize_fabric, convert_to_sync_batchnorm, setup_model_for_inference
-from supreme.utils.wandb_utils.runtime.wandb_setup import initialize_wandb, check_wandb_run_exists
+from supreme.utils.fabric.fabric_setup import (
+    initialize_fabric,
+    convert_to_sync_batchnorm,
+    setup_model_for_inference,
+)
+from supreme.utils.wandb_utils.runtime.wandb_setup import (
+    initialize_wandb,
+    check_wandb_run_exists,
+)
 from lightning.fabric.accelerators.cuda import num_cuda_devices
 from lightning.fabric.accelerators.mps import MPSAccelerator
 from supreme.eval_metrics.resource_consumption import (
@@ -271,7 +284,7 @@ def setup_unlearning(
                     state_dict=teacher_state_dict,
                     core_time_dict=None,
                     memory_usage_dict=None,
-                    power_consumption_dict=None,
+                    compute_utilisation_dict=None,
                 )
             fabric.barrier()
             fabric.print("The unlearning teacher has been initialized successfully")
@@ -374,7 +387,7 @@ def setup_unlearning(
     # Load the retrained model
     retrain_time_elapsed_dict = None
     retrain_memory_usage_dict = None
-    retrain_power_consumption_dict = None
+    retrain_compute_utilisation_dict = None
     fabric.print(f"The current method that is running is: '{method_name}'")
 
     # Only try to load retrained model if we need retrain and this isn't the retrain method
@@ -391,7 +404,7 @@ def setup_unlearning(
             retrained_model,
             retrain_time_elapsed_dict,
             retrain_memory_usage_dict,
-            retrain_power_consumption_dict,
+            retrain_compute_utilisation_dict,
         ) = load_model_and_logs(
             fabric=fabric,
             net=retrained_model,
@@ -402,8 +415,8 @@ def setup_unlearning(
     # retrained_model = fabric.broadcast(retrained_model, src=0)
     retrain_time_elapsed_dict = fabric.broadcast(retrain_time_elapsed_dict, src=0)
     # retrain_memory_usage_dict = fabric.broadcast(retrain_memory_usage_dict, src=0)
-    # retrain_power_consumption_dict = fabric.broadcast(
-    #     retrain_power_consumption_dict, src=0
+    # retrain_compute_utilisation_dict = fabric.broadcast(
+    #     retrain_compute_utilisation_dict, src=0
     # )
 
     # We cannot do
@@ -421,7 +434,9 @@ def setup_unlearning(
     model = convert_to_sync_batchnorm(model, use_sync_batchnorm)
     original_model = convert_to_sync_batchnorm(original_model, use_sync_batchnorm)
     if unlearning_teacher is not None:
-        unlearning_teacher = convert_to_sync_batchnorm(unlearning_teacher, use_sync_batchnorm)
+        unlearning_teacher = convert_to_sync_batchnorm(
+            unlearning_teacher, use_sync_batchnorm
+        )
     if retrained_model is not None:
         retrained_model = convert_to_sync_batchnorm(retrained_model, use_sync_batchnorm)
 
@@ -441,18 +456,24 @@ def setup_unlearning(
 
     # Inference-only models: use setup_model_for_inference which handles
     # DeepSpeed by moving to device without creating a DeepSpeed engine.
-    original_model = setup_model_for_inference(fabric, original_model, distributed_strategy_name)
+    original_model = setup_model_for_inference(
+        fabric, original_model, distributed_strategy_name
+    )
     fabric.print("Setup original model")
 
     # Only set up unlearning_teacher if it's not None
     if unlearning_teacher is not None:
-        unlearning_teacher = setup_model_for_inference(fabric, unlearning_teacher, distributed_strategy_name)
+        unlearning_teacher = setup_model_for_inference(
+            fabric, unlearning_teacher, distributed_strategy_name
+        )
         fabric.print("Setup unlearning teacher")
     else:
         fabric.print("Skipping unlearning_teacher setup as it is None")
 
     if retrained_model is not None:
-        retrained_model = setup_model_for_inference(fabric, retrained_model, distributed_strategy_name)
+        retrained_model = setup_model_for_inference(
+            fabric, retrained_model, distributed_strategy_name
+        )
         fabric.print("Setup retrained model")
     else:
         fabric.print("Skipping retrained model setup as it is None")
@@ -475,7 +496,9 @@ def setup_unlearning(
         "full_train_dataloader": full_train_dataloader,
     }
     if retain_train_augmented_dataloader is not None:
-        dataloaders_to_setup["retain_train_augmented_dataloader"] = retain_train_augmented_dataloader
+        dataloaders_to_setup["retain_train_augmented_dataloader"] = (
+            retain_train_augmented_dataloader
+        )
 
     setup_results = fabric.setup_dataloaders(*dataloaders_to_setup.values())
     setup_loaders = dict(zip(dataloaders_to_setup.keys(), setup_results))
@@ -487,9 +510,10 @@ def setup_unlearning(
     test_dataloader = setup_loaders["test_dataloader"]
     full_train_dataloader = setup_loaders["full_train_dataloader"]
     if retain_train_augmented_dataloader is not None:
-        retain_train_augmented_dataloader = setup_loaders["retain_train_augmented_dataloader"]
+        retain_train_augmented_dataloader = setup_loaders[
+            "retain_train_augmented_dataloader"
+        ]
     fabric.print("Setup dataloaders")
-
 
     # ============================================================================
     # STEP 1: BASE ARGUMENTS - Required for ALL unlearning methods
@@ -504,7 +528,6 @@ def setup_unlearning(
         "num_gpus": num_gpus,
         "distributed_strategy_name": distributed_strategy_name,
     }
-
 
     # ============================================================================
     # STEP 2: STRATEGY-SPECIFIC ARGUMENTS - Based on unlearning task type
@@ -531,7 +554,6 @@ def setup_unlearning(
                 "num_labels": num_labels,
             }
         )
-
 
     # ============================================================================
     # STEP 3: METHOD-SPECIFIC ARGUMENTS - Customize for each unlearning method
@@ -567,7 +589,8 @@ def setup_unlearning(
     elif method_name == "retrain":
         kwargs.update(
             {
-                "retain_train_dataloader": retain_train_augmented_dataloader or retain_train_dataloader,
+                "retain_train_dataloader": retain_train_augmented_dataloader
+                or retain_train_dataloader,
                 "retain_test_dataloader": retain_test_dataloader,
                 "model_name": model_name,
                 "dataset_name": dataset_name,
@@ -585,72 +608,78 @@ def setup_unlearning(
         # whereas in the SSD paper itself, it uses an alpha of 5 for the ViT model
         # regardess though, we went to the latest published version of the paper which is the LFSSD paper
 
-        model_size_scaler = 1 # alpha is 10
+        model_size_scaler = 1  # alpha is 10
         dampening_constant = 1
 
         if type_of_unlearning_strategy == "fullclass":
             if dataset_name == "Cifar20":
                 if method_name == "ssd":
                     if model_name == "ResNet18":
-                        model_size_scaler = 1 # alpha is 10
-                    else: # ViT
+                        model_size_scaler = 1  # alpha is 10
+                    else:  # ViT
                         # this in SSD paper is 0.5 so alpha is 5
                         # but in LFSSD paper, it is 1 so alpha is 10
                         # we went to the latest published version of the paper which is the LFSSD paper
-                        model_size_scaler = 1 # alpha is 10
+                        model_size_scaler = 1  # alpha is 10
                 elif method_name == "lfssd":
                     # regardless of model architecture
-                    model_size_scaler = 0.5 # alpha is 5
+                    model_size_scaler = 0.5  # alpha is 5
 
             elif dataset_name == "Cifar100":
                 if method_name == "ssd":
                     if model_name == "ResNet18":
-                        model_size_scaler = 1 # alpha is 10
-                    else: # ViT
-                        model_size_scaler = 1 # alpha is 10
+                        model_size_scaler = 1  # alpha is 10
+                    else:  # ViT
+                        model_size_scaler = 1  # alpha is 10
                 elif method_name == "lfssd":
                     # regardless of model architecture
-                    model_size_scaler = 1 # alpha is 10
+                    model_size_scaler = 1  # alpha is 10
 
             elif dataset_name == "PinsFaceRecognition":
                 if method_name == "ssd":
-                    model_size_scaler = 5 # alpha is 50
+                    model_size_scaler = 5  # alpha is 50
                     dampening_constant = 0.1
                 elif method_name == "lfssd":
                     # regardless of model architecture
-                    model_size_scaler = 1 # alpha is 10
+                    model_size_scaler = 1  # alpha is 10
 
         elif type_of_unlearning_strategy == "subclass":
             # Cifar20 dataset
             if method_name == "ssd":
                 if model_name == "ResNet18":
-                    model_size_scaler = 1 # alpha is 10
+                    model_size_scaler = 1  # alpha is 10
                 elif model_name == "ViT":
-                    model_size_scaler = 2.5 # alpha is 25
+                    model_size_scaler = 2.5  # alpha is 25
             elif method_name == "lfssd":
-                model_size_scaler = 1 # alpha is 10
+                model_size_scaler = 1  # alpha is 10
 
         elif type_of_unlearning_strategy == "random_":
             if method_name == "ssd":
-                model_size_scaler = 1 # alpha is 10
+                model_size_scaler = 1  # alpha is 10
             elif method_name == "lfssd":
-                model_size_scaler = 0.35 # alpha is 3.5
+                model_size_scaler = 0.35  # alpha is 3.5
 
         # Calculate final alpha value
         selection_weighting = 10 * model_size_scaler
 
         # Print the selected hyperparameters and reasoning
         fabric.print(f"\n{'='*80}")
-        fabric.print(f"SSD/LFSSD Hyperparameter Selection:")
+        fabric.print("SSD/LFSSD Hyperparameter Selection:")
         fabric.print(f"  Method: {method_name.upper()}")
         fabric.print(f"  Dataset: {dataset_name}")
         fabric.print(f"  Model: {model_name}")
         fabric.print(f"  Unlearning Strategy: {type_of_unlearning_strategy}")
         fabric.print(f"  Selected Alpha (selection_weighting): {selection_weighting}")
         fabric.print(f"  Selected Lambda (dampening_constant): {dampening_constant}")
-        fabric.print(f"  Rationale: Based on hyperparameters from the {'LFSSD' if method_name == 'lfssd' else 'SSD (following LFSSD paper updates)'} paper")
-        fabric.print(f"             for {dataset_name} dataset with {model_name} architecture")
-        fabric.print(f"             under {type_of_unlearning_strategy} unlearning strategy")
+        fabric.print(
+            f"  Rationale: Based on hyperparameters from the {'LFSSD' if method_name == 'lfssd' else 'SSD (following LFSSD paper updates)'} paper"
+        )
+        fabric.print(
+            f"             for {dataset_name} dataset with {model_name} architecture"
+        )
+        fabric.print(
+            f"             under {type_of_unlearning_strategy} unlearning strategy"
+        )
         fabric.print(f"{'='*80}\n")
 
         kwargs.update(
@@ -683,13 +712,17 @@ def setup_unlearning(
         selection_weighting = 10.0  # Initial value, will be adapted
 
         fabric.print(f"\n{'='*80}")
-        fabric.print(f"ASSD (Adaptive SSD) Hyperparameter Selection:")
+        fabric.print("ASSD (Adaptive SSD) Hyperparameter Selection:")
         fabric.print(f"  Dataset: {dataset_name}")
         fabric.print(f"  Model: {model_name}")
         fabric.print(f"  Unlearning Strategy: {type_of_unlearning_strategy}")
-        fabric.print(f"  Initial Selection Weighting (Alpha): {selection_weighting} (will be adapted)")
+        fabric.print(
+            f"  Initial Selection Weighting (Alpha): {selection_weighting} (will be adapted)"
+        )
         fabric.print(f"  Dampening Constant (Lambda): {dampening_constant}")
-        fabric.print(f"  Rationale: ASSD automatically adapts alpha based on importance distribution")
+        fabric.print(
+            "  Rationale: ASSD automatically adapts alpha based on importance distribution"
+        )
         fabric.print(f"{'='*80}\n")
 
         kwargs.update(
@@ -704,14 +737,14 @@ def setup_unlearning(
     elif method_name == "jit":
         # JIT (Just-In-Time) unlearning
         fabric.print(f"\n{'='*80}")
-        fabric.print(f"JIT Unlearning Hyperparameter Selection:")
+        fabric.print("JIT Unlearning Hyperparameter Selection:")
         fabric.print(f"  Dataset: {dataset_name}")
         fabric.print(f"  Model: {model_name}")
         fabric.print(f"  Unlearning Strategy: {type_of_unlearning_strategy}")
-        fabric.print(f"  Epochs: 1 (default)")
-        fabric.print(f"  Learning Rate: 0.001 (default)")
-        fabric.print(f"  JIT Weighting: 0.1 (default)")
-        fabric.print(f"  Rationale: JIT method enforces local smoothness constraints")
+        fabric.print("  Epochs: 1 (default)")
+        fabric.print("  Learning Rate: 0.001 (default)")
+        fabric.print("  JIT Weighting: 0.1 (default)")
+        fabric.print("  Rationale: JIT method enforces local smoothness constraints")
         fabric.print(f"{'='*80}\n")
 
         kwargs.update(
@@ -728,15 +761,17 @@ def setup_unlearning(
     elif method_name == "scrub":
         # SCRUB - Smoothed Gradient Descent-Ascent
         fabric.print(f"\n{'='*80}")
-        fabric.print(f"SCRUB Hyperparameter Selection:")
+        fabric.print("SCRUB Hyperparameter Selection:")
         fabric.print(f"  Dataset: {dataset_name}")
         fabric.print(f"  Model: {model_name}")
         fabric.print(f"  Unlearning Strategy: {type_of_unlearning_strategy}")
-        fabric.print(f"  SGDA Epochs: 10 (default)")
-        fabric.print(f"  SGDA Learning Rate: 0.0005 (default)")
-        fabric.print(f"  Gamma: 1.0 (default)")
-        fabric.print(f"  Alpha: 0.5 (default)")
-        fabric.print(f"  Rationale: SCRUB uses gradient ascent on forget set, descent on retain set")
+        fabric.print("  SGDA Epochs: 10 (default)")
+        fabric.print("  SGDA Learning Rate: 0.0005 (default)")
+        fabric.print("  Gamma: 1.0 (default)")
+        fabric.print("  Alpha: 0.5 (default)")
+        fabric.print(
+            "  Rationale: SCRUB uses gradient ascent on forget set, descent on retain set"
+        )
         fabric.print(f"{'='*80}\n")
 
         kwargs.update(
@@ -751,15 +786,29 @@ def setup_unlearning(
             }
         )
 
-    # [ADD YOUR NEW METHOD HERE]
-    # elif method_name == "your_method":
-    #     kwargs.update(
-    #         {
-    #             "your_custom_dataloader": your_dataloader,
-    #             "temperature": 0.5,
-    #             "alpha": 1.0,
-    #         }
-    #     )
+    else:
+        # Externally registered (custom) method - it has no hardcoded branch
+        # above. Mirror the external-metric dispatch in
+        # eval_metrics/metrics_main.py: pass the standard set of loaders/handles
+        # and let the method take only what it needs via its signature +
+        # **kwargs. Built-in methods keep their explicit, minimal wiring above
+        # (clarity + safety for the maintained codebase); custom methods work
+        # with no edits to this file. To promote a method to built-in, add an
+        # explicit `elif method_name == "<name>":` branch above (see finetune).
+        kwargs.update(
+            {
+                "retain_train_dataloader": retain_train_dataloader,
+                "retain_test_dataloader": retain_test_dataloader,
+                "forget_train_dataloader": forget_train_dataloader,
+                "forget_test_dataloader": forget_test_dataloader,
+                "train_dataloader": train_dataloader,
+                "test_dataloader": test_dataloader,
+                "full_train_dataloader": full_train_dataloader,
+                "retain_train_augmented_dataloader": retain_train_augmented_dataloader,
+                "unlearning_teacher": unlearning_teacher,
+                "dataset_name": dataset_name,
+            }
+        )
 
     # Resolve the method's module path via the registry. For built-in methods
     # this reproduces the original dispatch exactly (baselines ->
@@ -776,7 +825,7 @@ def setup_unlearning(
     files_exist = None
     core_time_dict = None
     memory_usage_dict = None
-    power_consumption_dict = None
+    compute_utilisation_dict = None
 
     # Only check for existing files if force_reunlearning is False
     if not force_reunlearning:
@@ -785,7 +834,7 @@ def setup_unlearning(
             files_exist,
             core_time_dict,
             memory_usage_dict,
-            power_consumption_dict,
+            compute_utilisation_dict,
         ) = check_model_files_exist(
             fabric=fabric,
             model=model,
@@ -818,7 +867,7 @@ def setup_unlearning(
                 method_result,
                 core_time_dict,
                 memory_usage_dict,
-                power_consumption_dict,
+                compute_utilisation_dict,
             ) = track_resources(
                 dynamic_method_call,
                 module_name=module_path,
@@ -853,31 +902,36 @@ def setup_unlearning(
                 # state_dict() returns full-size tensors. Other ranks must
                 # enter the same context (it's a collective gather).
                 import deepspeed
+
                 with deepspeed.zero.GatheredParameters(
                     list(model.parameters()), modifier_rank=0
                 ):
                     if fabric.global_rank == 0:
                         raw_model = model.module if hasattr(model, "module") else model
                         torch.save(raw_model.state_dict(), model_path)
-                        fabric.print(f'{method_name_capitalized} model saved to {model_path}')
+                        fabric.print(
+                            f"{method_name_capitalized} model saved to {model_path}"
+                        )
             else:
                 if fabric.global_rank == 0:
                     raw_model = model.module if hasattr(model, "module") else model
                     torch.save(raw_model.state_dict(), model_path)
-                    fabric.print(f'{method_name_capitalized} model saved to {model_path}')
+                    fabric.print(
+                        f"{method_name_capitalized} model saved to {model_path}"
+                    )
             fabric.barrier()
         elif distributed_strategy_name == "fsdp" and not any(
             isinstance(m, FSDP) for m in model.modules()
         ):
             if fabric.global_rank == 0:
                 torch.save(model.state_dict(), model_path)
-                fabric.print(f'{method_name_capitalized} model saved to {model_path}')
+                fabric.print(f"{method_name_capitalized} model saved to {model_path}")
             fabric.barrier()
         else:
             # DDP, or FSDP with a properly-wrapped model.
             # All ranks must participate (FSDP needs collective gathering).
             fabric.save(model_path, {"model": model})
-            fabric.print(f'{method_name_capitalized} model saved to {model_path}')
+            fabric.print(f"{method_name_capitalized} model saved to {model_path}")
 
         # Save logs (time, memory, power) on rank 0 only
         if fabric.global_rank == 0:
@@ -886,12 +940,12 @@ def setup_unlearning(
                 method_name=method_name_capitalized,
                 core_time_dict=core_time_dict,
                 memory_usage_dict=memory_usage_dict,
-                power_consumption_dict=power_consumption_dict,
+                compute_utilisation_dict=compute_utilisation_dict,
             )
         fabric.barrier()
 
     else:
-        if power_consumption_dict and "gpu_ids" in power_consumption_dict:
+        if compute_utilisation_dict and "gpu_ids" in compute_utilisation_dict:
             # Normalize both GPU ID representations for comparison
             def normalize_gpu_ids(gpu_ids_value):
                 """Convert GPU IDs to a consistent string format for comparison"""
@@ -911,16 +965,16 @@ def setup_unlearning(
                 else:
                     return str(gpu_ids_value)
 
-            original_gpus = normalize_gpu_ids(power_consumption_dict["gpu_ids"])
+            original_gpus = normalize_gpu_ids(compute_utilisation_dict["gpu_ids"])
             current_gpus = normalize_gpu_ids(gpu_ids)
 
             if original_gpus != current_gpus:
                 fabric.print(
-                    f"Note: '{method_name}' originally used GPU ID(s) [{power_consumption_dict['gpu_ids']}] for unlearning but is now running on GPU ID(s) [{','.join(map(str, gpu_ids))}]. This difference doesn't affect the recorded memory and power consumption usage since they were measured during unlearning, not inference."
+                    f"Note: '{method_name}' originally used GPU ID(s) [{compute_utilisation_dict['gpu_ids']}] for unlearning but is now running on GPU ID(s) [{','.join(map(str, gpu_ids))}]. This difference doesn't affect the recorded memory and power consumption usage since they were measured during unlearning, not inference."
                 )
             else:
                 fabric.print(
-                    f"Note: '{method_name}' originally used GPU ID(s) [{power_consumption_dict['gpu_ids']}] for unlearning and is now running on the same GPU ID(s) [{','.join(map(str, gpu_ids))}]. Memory and power consumption usage were measured during unlearning, not inference."
+                    f"Note: '{method_name}' originally used GPU ID(s) [{compute_utilisation_dict['gpu_ids']}] for unlearning and is now running on the same GPU ID(s) [{','.join(map(str, gpu_ids))}]. Memory and power consumption usage were measured during unlearning, not inference."
                 )
         else:
             fabric.print(
@@ -984,7 +1038,9 @@ def setup_unlearning(
             fabric.print(
                 f"\nChecking WandB for existing evaluation results (project: {project_name}, run: {run_name}, metrics: {eval_metrics})..."
             )
-            status, missing_metrics = check_wandb_run_exists(project_name, run_name, eval_metrics)
+            status, missing_metrics = check_wandb_run_exists(
+                project_name, run_name, eval_metrics
+            )
             if status == "all_exist":
                 fabric.print(
                     "\n################################################################################\n"
@@ -1002,7 +1058,9 @@ def setup_unlearning(
                 )
                 eval_metrics = missing_metrics
             else:
-                fabric.print("No existing evaluation results found in WandB. Proceeding with evaluation.\n")
+                fabric.print(
+                    "No existing evaluation results found in WandB. Proceeding with evaluation.\n"
+                )
 
         # Clear, prominent start banner for EVALUATION phase (new subprocess run)
         fabric.print(
@@ -1032,10 +1090,10 @@ def setup_unlearning(
             "retrain_time_elapsed_dict": retrain_time_elapsed_dict
             if method_name != "retrain"
             else core_time_dict,
-            "model_unlearned_with_initial_gpu_ids": power_consumption_dict.get(
+            "model_unlearned_with_initial_gpu_ids": compute_utilisation_dict.get(
                 "gpu_ids"
             )
-            if power_consumption_dict
+            if compute_utilisation_dict
             else None,
             "retain_train_dataloader": retain_train_dataloader,
             "retain_test_dataloader": retain_test_dataloader,
@@ -1046,7 +1104,7 @@ def setup_unlearning(
             "trainset": trainset,
             "core_time_dict": core_time_dict,
             "memory_usage_dict": memory_usage_dict,
-            "power_consumption_dict": power_consumption_dict,
+            "compute_utilisation_dict": compute_utilisation_dict,
             "wandb_logging_flag": wandb_logging_flag,
             "track_evaluation_resources": track_evaluation_resources,
         }
@@ -1061,31 +1119,31 @@ def setup_unlearning(
         # Always log during evaluation phase
         # Prepare the resource metrics from the UNLEARNING process to be logged at the top level
         unlearning_resource_metrics = {}
-        if memory_usage_dict and power_consumption_dict:
+        if memory_usage_dict and compute_utilisation_dict:
             # Base resource metrics (always included)
             unlearning_resource_metrics = {
                 "TotalGPUMemoryGB": memory_usage_dict["total_gpu_memory"],
                 "TotalCPUMemoryGB": memory_usage_dict["total_cpu_memory"],
                 "MaxGPUMemoryGB": memory_usage_dict["max_gpu_memory"],
                 "MaxCPUMemoryGB": memory_usage_dict["max_cpu_memory"],
-                "GPUIDs": power_consumption_dict["gpu_ids"],
-                "StartSMUtilTotal": power_consumption_dict["start_sm_util"]["total"],
-                "StartSMUtilMax": power_consumption_dict["start_sm_util"]["max"],
-                "EndSMUtilTotal": power_consumption_dict["end_sm_util"]["total"],
-                "EndSMUtilMax": power_consumption_dict["end_sm_util"]["max"],
-                "TotalAverageSMUtil": power_consumption_dict["total_avg_sm_util"],
-                "TotalPeakSMUtil": power_consumption_dict["total_peak_sm_util"],
-                "MaxAverageSMUtil": power_consumption_dict["max_avg_sm_util"],
-                "MaxPeakSMUtil": power_consumption_dict["max_peak_sm_util"],
-                "TotalSMSeconds": power_consumption_dict["total_sm_seconds"],
-                "TotalSMHours": power_consumption_dict["total_sm_hours"],
-                "LogicalCPUCount": power_consumption_dict["logical_cpu_count"],
-                "TotalAverageCPUUtil": power_consumption_dict["total_avg_cpu_util"],
-                "TotalPeakCPUUtil": power_consumption_dict["total_peak_cpu_util"],
-                "MaxAverageCPUUtil": power_consumption_dict["max_avg_cpu_util"],
-                "MaxPeakCPUUtil": power_consumption_dict["max_peak_cpu_util"],
-                "TotalCPUSeconds": power_consumption_dict["total_cpu_seconds"],
-                "TotalCPUHours": power_consumption_dict["total_cpu_hours"],
+                "GPUIDs": compute_utilisation_dict["gpu_ids"],
+                "StartComputeUtilTotal": compute_utilisation_dict["start_compute_util"]["total"],
+                "StartComputeUtilMax": compute_utilisation_dict["start_compute_util"]["max"],
+                "EndComputeUtilTotal": compute_utilisation_dict["end_compute_util"]["total"],
+                "EndComputeUtilMax": compute_utilisation_dict["end_compute_util"]["max"],
+                "TotalAverageComputeUtil": compute_utilisation_dict["total_avg_compute_util"],
+                "TotalPeakComputeUtil": compute_utilisation_dict["total_peak_compute_util"],
+                "MaxAverageComputeUtil": compute_utilisation_dict["max_avg_compute_util"],
+                "MaxPeakComputeUtil": compute_utilisation_dict["max_peak_compute_util"],
+                "TotalComputeSeconds": compute_utilisation_dict["total_compute_seconds"],
+                "TotalComputeHours": compute_utilisation_dict["total_compute_hours"],
+                "LogicalCPUCount": compute_utilisation_dict["logical_cpu_count"],
+                "TotalAverageCPUUtil": compute_utilisation_dict["total_avg_cpu_util"],
+                "TotalPeakCPUUtil": compute_utilisation_dict["total_peak_cpu_util"],
+                "MaxAverageCPUUtil": compute_utilisation_dict["max_avg_cpu_util"],
+                "MaxPeakCPUUtil": compute_utilisation_dict["max_peak_cpu_util"],
+                "TotalCPUSeconds": compute_utilisation_dict["total_cpu_seconds"],
+                "TotalCPUHours": compute_utilisation_dict["total_cpu_hours"],
             }
 
             # Conditionally add per-process metrics
@@ -1098,34 +1156,34 @@ def setup_unlearning(
                         "PerProcessCPUMemoryGB": memory_usage_dict["per_process"][
                             "cpu_memory"
                         ],
-                        "StartSMUtilPerProcess": power_consumption_dict["start_sm_util"][
+                        "StartComputeUtilPerProcess": compute_utilisation_dict[
+                            "start_compute_util"
+                        ]["per_process"],
+                        "EndComputeUtilPerProcess": compute_utilisation_dict["end_compute_util"][
                             "per_process"
                         ],
-                        "EndSMUtilPerProcess": power_consumption_dict["end_sm_util"][
+                        "PerProcessAverageComputeUtil": compute_utilisation_dict[
                             "per_process"
+                        ]["avg_compute_util"],
+                        "PerProcessPeakComputeUtil": compute_utilisation_dict["per_process"][
+                            "peak_compute_util"
                         ],
-                        "PerProcessAverageSMUtil": power_consumption_dict["per_process"][
-                            "avg_sm_util"
+                        "PerProcessComputeSeconds": compute_utilisation_dict["per_process"][
+                            "compute_seconds"
                         ],
-                        "PerProcessPeakSMUtil": power_consumption_dict["per_process"][
-                            "peak_sm_util"
+                        "PerProcessComputeHours": compute_utilisation_dict["per_process"][
+                            "compute_hours"
                         ],
-                        "PerProcessSMSeconds": power_consumption_dict["per_process"][
-                            "sm_seconds"
-                        ],
-                        "PerProcessSMHours": power_consumption_dict["per_process"][
-                            "sm_hours"
-                        ],
-                        "PerProcessAverageCPUUtil": power_consumption_dict[
+                        "PerProcessAverageCPUUtil": compute_utilisation_dict[
                             "per_process"
                         ]["avg_cpu_util"],
-                        "PerProcessPeakCPUUtil": power_consumption_dict["per_process"][
+                        "PerProcessPeakCPUUtil": compute_utilisation_dict["per_process"][
                             "peak_cpu_util"
                         ],
-                        "PerProcessCPUSeconds": power_consumption_dict["per_process"][
+                        "PerProcessCPUSeconds": compute_utilisation_dict["per_process"][
                             "cpu_seconds"
                         ],
-                        "PerProcessCPUHours": power_consumption_dict["per_process"][
+                        "PerProcessCPUHours": compute_utilisation_dict["per_process"][
                             "cpu_hours"
                         ],
                     }
@@ -1222,7 +1280,9 @@ def segfault_handler(signum, frame):
         elif torch.backends.mps.is_available():
             allocated_gb = torch.mps.current_allocated_memory() / 1e9
             driver_gb = torch.mps.driver_allocated_memory() / 1e9
-            print(f"    MPS: {allocated_gb:.2f}GB tensor / {driver_gb:.2f}GB driver allocated")
+            print(
+                f"    MPS: {allocated_gb:.2f}GB tensor / {driver_gb:.2f}GB driver allocated"
+            )
     except Exception as e:
         print(f"    Could not get GPU memory info: {e}")
     print(f"{'='*80}")
@@ -1270,10 +1330,14 @@ def main():
 
             # Get dictionary name from centralized config
             try:
-                dict_name = project_config.get_dict_name_for_dataset(dataset_name, type_of_unlearning_strategy)
+                dict_name = project_config.get_dict_name_for_dataset(
+                    dataset_name, type_of_unlearning_strategy
+                )
                 class_dict = getattr(project_config, dict_name)
             except (ValueError, AttributeError) as e:
-                raise ValueError(f"Could not load class dictionary for dataset '{dataset_name}': {e}")
+                raise ValueError(
+                    f"Could not load class dictionary for dataset '{dataset_name}': {e}"
+                )
 
             parser.add_argument(
                 "-forget_class_name",
@@ -1296,10 +1360,14 @@ def main():
 
             # Get dictionary name from centralized config (subclass strategy uses CIFAR100 classes)
             try:
-                dict_name = project_config.get_dict_name_for_dataset(dataset_name, type_of_unlearning_strategy)
+                dict_name = project_config.get_dict_name_for_dataset(
+                    dataset_name, type_of_unlearning_strategy
+                )
                 class_dict = getattr(project_config, dict_name)
             except (ValueError, AttributeError) as e:
-                raise ValueError(f"Could not load class dictionary for dataset '{dataset_name}' with strategy '{type_of_unlearning_strategy}': {e}")
+                raise ValueError(
+                    f"Could not load class dictionary for dataset '{dataset_name}' with strategy '{type_of_unlearning_strategy}': {e}"
+                )
 
             parser.add_argument(
                 "-forget_subclass_name",
@@ -1420,7 +1488,9 @@ def main():
     # - Each task sees only 1 GPU (CUDA_VISIBLE_DEVICES set per task)
     # - fabric_devices = 1 (what Fabric can actually use per task)
     # - num_gpus = world_size = SLURM_NTASKS (for paths like "4gpus/")
-    fabric_devices = 1 if MPSAccelerator.is_available() else num_cuda_devices()  # What each task actually sees (1 with GPU binding)
+    fabric_devices = (
+        1 if MPSAccelerator.is_available() else num_cuda_devices()
+    )  # What each task actually sees (1 with GPU binding)
     slurm_ntasks = _os.environ.get("SLURM_NTASKS")
     if slurm_ntasks:
         num_gpus = int(slurm_ntasks)  # World size for paths/logging
@@ -1488,7 +1558,13 @@ def main():
             "logging_run_name": f"{model_name}_{dataset_name}_{method_name}_precision_{precision}",
         }
 
-        fabric, device, fabric_strategy, use_sync_batchnorm, distributed_strategy_name = initialize_fabric(fabric_config)
+        (
+            fabric,
+            device,
+            fabric_strategy,
+            use_sync_batchnorm,
+            distributed_strategy_name,
+        ) = initialize_fabric(fabric_config)
 
         if use_process_tracker:
             tracker = ProcessTracker(
@@ -1535,9 +1611,6 @@ def main():
         forget_class_name = fabric.broadcast(forget_class_name, src=0)
         forget_perc = fabric.broadcast(forget_perc, src=0)
 
-        # Get experiment type from environment variable
-        experiment_scenario = os.getenv("SCALABLE_EXPERIMENT_SCENARIO", "")
-
         # Initialize WandB
         # Filter out empty strings from the list of parts to avoid double underscores
         # Use WANDB_PROJECT_PREFIX environment variable (default: R14) for flexibility
@@ -1547,7 +1620,6 @@ def main():
                 None,
                 [
                     f"{wandb_project_prefix}_UNLEARNING",
-                    experiment_scenario,
                     model_name,
                     dataset_name,
                     type_of_unlearning_strategy,
@@ -1575,9 +1647,13 @@ def main():
         # evaluation run and emit the triple-form name. Earlier names are kept
         # as alt_run_names so wandb_setup can resume runs logged under any of
         # the older conventions.
-        _training_seed_env = os.environ.get('TRAINING_SEED')
-        _unlearning_seed_env = os.environ.get('UNLEARNING_SEED')
-        if _training_seed_env and _unlearning_seed_env and int(_unlearning_seed_env) != int(seed):
+        _training_seed_env = os.environ.get("TRAINING_SEED")
+        _unlearning_seed_env = os.environ.get("UNLEARNING_SEED")
+        if (
+            _training_seed_env
+            and _unlearning_seed_env
+            and int(_unlearning_seed_env) != int(seed)
+        ):
             # K>1 evaluation: seed holds s_e, UNLEARNING_SEED holds s_u
             wandb_run_name = (
                 f"{method_name}_tseed{_training_seed_env}"
@@ -1613,12 +1689,16 @@ def main():
             # This ensures WandB reports the GPUs actually used, not all visible GPUs
             # See: https://docs.wandb.ai/ref/python/experiments/settings/
             "actual_gpu_count": num_gpus,
-            "actual_gpu_ids": gpu_ids if isinstance(gpu_ids, list) else list(range(num_gpus)),
+            "actual_gpu_ids": gpu_ids
+            if isinstance(gpu_ids, list)
+            else list(range(num_gpus)),
         }
         # Resume existing WandB run if requested (to append new metrics)
         # Set WANDB_RESUME_EXISTING=true to resume an existing run by name
         # instead of creating a new one. Useful for re-evaluating specific metrics.
-        wandb_resume_existing = os.getenv("WANDB_RESUME_EXISTING", "false").lower() == "true"
+        wandb_resume_existing = (
+            os.getenv("WANDB_RESUME_EXISTING", "false").lower() == "true"
+        )
         if wandb_resume_existing:
             wandb_config["resume_if_exists"] = True
 
@@ -1627,14 +1707,21 @@ def main():
         #   WANDB_LOG_EVALUATION=true   - Log evaluation metrics to W&B (default: uses wandb_logging_flag)
         #   WANDB_LOG_UNLEARNING=false  - Log unlearning metrics to W&B (reserved for future use)
         perform_evaluation = os.getenv("PERFORM_EVALUATION", "false").lower() == "true"
-        wandb_log_evaluation = os.getenv("WANDB_LOG_EVALUATION", str(wandb_logging_flag).lower()).lower() == "true"
+        wandb_log_evaluation = (
+            os.getenv("WANDB_LOG_EVALUATION", str(wandb_logging_flag).lower()).lower()
+            == "true"
+        )
 
-        should_init_wandb = perform_evaluation and wandb_log_evaluation and fabric.global_rank == 0
+        should_init_wandb = (
+            perform_evaluation and wandb_log_evaluation and fabric.global_rank == 0
+        )
 
         if should_init_wandb:
             fabric = initialize_wandb(fabric, wandb_config)
         elif fabric.global_rank == 0 and wandb_logging_flag and not perform_evaluation:
-            fabric.print("Skipping WandB initialization during unlearning phase (no metrics to log yet)")
+            fabric.print(
+                "Skipping WandB initialization during unlearning phase (no metrics to log yet)"
+            )
 
         fabric.barrier()
 
@@ -1721,7 +1808,7 @@ def main():
                     "################################################################################\n\n\n"
                 )
             )
-        
+
         fabric.print(message)
 
         # Cleanup model checkpoint after evaluation to save disk space

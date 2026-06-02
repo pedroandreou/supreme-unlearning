@@ -1,6 +1,5 @@
 from torch import nn
 from transformers.models.vit.modeling_vit import ViTModel
-from huggingface_hub import snapshot_download
 import os
 
 
@@ -14,22 +13,17 @@ class ViT(nn.Module):
 
         model_id = "google/vit-base-patch16-224"
 
-        # Define path to store the model within the same directory as this script (supreme/models)
+        # Prefer a co-located local copy if one exists (handy for offline / cluster
+        # runs); otherwise load straight from the Hugging Face Hub. `from_pretrained`
+        # caches into ~/.cache/huggingface (writable even when SUPREME is installed
+        # read-only) - so nothing is bundled in the wheel and the download only
+        # happens the first time someone actually uses the ViT model.
         script_dir = os.path.dirname(__file__)
         local_dir = os.path.join(script_dir, "vit-base-patch16-224-local")
+        source = local_dir if os.path.isdir(local_dir) else model_id
+        print(f"Loading ViT base from '{source}'.")
 
-        # Only download the model if the local directory doesn't already exist.
-        if not os.path.exists(local_dir):
-            print(
-                f"Local model not found. Downloading from '{model_id}' to '{local_dir}'..."
-            )
-            snapshot_download(repo_id=model_id, local_dir=local_dir)
-            print("Download complete.")
-        else:
-            print(f"Found local model at '{local_dir}'. Loading from disk.")
-
-        # Load the model from the local directory
-        model_output = ViTModel.from_pretrained(local_dir)
+        model_output = ViTModel.from_pretrained(source)
         self.base = model_output[0] if isinstance(model_output, tuple) else model_output
         self.final = nn.Linear(self.base.config.hidden_size, num_labels)
         self.num_labels = num_labels

@@ -123,6 +123,26 @@ _entry_points_loaded = False
 # Helpers
 # ---------------------------------------------------------------------------
 
+
+def _as_target_string(target):
+    """Normalize a registration target to a ``"module[:attr]"`` string.
+
+    Accepts either a string (``"module"`` or ``"module:attr"``) or a live
+    callable (a function/class object). A callable is resolved to
+    ``"<__module__>:<__name__>"`` - so a component defined directly in a notebook
+    cell (``__module__ == "__main__"``) becomes e.g. ``"__main__:gentle_finetune"``
+    and imports in the same process, no file needed.
+
+    Note: live/``__main__`` objects only resolve **in-process** (the current
+    interpreter). For cross-process runs (the ``run_local.sh`` driver spawns fresh
+    subprocesses) ship components as an installed package via packaging entry
+    points - see ``docs/extending.md``.
+    """
+    if not isinstance(target, str) and callable(target):
+        return f"{target.__module__}:{target.__name__}"
+    return target
+
+
 def _split_target(target, default_attr):
     """Split a ``"module[:attr]"`` target into ``(module_name, attr_name)``.
 
@@ -189,34 +209,36 @@ def _load_entry_points():
 # Public registration API
 # ---------------------------------------------------------------------------
 
+
 def register_model(name, target):
-    """Register a model factory. ``target``: ``"module"`` or ``"module:attr"``."""
-    _callable_overrides["model"][name] = target
+    """Register a model factory. ``target``: a callable, or ``"module[:attr]"``."""
+    _callable_overrides["model"][name] = _as_target_string(target)
     _ensure_name_registered("model", name)
 
 
 def register_baseline(name, target):
-    """Register a baseline method. ``target``: ``"module"`` or ``"module:attr"``."""
-    _callable_overrides["baseline"][name] = target
+    """Register a baseline method. ``target``: a callable, or ``"module[:attr]"``."""
+    _callable_overrides["baseline"][name] = _as_target_string(target)
     _ensure_name_registered("baseline", name)
 
 
 def register_unlearning_method(name, target):
-    """Register an unlearning method. ``target``: ``"module"`` or ``"module:attr"``."""
-    _callable_overrides["unlearning_method"][name] = target
+    """Register an unlearning method. ``target``: a callable, or ``"module[:attr]"``."""
+    _callable_overrides["unlearning_method"][name] = _as_target_string(target)
     _ensure_name_registered("unlearning_method", name)
 
 
 def register_metric(name, target, *, requires_retrain=False):
     """Register an evaluation metric.
 
-    ``target``: ``"module"`` or ``"module:attr"`` pointing to a callable
-    (typically decorated with ``@track_evaluation_metric``). Set
+    ``target``: a callable (typically decorated with ``@track_evaluation_metric``),
+    or a ``"module[:attr]"`` string pointing at one. A live callable - e.g. defined
+    in a notebook cell - is supported in-process (see ``_as_target_string``). Set
     ``requires_retrain=True`` if the metric needs the retrained reference model
     ``M_r`` (this adds it to ``project_config.metrics_requiring_retrain``, which
     triggers the retrain pipeline when the metric is requested).
     """
-    _callable_overrides["metric"][name] = target
+    _callable_overrides["metric"][name] = _as_target_string(target)
     _ensure_name_registered("metric", name)
     if requires_retrain:
         project_config.metrics_requiring_retrain.add(name)
@@ -268,6 +290,7 @@ def register_dataset(
 # ---------------------------------------------------------------------------
 # Resolution API (consumed by the framework's existing call sites)
 # ---------------------------------------------------------------------------
+
 
 def resolve_callable_location(category, name):
     """Return ``(module_name, attr_name)`` for a model/baseline/method/metric.

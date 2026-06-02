@@ -33,21 +33,35 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 PROJECT_ROOT=$(cd -- "$SCRIPT_DIR/../../../.." &>/dev/null && pwd)
 export PYTHONPATH="$PROJECT_ROOT"
 
-# Activate Python virtual environment
-VENV_PATH="${PROJECT_ROOT}/gpu_env"
-if [ -f "${VENV_PATH}/bin/activate" ]; then
+# Activate the project venv if one isn't already active. Honor $SUPREME_VENV,
+# otherwise probe common names (the Makefile default is `unlearning`).
+if [ -n "${VIRTUAL_ENV:-}" ]; then
 	echo "=============================================="
-	echo "Activating virtual environment: ${VENV_PATH}"
-	source "${VENV_PATH}/bin/activate"
+	echo "Using already-active virtual environment: ${VIRTUAL_ENV}"
 	echo "Python executable: $(which python)"
-	echo "Python version: $(python --version 2>&1)"
 	echo "=============================================="
 else
-	echo "=============================================="
-	echo "WARNING: Virtual environment not found at ${VENV_PATH}"
-	echo "Using system Python: $(which python)"
-	echo "This may cause segmentation faults!"
-	echo "=============================================="
+	VENV_PATH=""
+	for _venv in "${SUPREME_VENV:-}" unlearning .venv gpu_env venv env; do
+		if [ -n "$_venv" ] && [ -f "${PROJECT_ROOT}/${_venv}/bin/activate" ]; then
+			VENV_PATH="${PROJECT_ROOT}/${_venv}"
+			break
+		fi
+	done
+	if [ -n "$VENV_PATH" ]; then
+		echo "=============================================="
+		echo "Activating virtual environment: ${VENV_PATH}"
+		source "${VENV_PATH}/bin/activate"
+		echo "Python executable: $(which python)"
+		echo "Python version: $(python --version 2>&1)"
+		echo "=============================================="
+	else
+		echo "=============================================="
+		echo "WARNING: no virtual environment found under ${PROJECT_ROOT}"
+		echo "Using system Python: $(which python)"
+		echo "This may cause segmentation faults!"
+		echo "=============================================="
+	fi
 fi
 
 ################################################################################

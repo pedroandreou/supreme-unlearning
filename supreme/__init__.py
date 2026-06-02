@@ -46,7 +46,7 @@ from supreme.registry import (
 )
 from supreme.utils import project_config
 
-__version__ = "0.1.0"
+__version__ = "0.2.0.dev0"
 
 __all__ = [
     "__version__",

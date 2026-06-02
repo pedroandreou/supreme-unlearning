@@ -7,7 +7,7 @@
             "command": "bash",
             "args": [
                 "-c",
-                "source gpu_env/bin/activate && cd src && DEBUGGER=1 bash MAIN.sh 4,5,6,7"
+                "source unlearning/bin/activate && cd supreme && DEBUGGER=1 bash MAIN.sh 4,5,6,7"
                 // "cd /app/host/src && DEBUGGER=1 bash MAIN.sh 0"
                 // "cd /app/host/src && DEBUGGER=1 SCALENE=1 bash MAIN.sh 4,5,6,7"
             ],

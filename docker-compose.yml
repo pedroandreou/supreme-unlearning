@@ -46,7 +46,7 @@ services:
   # local build; not the dev container (see cuda_12_1_devcontainer below).
   cuda_12_1_pulled:
     container_name: framework_cuda_12_1_pulled
-    image: ghcr.io/pedroandreou/supreme-unlearning:0.1.0
+    image: ghcr.io/pedroandreou/supreme-unlearning:0.1.2
     <<: *common-config # alias
 
   # Prebuilt dev container image (CUDA Dockerfile + devcontainer features baked in),

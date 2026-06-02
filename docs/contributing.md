@@ -51,9 +51,44 @@ There are **two ways** to share a component, and you can choose either:
    others can find it.
 
 2. **In-tree, via a pull request.** If your component is broadly useful and you'd
-   like it shipped with SUPREME, open a PR adding it under `supreme/` with a short
+   like it shipped with SUPREME, open a PR adding it under `src/supreme/` with a short
    `community/` entry documenting it (see the
    [method template](https://github.com/pedroandreou/supreme-unlearning/blob/main/community/methods/template/README.md)).
+
+## File header convention
+
+Every component file (datasets, models, methods, baselines, metrics) starts with
+a **module docstring on the first line**, before the imports. It carries a
+one-line summary and, for any code derived from a paper or another codebase, the
+attribution. Use these labels so headers stay consistent and grep-able:
+
+```python
+"""<One-line summary of the component>.
+
+Paper: "<Title>" (<paper-url>)
+Reference: <upstream implementation url>
+
+Notes:
+<adaptation details, validation against the original, or naming caveats>
+"""
+
+import ...
+```
+
+- **`Paper:`** - the source paper, title in quotes with the URL in parentheses.
+  Repeat the `Paper:` / `Reference:` pair (separated by a blank line) when a file
+  draws on more than one source.
+- **`Reference:`** - a link to the upstream implementation you adapted, pinned to
+  a specific commit and line where possible (e.g. `.../blob/<sha>/src/ssd.py#L35`).
+  Omit it for fully original code.
+- **`Notes:`** - anything else worth preserving: what you changed from the
+  original, how you validated the port, or alternative implementations you
+  considered. Keep every upstream URL; don't drop attribution when editing.
+
+If your component derives from third-party code, keep its attribution in the
+source-file header (`Paper:`, `Reference:`, `Notes:`) and credit the upstream
+project in the README [Acknowledgements](https://github.com/pedroandreou/supreme-unlearning#-acknowledgements)
+section.
 
 ## Opening a pull request
 

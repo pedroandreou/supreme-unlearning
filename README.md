@@ -51,6 +51,7 @@
 
 <p>
   <strong>📦 Repository</strong><br>
+  <a href="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml"><img src="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml/badge.svg" alt="CI (lint, build, tests)"></a>
   <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI&cacheSeconds=3600" alt="PyPI"></a>
   <a href="https://test.pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/badge/TestPyPI-supreme--unlearning-orange?logo=pypi&logoColor=white" alt="TestPyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
@@ -79,7 +80,58 @@ Machine unlearning removes the influence of a chosen subset of training data (a 
 
 SUPREME evolved from the codebases of [Selective Synaptic Dampening (SSD)](https://github.com/if-loops/selective-synaptic-dampening) and [bad-teaching unlearning](https://github.com/vikram2000b/bad-teaching-unlearning), generalising them from single-method, single-device scripts into a standardised, distributed evaluation platform.
 
-For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`supreme/README.md`](supreme/README.md) and [`docs/notation.md`](docs/notation.md).
+For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`src/supreme/README.md`](src/supreme/README.md) and [`docs/notation.md`](docs/notation.md).
+
+---
+
+## 📦 SUPREME as a Library
+
+SUPREME is a **pip-installable Python library** (`import supreme`), not just a
+set of scripts. Install it, register your own components, and drive the full
+**train → unlearn → evaluate** pipeline from Python, with no edits to the
+framework:
+
+```bash
+pip install supreme-unlearning
+```
+
+```python
+import supreme
+
+# Run the built-in pipeline programmatically
+supreme.run_training(["-net", "ViT", "-dataset", "Cifar10", "-seed", "260"])
+supreme.run_unlearning(["-method", "ssd", "-net", "ViT", "-dataset", "Cifar10"])
+
+# Plug in code you wrote yourself, living in your own package.
+# Replace "your_package.your_method" with your real import path.
+supreme.register_unlearning_method("mymethod", "your_package.your_method")
+supreme.run_unlearning(["-method", "mymethod", "-net", "ViT", "-dataset", "Cifar10"])
+```
+
+**Public API:** `supreme.run_training`, `supreme.run_unlearning`,
+`supreme.register_model`, `supreme.register_baseline`,
+`supreme.register_unlearning_method`, `supreme.register_metric`,
+`supreme.register_dataset`, and `supreme.project_config`. Everything under
+`supreme.utils.*` is internal. The API is defined in
+[`src/supreme/__init__.py`](src/supreme/__init__.py); resolution and plugin entry points
+live in [`src/supreme/registry.py`](src/supreme/registry.py). Full walkthrough:
+[`docs/extending.md`](docs/extending.md) and the notebook
+[`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
+
+### Where the code lives
+
+| Path | What's there |
+|---|---|
+| [`src/supreme/__init__.py`](src/supreme/__init__.py) | Public API surface (`run_*`, `register_*`) |
+| [`src/supreme/registry.py`](src/supreme/registry.py) | Name → component resolution and plugin entry points |
+| [`src/supreme/methods/unlearning_methods/`](src/supreme/methods/unlearning_methods/) | Unlearning method implementations |
+| [`src/supreme/methods/baselines/`](src/supreme/methods/baselines/) | Retrain / Original baselines |
+| [`src/supreme/models/`](src/supreme/models/) | ResNet18, ViT |
+| [`src/supreme/datasets/datasets.py`](src/supreme/datasets/datasets.py) | The 5 datasets |
+| [`src/supreme/eval_metrics/`](src/supreme/eval_metrics/) | The 9 evaluation metrics |
+| [`src/supreme/utils/training/train_main.py`](src/supreme/utils/training/train_main.py) | Training-stage entry point (`supreme-train`) |
+| [`src/supreme/utils/unlearning/unlearn_main.py`](src/supreme/utils/unlearning/unlearn_main.py) | Unlearn/evaluate entry point (`supreme-unlearn`) |
+| [`src/supreme/utils/fabric/`](src/supreme/utils/fabric/) | Lightning Fabric setup (accelerators, precision, distributed strategies) |
 
 ---
 
@@ -91,11 +143,11 @@ Registry-based components are **user-extensible** - implement the relevant inter
 
 | Component | Available implementations |
 |---|---|
-| **Datasets** | [CIFAR-10](supreme/datasets/datasets.py), [CIFAR-20](supreme/datasets/datasets.py), [CIFAR-100](supreme/datasets/datasets.py), [PinsFaceRecognition](supreme/datasets/datasets.py), [Caltech-101](supreme/datasets/datasets.py) |
-| **Models** | [ResNet18](supreme/models/ResNet18.py), [Vision Transformer (ViT)](supreme/models/ViT.py) |
-| **Baselines** | [Retrain](supreme/methods/baselines/retrain.py), [Original](supreme/methods/baselines/original.py) |
-| **Unlearning methods** | [Fine-Tuning (FT)](supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](supreme/methods/unlearning_methods/unsir.py), [SSD](supreme/methods/unlearning_methods/ssd.py), [LFSSD](supreme/methods/unlearning_methods/lfssd.py), [ASSD](supreme/methods/unlearning_methods/assd.py), [SCRUB](supreme/methods/unlearning_methods/scrub.py), [JIT](supreme/methods/unlearning_methods/jit.py) |
-| **Evaluation metrics** | [Accuracy](supreme/eval_metrics/accuracy.py), [Loss/Error](supreme/utils/training/training_utils.py), [ZRF](supreme/eval_metrics/zrf.py), [Activation Distance](supreme/eval_metrics/activation_distance.py), [JS-Divergence](supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](supreme/eval_metrics/membership_inference_attack.py), [Completeness](supreme/eval_metrics/completeness.py), [Resource Consumption](supreme/eval_metrics/resource_consumption.py), [Time](supreme/eval_metrics/time.py) |
+| **Datasets** | [CIFAR-10](src/supreme/datasets/datasets.py), [CIFAR-20](src/supreme/datasets/datasets.py), [CIFAR-100](src/supreme/datasets/datasets.py), [PinsFaceRecognition](src/supreme/datasets/datasets.py), [Caltech-101](src/supreme/datasets/datasets.py) |
+| **Models** | [ResNet18](src/supreme/models/ResNet18.py), [Vision Transformer (ViT)](src/supreme/models/ViT.py) |
+| **Baselines** | [Retrain](src/supreme/methods/baselines/retrain.py), [Original](src/supreme/methods/baselines/original.py) |
+| **Unlearning methods** | [Fine-Tuning (FT)](src/supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](src/supreme/methods/unlearning_methods/unsir.py), [SSD](src/supreme/methods/unlearning_methods/ssd.py), [LFSSD](src/supreme/methods/unlearning_methods/lfssd.py), [ASSD](src/supreme/methods/unlearning_methods/assd.py), [SCRUB](src/supreme/methods/unlearning_methods/scrub.py), [JIT](src/supreme/methods/unlearning_methods/jit.py) |
+| **Evaluation metrics** | [Accuracy](src/supreme/eval_metrics/accuracy.py), [Loss/Error](src/supreme/utils/training/training_utils.py), [ZRF](src/supreme/eval_metrics/zrf.py), [Activation Distance](src/supreme/eval_metrics/activation_distance.py), [JS-Divergence](src/supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](src/supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](src/supreme/eval_metrics/membership_inference_attack.py), [Completeness](src/supreme/eval_metrics/completeness.py), [Resource Consumption](src/supreme/eval_metrics/resource_consumption.py), [Time](src/supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
 
 ### Provided via Lightning Fabric
@@ -128,7 +180,7 @@ cp .env.example .env
 # edit .env with your WANDB_KEY, WANDB_USERNAME and HUGGING_FACE_HUB_TOKEN
 
 # 4. Smoke test - one seed, one method, one dataset
-bash supreme/run_local.sh \
+bash src/supreme/run_local.sh \
   --gpu 0 --models ViT --training-seeds 260 \
   --methods retrain,finetune,ssd \
   --strategies random_ --datasets Cifar10 \
@@ -147,10 +199,10 @@ The pipeline runs **train → unlearn → evaluate** automatically. Re-running i
 
 ```bash
 # All 10 seeds, all methods, all datasets - defaults
-bash supreme/run_local.sh --gpu 0
+bash src/supreme/run_local.sh --gpu 0
 
 # Filter the sweep
-bash supreme/run_local.sh \
+bash src/supreme/run_local.sh \
   --gpu 0,1 \
   --models ViT \
   --training-seeds 260,261,262 \
@@ -175,19 +227,19 @@ bash supreme/run_local.sh \
 
 ```bash
 # Preview the grid (no submission)
-./supreme/run_slurm.sh --dry-run
+./src/supreme/run_slurm.sh --dry-run
 
 # Submit all experiments, max 12 concurrent jobs
-./supreme/run_slurm.sh --max-concurrent 12
+./src/supreme/run_slurm.sh --max-concurrent 12
 
 # Subset
-./supreme/run_slurm.sh \
+./src/supreme/run_slurm.sh \
   --datasets Cifar10,Cifar20 \
   --models ViT \
   --training-seeds 260,261,262
 
 # Multi-GPU DDP per job
-./supreme/run_slurm.sh --gpus 4
+./src/supreme/run_slurm.sh --gpus 4
 ```
 
 Each submitted job runs one `(seed, dataset, model)` cell independently; cells run in parallel across the cluster. Distributed-strategy selection (DDP / FSDP / DeepSpeed) is documented in [`docs/implementation_notes.md → Distributed Strategies`](docs/implementation_notes.md#distributed-strategies).
@@ -196,37 +248,22 @@ Each submitted job runs one `(seed, dataset, model)` cell independently; cells r
 
 ## 🔁 Reproducing the paper
 
-Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md). For a runnable, step-by-step walkthrough (install → smoke test → full grid → tables → extending), see the notebook [`notebooks/reproduce_experiments.ipynb`](notebooks/reproduce_experiments.ipynb).
+Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`src/supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](src/supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md). For a runnable, step-by-step walkthrough (install → smoke test → full grid → tables → extending), see the notebook [`notebooks/reproduce_experiments.ipynb`](notebooks/reproduce_experiments.ipynb).
 
 ---
 
 ## ➕ Extending SUPREME
 
-SUPREME is pip-installable (`pip install supreme-unlearning`, imported as
-`supreme`) and reusable as a library.
-Register your own components from your own package - no edits to framework code:
+SUPREME is reusable as a library (see [SUPREME as a Library](#-supreme-as-a-library)
+for installation and the public API). You register your own components from your
+own package with no edits to framework code, either at runtime via
+`supreme.register_*` or, for an installed plugin package, via packaging entry
+points (`supreme.models`, `supreme.unlearning_methods`, `supreme.metrics`,
+`supreme.datasets`, `supreme.plugins`).
 
-```python
-import supreme
-
-supreme.register_unlearning_method("mymethod", "my_pkg.mymethod")
-supreme.register_model("MyNet", "my_pkg.models:MyNet")
-supreme.register_dataset("MyDS", "my_pkg.data:MyDS",
-                         root="/data/myds", class_dict={"cat": 0, "dog": 1})
-
-supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
-                        "-dataset", "MyDS", "-seed", "260"])
-```
-
-A runnable, end-to-end walkthrough from an external user's point of view -
-`pip install supreme-unlearning` then register your own method/metric/model/dataset - is in
+A runnable, end-to-end walkthrough - `pip install supreme-unlearning`, then
+register your own method/metric/model/dataset from your own project - is in
 the notebook [`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
-
-An installed plugin package can equivalently provide components via packaging
-entry points (`supreme.models`, `supreme.unlearning_methods`, `supreme.metrics`,
-`supreme.plugins`). The public API is `supreme.register_*`, `supreme.run_training`,
-`supreme.run_unlearning`, and `supreme.project_config`; everything under
-`supreme.utils.*` is internal.
 
 Adding a dataset, model, method, or metric follows a consistent register-and-implement pattern. Walkthroughs and Fabric-integration rules live in [`docs/extending.md`](docs/extending.md):
 
@@ -276,7 +313,7 @@ CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](
 | [`CHANGELOG.md`](CHANGELOG.md) | Notable changes per release (Keep a Changelog / SemVer) |
 | [`community/`](community/README.md) | Community-contributed methods, templates, and the results leaderboard |
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
-| [`supreme/README.md`](supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
+| [`src/supreme/README.md`](src/supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |
 | [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md) | Single command for the paper's experiment grid plus the W&B-export-to-LaTeX-tables workflow |
 | [`docs/script_arguments.md`](docs/script_arguments.md) | Full argument reference for `train_main.py` and `unlearn_main.py` |
@@ -292,6 +329,11 @@ CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](
 
 ## 📝 Citing this work
 
+If you use SUPREME in your research, please cite our work. When you use a specific
+unlearning method, please also cite its original paper (linked in each method's
+source-file header); the foundational SSD/LFSSD and Bad Teacher papers are
+included below.
+
 ```bibtex
 @misc{supreme2026,
   title  = {SUPREME: A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation},
@@ -302,15 +344,52 @@ CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](
   primaryClass = {cs.LG},
   url    = {https://arxiv.org/abs/2606.00380}
 }
+@inproceedings{foster2024ssd,
+  title     = {Fast Machine Unlearning Without Retraining Through Selective Synaptic Dampening},
+  author    = {Foster, Jack and Schoepf, Stefan and Brintrup, Alexandra},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2308.07707}
+}
+@inproceedings{foster2024lossfree,
+  title     = {Loss-Free Machine Unlearning},
+  author    = {Foster, Jack and Schoepf, Stefan and Brintrup, Alexandra},
+  booktitle = {ICLR 2024 Tiny Papers Track},
+  year      = {2024},
+  url       = {https://arxiv.org/abs/2402.19308}
+}
+@inproceedings{chundawat2023badteacher,
+  title     = {Can Bad Teaching Induce Forgetting? Unlearning in Deep Networks using an Incompetent Teacher},
+  author    = {Chundawat, Vikram S and Tarun, Ayush K and Mandal, Murari and Kankanhalli, Mohan},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  year      = {2023},
+  url       = {https://arxiv.org/abs/2205.08096}
+}
 ```
 
 This work was conducted at [Loughborough University](https://www.lboro.ac.uk/).
 
 ---
 
+## 🙏 Acknowledgements
+
+Several unlearning methods reimplement or adapt published research code. We thank
+the authors of the following projects, and ask that you cite the original papers
+(linked in each method's source-file header) when using the corresponding methods:
+
+- [if-loops/selective-synaptic-dampening](https://github.com/if-loops/selective-synaptic-dampening) - SSD, LFSSD
+- [vikram2000b/bad-teaching-unlearning](https://github.com/vikram2000b/bad-teaching-unlearning) - Bad Teacher
+- [vikram2000b/Fast-Machine-Unlearning](https://github.com/vikram2000b/Fast-Machine-Unlearning) - UNSIR
+- [jwf40/Information-Theoretic-Unlearning](https://github.com/jwf40/Information-Theoretic-Unlearning) - JIT
+- [meghdadk/SCRUB](https://github.com/meghdadk/SCRUB) - SCRUB
+- [kklusd/Unlearning](https://github.com/kklusd/Unlearning) - NegGrad
+
+---
+
 ## 📄 License
 
-Released under the [MIT License](LICENSE).
+This project is licensed under the MIT License. See the [`LICENSE`](LICENSE) file
+for details.
 
 ---
 

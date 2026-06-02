@@ -56,7 +56,7 @@ cuda = [
     "nvidia-ml-py==13.580.82",
 ]
 tensorboard = ["tensorboard"]
-dev = ["pre-commit", "debugpy"]
+dev = ["pre-commit", "debugpy", "pytest"]
 
 [project.urls]
 Homepage = "https://github.com/pedroandreou/supreme-unlearning"
@@ -68,7 +68,7 @@ supreme-train = "supreme.utils.training.train_main:main"
 supreme-unlearn = "supreme.utils.unlearning.unlearn_main:main"
 
 # Entry-point GROUPS used to register external components from installed plugin
-# packages (see supreme/registry.py and docs/extending.md). A plugin package
+# packages (see src/supreme/registry.py and docs/extending.md). A plugin package
 # declares entries under these groups; SUPREME discovers them automatically.
 #   [project.entry-points."supreme.models"]
 #   MyNet = "my_pkg.models:MyNet"
@@ -83,16 +83,28 @@ supreme-unlearn = "supreme.utils.unlearning.unlearn_main:main"
 # These entry points deliberately run _fix_slurm_gpu_binding() at module top,
 # BEFORE any torch/CUDA import, so the later imports are intentionally not at the
 # top of the file. Silence E402 (module-import-not-at-top) for them only.
-"supreme/utils/unlearning/unlearn_main.py" = ["E402"]
-"supreme/utils/training/train_main.py" = ["E402"]
+"src/supreme/utils/unlearning/unlearn_main.py" = ["E402"]
+"src/supreme/utils/training/train_main.py" = ["E402"]
 # Teaching notebooks use normal notebook idioms ruff shouldn't enforce: grouped
 # imports (E401), imports after an intro/setup line (E402), and each section
 # re-importing torch/nn so cells are self-contained (F811).
 "*.ipynb" = ["E401", "E402", "F811"]
 
+# Pytest: the suite lives in tests/ and is CPU-only / download-free so it runs
+# in CI without a GPU, dataset, or Hugging Face fetch (see tests/conftest.py).
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 [tool.setuptools.dynamic]
 version = { attr = "supreme.__version__" }
 
+# src-layout: the import package `supreme` lives under src/. package-dir maps the
+# root namespace to src/ so setuptools resolves `supreme` (and the dynamic version
+# from supreme.__version__) there. Distribution name: supreme-unlearning.
+[tool.setuptools.package-dir]
+"" = "src"
+
 [tool.setuptools.packages.find]
+where = ["src"]
 include = ["supreme*"]
 namespaces = false

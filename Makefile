@@ -36,7 +36,7 @@
 #   make mps BASE_PYTHON=$HOME/.pyenv/versions/3.9.12/bin/python
 
 .PHONY: help cuda mps dev hooks build publish publish-test clean quality style \
-        precommit venv _create_venv _ensure_venv
+        test precommit venv _create_venv _ensure_venv
 
 # Virtual environment location (override with VENV=<name>) and the tools inside it.
 VENV   ?= unlearning
@@ -52,7 +52,7 @@ ON_EXISTING ?=
 
 # Directories/files that the lint + format targets operate on. Single source of
 # truth: CI runs `make quality`, so it inherits this list (don't duplicate it there).
-check_dirs := supreme setup.py
+check_dirs := src tests setup.py
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -141,6 +141,12 @@ quality:  ## Lint + format check without modifying files (CI-style)
 style:  ## Auto-fix lint issues and format in place
 	$(RUFF) check $(check_dirs) --fix
 	$(RUFF) format $(check_dirs)
+
+# --- Tests ----------------------------------------------------------------
+
+test:  ## Run the CPU-only unit test suite (pytest). Mirrored by ci.yml's tests job.
+	$(PIP) install --quiet pytest
+	$(PYTHON) -m pytest
 
 precommit:  ## Run every pre-commit hook against the whole tree
 	$(VENV)/bin/pre-commit run --all-files

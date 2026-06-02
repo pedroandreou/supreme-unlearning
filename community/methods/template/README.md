@@ -8,7 +8,7 @@ embedding large images to keep the repository size manageable.
 ## Availability
 
 - [ ] **Plugin package** (recommended): name + install command (e.g. `pip install my-unlearning-method`) and the registration call / entry point it exposes.
-- [ ] **In-tree**: link to the PR / files under `supreme/`.
+- [ ] **In-tree**: link to the PR / files under `src/supreme/`.
 
 ## Setup
 

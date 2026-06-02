@@ -17,7 +17,7 @@ lightning==2.1.0  # Match pytorch-lightning version
 torch==2.1.0  # Match with Lightning version
 torchvision==0.16.0
 torchaudio==2.1.0
-requests==2.28.2
+requests==2.33.0
 urllib3<2.0.0
 chardet==4.0.0
 charset-normalizer==3.0.1  # Added this for complete compatibility

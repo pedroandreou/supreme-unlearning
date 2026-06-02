@@ -8,7 +8,7 @@ In a multi-GPU run, only rank 0 writes to W&B - duplicates from other ranks are 
 
 ## Online vs offline mode
 
-W&B runs in **online mode by default**. To switch to offline mode, uncomment this line in [`src/utils/wandb_utils/runtime/wandb_setup.py`](../src/utils/wandb_utils/runtime/wandb_setup.py):
+W&B runs in **online mode by default**. To switch to offline mode, uncomment this line in [`supreme/utils/wandb_utils/runtime/wandb_setup.py`](../supreme/utils/wandb_utils/runtime/wandb_setup.py):
 
 ```python
 # os.environ["WANDB_MODE"] = "offline"
@@ -22,19 +22,19 @@ Batch-upload previously-saved offline runs to the W&B cloud:
 
 ```bash
 # Sync all pending offline runs
-src/utils/wandb_utils/runtime/wandb_tools.sh sync
+supreme/utils/wandb_utils/runtime/wandb_tools.sh sync
 
 # Sync + clean local directories after each successful upload
-src/utils/wandb_utils/runtime/wandb_tools.sh sync --delete-immediately
+supreme/utils/wandb_utils/runtime/wandb_tools.sh sync --delete-immediately
 
 # Sync + clean local directories only after ALL syncs complete
-src/utils/wandb_utils/runtime/wandb_tools.sh sync --delete-synced
+supreme/utils/wandb_utils/runtime/wandb_tools.sh sync --delete-synced
 
 # Treat conflicted runs as new runs (force-resolve conflicts)
-src/utils/wandb_utils/runtime/wandb_tools.sh sync --clean
+supreme/utils/wandb_utils/runtime/wandb_tools.sh sync --clean
 ```
 
-The orchestrator behind these commands lives in [`src/utils/wandb_utils/runtime/wandb_tools.sh`](../src/utils/wandb_utils/runtime/wandb_tools.sh). See the script header for the full sync-mode flag list.
+The orchestrator behind these commands lives in [`supreme/utils/wandb_utils/runtime/wandb_tools.sh`](../supreme/utils/wandb_utils/runtime/wandb_tools.sh). See the script header for the full sync-mode flag list.
 
 ## Metric synchronisation across processes
 
@@ -42,15 +42,15 @@ Evaluation metrics that are computed independently on each rank are aggregated b
 
 Examples in the codebase:
 
-- [`src/eval_metrics/jsdiv.py`](../src/eval_metrics/jsdiv.py) - `fabric.all_gather(local_js_div)` then `.mean()`
-- [`src/eval_metrics/membership_inference_attack.py`](../src/eval_metrics/membership_inference_attack.py) - `fabric.all_gather()` on the forget / retain features and labels before the attack model is trained
-- [`src/eval_metrics/accuracy.py`](../src/eval_metrics/accuracy.py) - `fabric.all_gather()` on per-rank correct-count totals
+- [`supreme/eval_metrics/jsdiv.py`](../supreme/eval_metrics/jsdiv.py) - `fabric.all_gather(local_js_div)` then `.mean()`
+- [`supreme/eval_metrics/membership_inference_attack.py`](../supreme/eval_metrics/membership_inference_attack.py) - `fabric.all_gather()` on the forget / retain features and labels before the attack model is trained
+- [`supreme/eval_metrics/accuracy.py`](../supreme/eval_metrics/accuracy.py) - `fabric.all_gather()` on per-rank correct-count totals
 
 For implementing a new metric, the same pattern is documented in [`docs/extending.md → Adding a new evaluation metric`](extending.md#adding-a-new-evaluation-metric).
 
 ## Skipping already-logged results
 
-Before running a cell, [`src/MAIN.sh`](../src/MAIN.sh) checks whether the corresponding W&B run already exists with all requested evaluation metrics logged. If yes, the cell is skipped; partial results trigger a re-run for only the missing metrics. The check is implemented in [`check_wandb_run_exists()`](../src/utils/wandb_utils/runtime/wandb_setup.py) (see `wandb_setup.py`). Override the skip behaviour with `--force-rerun` (SLURM) or `FORCE_REUNLEARNING=true FORCE_REEVALUATION=true` (env vars).
+Before running a cell, [`supreme/MAIN.sh`](../supreme/MAIN.sh) checks whether the corresponding W&B run already exists with all requested evaluation metrics logged. If yes, the cell is skipped; partial results trigger a re-run for only the missing metrics. The check is implemented in [`check_wandb_run_exists()`](../supreme/utils/wandb_utils/runtime/wandb_setup.py) (see `wandb_setup.py`). Override the skip behaviour with `--force-rerun` (SLURM) or `FORCE_REUNLEARNING=true FORCE_REEVALUATION=true` (env vars).
 
 ## Run-name convention
 
@@ -62,4 +62,4 @@ W&B run names encode the seed protocol so the export pipeline can group runs cor
 | Decoupled `I × J` (`J > 1`, `K = 1`) | `{method}_tseed{T}_useed{U}` |
 | Decoupled `I × J × K` (`J > 1`, `K > 1`) | `{method}_tseed{T}_useed{U}_eseed{E}` |
 
-Names are generated in [`src/utils/wandb_utils/runtime/wandb_setup.py`](../src/utils/wandb_utils/runtime/wandb_setup.py) and [`src/utils/unlearning/unlearn_main.py`](../src/utils/unlearning/unlearn_main.py). The full seed-protocol notation lives in [`docs/notation.md`](notation.md).
+Names are generated in [`supreme/utils/wandb_utils/runtime/wandb_setup.py`](../supreme/utils/wandb_utils/runtime/wandb_setup.py) and [`supreme/utils/unlearning/unlearn_main.py`](../supreme/utils/unlearning/unlearn_main.py). The full seed-protocol notation lives in [`docs/notation.md`](notation.md).

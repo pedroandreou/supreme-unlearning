@@ -1,0 +1,51 @@
+name: "\U0001F680 Feature request"
+description: Propose a new feature or component for SUPREME
+labels: ["enhancement"]
+body:
+  - type: checkboxes
+    id: feature-category
+    attributes:
+      label: Category
+      description: "This feature would add a new:"
+      options:
+        - label: "Dataset"
+        - label: "Model architecture"
+        - label: "Unlearning method"
+        - label: "Evaluation metric"
+        - label: "Unlearning scenario (full-class / subclass / random-sample / new)"
+        - label: "Framework capability (runner, distributed strategy, logging, tooling)"
+        - label: "None of the above"
+
+  - type: textarea
+    id: feature-request
+    validations:
+      required: true
+    attributes:
+      label: Feature request
+      description: |
+        A clear and concise description of the feature. If it relates to a paper
+        or existing implementation, please link the paper and code.
+
+  - type: textarea
+    id: motivation
+    validations:
+      required: true
+    attributes:
+      label: Motivation
+      description: |
+        Why is this useful? Is it related to a problem you ran into, or something
+        you think would benefit the community? If it relates to an existing
+        issue, please link it here.
+
+  - type: textarea
+    id: implementation
+    validations:
+      required: false
+    attributes:
+      label: Proposed implementation
+      description: |
+        How might this be implemented? Many components are user-extensible via
+        the registry / plugin system; see
+        [`docs/extending.md`](../../docs/extending.md). If you can register it
+        from your own package today, note that here; if it needs framework
+        changes, describe them.

@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "\U0001F4AC Questions & discussion"
+    url: https://github.com/pedroandreou/supreme-unlearning/discussions
+    about: "Ask questions, share results, and discuss ideas with the community."
+  - name: "\U0001F4DA Extending SUPREME (add your own dataset / model / method / metric)"
+    url: https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/extending.md
+    about: "Most components can be added from your own package with no framework edits, so check here before opening a feature request."
+  - name: "\U0001F91D Contributing guide"
+    url: https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/contributing.md
+    about: "How to report bugs, request features, and open a pull request."
+  - name: "\U0001F310 Project page"
+    url: https://pedroandreou.github.io/supreme-unlearning-page/
+    about: "Overview, paper, and results."

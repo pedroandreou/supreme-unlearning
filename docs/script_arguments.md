@@ -1,10 +1,17 @@
 # Advanced: Direct Script Arguments
 
-**Note:** Most users should use [run_local.sh](../src/run_local.sh) (documented in the README). This section is for advanced users running [train_main.py](../src/utils/training/train_main.py) or [unlearn_main.py](../src/utils/unlearning/unlearn_main.py) directly.
+**Note:** Most users should use [run_local.sh](../supreme/run_local.sh) (documented in the README). This section is for advanced users running [train_main.py](../supreme/utils/training/train_main.py) or [unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py) directly.
+
+The two stages can be invoked three equivalent ways, all taking the same
+arguments documented below:
+
+- the scripts directly: `python supreme/utils/training/train_main.py ...`
+- the installed console scripts: `supreme-train ...` / `supreme-unlearn ...`
+- the Python API: `supreme.run_training([...])` / `supreme.run_unlearning([...])`
 
 ## Common Arguments (both scripts)
 
-Defined in [common_args.py](../src/utils/parsers/common_args.py):
+Defined in [common_args.py](../supreme/utils/parsers/common_args.py):
 
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -17,7 +24,7 @@ Defined in [common_args.py](../src/utils/parsers/common_args.py):
 | `-export_class_distribution_info_flag` | flag | `False` | Export class distribution CSVs |
 | `-use_process_tracker` | flag | `False` | Enable zombie process monitoring |
 
-## Training ([train_main.py](../src/utils/training/train_main.py))
+## Training ([train_main.py](../supreme/utils/training/train_main.py))
 
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
@@ -30,7 +37,7 @@ Defined in [common_args.py](../src/utils/parsers/common_args.py):
 | `-unlearning_context` | str | `"N/A"` | Description of the unlearning context for this training run |
 | `-include_gpus_in_path` | str | `"true"` | Include GPU count in checkpoint path |
 
-## Unlearning ([unlearn_main.py](../src/utils/unlearning/unlearn_main.py))
+## Unlearning ([unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py))
 
 ### Always required
 

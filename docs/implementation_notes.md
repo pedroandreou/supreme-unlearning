@@ -47,9 +47,9 @@ When adapting existing unlearning methods for distributed computing, we Standard
 
 Standard BatchNorm computes statistics only from the local batch on each GPU. **SyncBatchNorm** synchronizes these statistics across all GPUs, ensuring consistent normalization.
 
-The framework automatically converts all models to SyncBatchNorm in [unlearn_main.py](../src/utils/unlearning/unlearn_main.py#L425-L430) before `fabric.setup()`. This conversion must happen before Fabric wraps the model.
+The framework automatically converts all models to SyncBatchNorm in [unlearn_main.py](../supreme/utils/unlearning/unlearn_main.py#L425-L430) before `fabric.setup()`. This conversion must happen before Fabric wraps the model.
 
-**Implementation:** [convert_to_sync_batchnorm()](../src/utils/fabric/fabric_setup.py#L257-L272)
+**Implementation:** [convert_to_sync_batchnorm()](../supreme/utils/fabric/fabric_setup.py#L257-L272)
 
 ---
 
@@ -63,7 +63,7 @@ effective_batch_size = per_gpu_batch_size × num_gpus
 
 **Problem:** If you use `batch_size=64` on 4 GPUs, your effective batch size becomes 256, not 64. This changes training dynamics and produces different results than single-GPU training.
 
-**Our Solution:** We automatically scale `batch_size` down by `num_gpus` to maintain the same effective batch size. This is handled centrally in [`create_dataloader()`](../src/utils/generic_utils.py#L56-L93):
+**Our Solution:** We automatically scale `batch_size` down by `num_gpus` to maintain the same effective batch size. This is handled centrally in [`create_dataloader()`](../supreme/utils/generic_utils.py#L56-L93):
 
 ```python
 if num_gpus > 1:
@@ -120,7 +120,7 @@ To make the UNSIR noise training compatible with Fabric/DDP wrapping, we ensure 
 
 - **Problem:** Calling a wrapped module with no inputs (e.g., `noise()`) leads to an empty input tuple, which triggers an IndexError inside distributed pre-forward hooks.
 - **Solution:** Define `UNSIR_noise.forward(dummy: Tensor = None)` and call it with a 1-element dummy tensor on the correct device (we ignore the value). This preserves DDP semantics while keeping the learnable noise tensor as the actual output used by the model.
-- **Where:** See `src/methods/unlearning_methods/unsir.py` (`UNSIR_noise.forward` and the call site in `UNSIR_noise_train`).
+- **Where:** See `supreme/methods/unlearning_methods/unsir.py` (`UNSIR_noise.forward` and the call site in `UNSIR_noise_train`).
 - **Alternatives:** You could avoid wrapping the noise module with Fabric and manually synchronize parameters/gradients across ranks, but the dummy-input approach is simpler and keeps the unified `fabric.backward(loss)` design intact.
 
 ---
@@ -175,7 +175,7 @@ SUPREME exports class distributions and sample-level details for each forget and
 
 ## Unlearning Method DataLoader Implementation
 
-The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR materialised the entire training set into a Python list before any training step began. On ViT experiments this consumed ~30 GB of CPU memory and added several hours of wall-clock time with zero GPU utilisation, inflating the measured `time_elapsed`, `TotalCPUMemoryGB`, and `TotalAverageSMUtil` metrics without affecting model weights.
+The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR materialised the entire training set into a Python list before any training step began. On ViT experiments this consumed ~30 GB of CPU memory and added several hours of wall-clock time with zero GPU utilisation, inflating the measured `time_elapsed`, `TotalCPUMemoryGB`, and `TotalAverageComputeUtil` metrics without affecting model weights.
 
 **Fix:** We replaced the list-building loops with `torch.utils.data.Dataset` wrappers (`RandomLabelDataset`, `NoisyRetainDataset`, `RetainRelabelDataset`, `torch.utils.data.Subset`) that load samples on-the-fly via `__getitem__`. This reduces peak CPU memory to ~1 GB and brings runtimes down to under 10 minutes.
 
@@ -202,7 +202,7 @@ The upstream reference implementations of Bad Teacher, Random Labels, and UNSIR 
 
 **DDP Scalability:**
 - Data-parallel metrics achieve near-linear speedup with additional GPUs
-- Parameter-based metrics (layerwise distance) require manual parameter sharding across ranks (see [metrics_main.py:356-379](../src/eval_metrics/metrics_main.py#L356-L379))
+- Parameter-based metrics (layerwise distance) require manual parameter sharding across ranks (see [metrics_main.py:356-379](../supreme/eval_metrics/metrics_main.py#L356-L379))
 - Time metric remains unaffected (simple arithmetic on pre-computed values)
 
 **Reproducibility:**
@@ -231,15 +231,15 @@ SUPREME supports three distributed strategies via the `DISTRIBUTED_STRATEGY` env
 
 ```bash
 # Local multi-GPU with different strategies
-DISTRIBUTED_STRATEGY=ddp ./src/run_local.sh --gpu 0,1 --datasets Cifar100 --models ResNet18
-DISTRIBUTED_STRATEGY=fsdp ./src/run_local.sh --gpu 0,1,2,3 --datasets Cifar100 --models ResNet18
-DISTRIBUTED_STRATEGY=deepspeed ./src/run_local.sh --gpu 0,1 --datasets Cifar100 --models ResNet18
+DISTRIBUTED_STRATEGY=ddp ./supreme/run_local.sh --gpu 0,1 --datasets Cifar100 --models ResNet18
+DISTRIBUTED_STRATEGY=fsdp ./supreme/run_local.sh --gpu 0,1,2,3 --datasets Cifar100 --models ResNet18
+DISTRIBUTED_STRATEGY=deepspeed ./supreme/run_local.sh --gpu 0,1 --datasets Cifar100 --models ResNet18
 
 # DeepSpeed with ZeRO Stage 3 (maximum memory savings)
-DISTRIBUTED_STRATEGY=deepspeed DEEPSPEED_STAGE=3 ./src/run_local.sh --gpu 0,1,2,3 --models ResNet18
+DISTRIBUTED_STRATEGY=deepspeed DEEPSPEED_STAGE=3 ./supreme/run_local.sh --gpu 0,1,2,3 --models ResNet18
 
 # SLURM with FSDP
-DISTRIBUTED_STRATEGY=fsdp ./src/run_slurm.sh --gpus 4
+DISTRIBUTED_STRATEGY=fsdp ./supreme/run_slurm.sh --gpus 4
 ```
 
 Checkpoint paths automatically include the strategy (e.g. `2gpus/dist_ddp/`, `4gpus/dist_fsdp/`, `2gpus/dist_deepspeed_stage2/`) so different strategy runs never collide. Single-GPU runs use `no_dist/` instead.
@@ -301,4 +301,4 @@ The computation is still correct: importances are computed locally with `loss.ba
 
 **Checkpoint format by strategy.** Training and unlearning checkpoints are saved via `fabric.save()` for DDP and FSDP, which handles strategy-specific unwrapping automatically and produces a `{"model": state_dict}` format. For DeepSpeed, `fabric.save()` produces a sharded directory incompatible with `torch.load()`, so we extract the raw model's state_dict and save it directly via `torch.save()`. Both formats are loaded transparently by `load_weights_efficiently()`. DeepSpeed checkpoints do not include optimiser states - only model weights - but training and unlearning always run to completion (no mid-epoch resumption), so optimiser state isn't needed.
 
-**Correctness note for `layerwise_distance`.** FSDP inference models have sharded parameters; iterating `named_parameters()` and doing element-wise comparison on local shards would give wrong results. [`metrics_main.py`](../src/eval_metrics/metrics_main.py) detects FSDP-wrapped models and wraps the `lay_dist` call in `FSDP.summon_full_params(..., writeback=False)` for both models, temporarily gathering full params on every rank. Brief memory spike, but guaranteed correctness. Other metrics (accuracy, jsdiv, activation_distance, completeness, time, ZRF, MIA) use only forward passes and are unaffected.
+**Correctness note for `layerwise_distance`.** FSDP inference models have sharded parameters; iterating `named_parameters()` and doing element-wise comparison on local shards would give wrong results. [`metrics_main.py`](../supreme/eval_metrics/metrics_main.py) detects FSDP-wrapped models and wraps the `lay_dist` call in `FSDP.summon_full_params(..., writeback=False)` for both models, temporarily gathering full params on every rank. Brief memory spike, but guaranteed correctness. Other metrics (accuracy, jsdiv, activation_distance, completeness, time, ZRF, MIA) use only forward passes and are unaffected.

@@ -1,10 +1,10 @@
 # W&B Metrics Field Documentation
 
-This document contains the W&B field naming conventions, paper-to-WandB mappings, and complete per-metric field paths for SUPREME. Field names are defined in [metrics_main.py](../src/eval_metrics/metrics_main.py).
+This document contains the W&B field naming conventions, paper-to-WandB mappings, and complete per-metric field paths for SUPREME. Field names are defined in [metrics_main.py](../supreme/eval_metrics/metrics_main.py).
 
 ## Evaluation Resource Tracking Flag
 
-By default, SUPREME tracks resource consumption (time/memory/power) for **unlearning methods** but **NOT** for evaluation metrics computation. This is controlled by the `track_evaluation_resources` flag in [run_local.sh](../src/run_local.sh):
+By default, SUPREME tracks resource consumption (time/memory/power) for **unlearning methods** but **NOT** for evaluation metrics computation. This is controlled by the `track_evaluation_resources` flag in [run_local.sh](../supreme/run_local.sh):
 
 ```bash
 track_evaluation_resources=false  # Default: disabled
@@ -82,7 +82,7 @@ Resource metrics are embedded in all evaluation metrics under the `unlearning_me
 |--------------|------------------------|---------|-------------|
 | CPU Memory Usage | `<metric>.*.unlearning_method.memory_usage.cpu_*` | Min → 0 | CPU RSS memory during unlearning (GB) |
 | GPU Memory Usage | `<metric>.*.unlearning_method.memory_usage.gpu_*` | Min → 0 | GPU VRAM during unlearning (GB) |
-| SM Utilisation | `<metric>.*.unlearning_method.power_consumption.*` | Min → 0 | GPU compute utilization (%) |
+| SM Utilisation | `<metric>.*.unlearning_method.compute_utilisation.*` | Min → 0 | GPU compute utilization (%) |
 
 > `*` = `.test` for data-based metrics, nothing for parameter-based metrics.
 
@@ -110,14 +110,14 @@ accuracy.test.unlearning_method.forget_acc         # Accuracy on forget test set
 ```
 accuracy.test.unlearning_method.core_time_elapsed  # Time to perform unlearning (seconds)
 accuracy.test.unlearning_method.memory_usage       # Peak memory during unlearning (GB)
-accuracy.test.unlearning_method.power_consumption  # GPU compute utilization during unlearning (%)
+accuracy.test.unlearning_method.compute_utilisation  # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields (resources used FOR computing accuracy):**
 ```
 accuracy.test.eval_metric.core_time_elapsed        # Time to evaluate accuracy (seconds)
 accuracy.test.eval_metric.memory_usage             # Peak memory for evaluation (GB)
-accuracy.test.eval_metric.power_consumption        # GPU utilization for evaluation (%)
+accuracy.test.eval_metric.compute_utilisation        # GPU utilization for evaluation (%)
 ```
 
 ## 2. Loss (`loss`)
@@ -136,14 +136,14 @@ loss.test.unlearning_method.forget_loss            # CE loss on forget set (shou
 ```
 loss.test.unlearning_method.core_time_elapsed      # Time to perform unlearning (seconds)
 loss.test.unlearning_method.memory_usage           # Peak memory during unlearning (GB)
-loss.test.unlearning_method.power_consumption      # GPU compute utilization during unlearning (%)
+loss.test.unlearning_method.compute_utilisation      # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields:**
 ```
 loss.test.eval_metric.core_time_elapsed            # Time to evaluate loss (seconds)
 loss.test.eval_metric.memory_usage                 # Peak memory for evaluation (GB)
-loss.test.eval_metric.power_consumption            # GPU utilization for evaluation (%)
+loss.test.eval_metric.compute_utilisation            # GPU utilization for evaluation (%)
 ```
 
 ## 3. ZRF (Zero Retrain Forgetting) (`zrf`)
@@ -161,17 +161,17 @@ zrf.test.unlearning_method.final_zrf               # ZRF of Mu vs random teacher
 ```
 zrf.test.unlearning_method.core_time_elapsed       # Time to perform unlearning (seconds)
 zrf.test.unlearning_method.memory_usage            # Peak memory during unlearning (GB)
-zrf.test.unlearning_method.power_consumption       # GPU compute utilization during unlearning (%)
+zrf.test.unlearning_method.compute_utilisation       # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields (nested for each ZRF computation):**
 ```
 zrf.test.eval_metric.initial_zrf.core_time_elapsed # Time to compute initial ZRF (seconds)
 zrf.test.eval_metric.initial_zrf.memory_usage      # Memory for initial ZRF computation (GB)
-zrf.test.eval_metric.initial_zrf.power_consumption # GPU utilization for initial ZRF (%)
+zrf.test.eval_metric.initial_zrf.compute_utilisation # GPU utilization for initial ZRF (%)
 zrf.test.eval_metric.final_zrf.core_time_elapsed   # Time to compute final ZRF (seconds)
 zrf.test.eval_metric.final_zrf.memory_usage        # Memory for final ZRF computation (GB)
-zrf.test.eval_metric.final_zrf.power_consumption   # GPU utilization for final ZRF (%)
+zrf.test.eval_metric.final_zrf.compute_utilisation   # GPU utilization for final ZRF (%)
 ```
 
 ## 4. JS-Divergence (`jsdiv`)
@@ -190,20 +190,20 @@ jsdiv.test.unlearning_method.jsdiv_forget          # JS divergence on forget tes
 ```
 jsdiv.test.unlearning_method.core_time_elapsed     # Time to perform unlearning (seconds)
 jsdiv.test.unlearning_method.memory_usage          # Peak memory during unlearning (GB)
-jsdiv.test.unlearning_method.power_consumption     # GPU compute utilization during unlearning (%)
+jsdiv.test.unlearning_method.compute_utilisation     # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields (nested per subset):**
 ```
 jsdiv.test.eval_metric.jsdiv_whole.core_time_elapsed   # Time for whole-set JS divergence (seconds)
 jsdiv.test.eval_metric.jsdiv_whole.memory_usage        # Memory for whole-set JS divergence (GB)
-jsdiv.test.eval_metric.jsdiv_whole.power_consumption   # GPU utilization for whole-set JS divergence (%)
+jsdiv.test.eval_metric.jsdiv_whole.compute_utilisation   # GPU utilization for whole-set JS divergence (%)
 jsdiv.test.eval_metric.jsdiv_retain.core_time_elapsed  # Time for retain-set JS divergence (seconds)
 jsdiv.test.eval_metric.jsdiv_retain.memory_usage       # Memory for retain-set JS divergence (GB)
-jsdiv.test.eval_metric.jsdiv_retain.power_consumption  # GPU utilization for retain-set JS divergence (%)
+jsdiv.test.eval_metric.jsdiv_retain.compute_utilisation  # GPU utilization for retain-set JS divergence (%)
 jsdiv.test.eval_metric.jsdiv_forget.core_time_elapsed  # Time for forget-set JS divergence (seconds)
 jsdiv.test.eval_metric.jsdiv_forget.memory_usage       # Memory for forget-set JS divergence (GB)
-jsdiv.test.eval_metric.jsdiv_forget.power_consumption  # GPU utilization for forget-set JS divergence (%)
+jsdiv.test.eval_metric.jsdiv_forget.compute_utilisation  # GPU utilization for forget-set JS divergence (%)
 ```
 
 ## 5. Membership Inference Attack (`membership_inference_attack`)
@@ -220,14 +220,14 @@ membership_inference_attack.test.unlearning_method.mia                # Attack s
 ```
 membership_inference_attack.test.unlearning_method.core_time_elapsed  # Time to perform unlearning (seconds)
 membership_inference_attack.test.unlearning_method.memory_usage       # Peak memory during unlearning (GB)
-membership_inference_attack.test.unlearning_method.power_consumption  # GPU compute utilization during unlearning (%)
+membership_inference_attack.test.unlearning_method.compute_utilisation  # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields:**
 ```
 membership_inference_attack.test.eval_metric.core_time_elapsed        # Time to perform MIA (seconds)
 membership_inference_attack.test.eval_metric.memory_usage             # Memory for MIA computation (GB)
-membership_inference_attack.test.eval_metric.power_consumption        # GPU utilization for MIA (%)
+membership_inference_attack.test.eval_metric.compute_utilisation        # GPU utilization for MIA (%)
 ```
 
 ## 6. Activation Distance (`activation_distance`)
@@ -246,20 +246,20 @@ activation_distance.test.unlearning_method.activation_distance_forget    # L2 di
 ```
 activation_distance.test.unlearning_method.core_time_elapsed             # Time to perform unlearning (seconds)
 activation_distance.test.unlearning_method.memory_usage                  # Peak memory during unlearning (GB)
-activation_distance.test.unlearning_method.power_consumption             # GPU compute utilization during unlearning (%)
+activation_distance.test.unlearning_method.compute_utilisation             # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields (nested per subset):**
 ```
 activation_distance.test.eval_metric.activation_distance_whole.core_time_elapsed   # Time for whole-set computation (seconds)
 activation_distance.test.eval_metric.activation_distance_whole.memory_usage        # Memory for whole-set computation (GB)
-activation_distance.test.eval_metric.activation_distance_whole.power_consumption   # GPU utilization for whole-set computation (%)
+activation_distance.test.eval_metric.activation_distance_whole.compute_utilisation   # GPU utilization for whole-set computation (%)
 activation_distance.test.eval_metric.activation_distance_retain.core_time_elapsed  # Time for retain-set computation (seconds)
 activation_distance.test.eval_metric.activation_distance_retain.memory_usage       # Memory for retain-set computation (GB)
-activation_distance.test.eval_metric.activation_distance_retain.power_consumption  # GPU utilization for retain-set computation (%)
+activation_distance.test.eval_metric.activation_distance_retain.compute_utilisation  # GPU utilization for retain-set computation (%)
 activation_distance.test.eval_metric.activation_distance_forget.core_time_elapsed  # Time for forget-set computation (seconds)
 activation_distance.test.eval_metric.activation_distance_forget.memory_usage       # Memory for forget-set computation (GB)
-activation_distance.test.eval_metric.activation_distance_forget.power_consumption  # GPU utilization for forget-set computation (%)
+activation_distance.test.eval_metric.activation_distance_forget.compute_utilisation  # GPU utilization for forget-set computation (%)
 ```
 
 ## 7. Layerwise Distance (`layerwise_distance`)
@@ -276,14 +276,14 @@ layerwise_distance.unlearning_method.layerwise_distance       # Weight distance 
 ```
 layerwise_distance.unlearning_method.core_time_elapsed        # Time to perform unlearning (seconds)
 layerwise_distance.unlearning_method.memory_usage             # Peak memory during unlearning (GB)
-layerwise_distance.unlearning_method.power_consumption        # GPU compute utilization during unlearning (%)
+layerwise_distance.unlearning_method.compute_utilisation        # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields:**
 ```
 layerwise_distance.eval_metric.core_time_elapsed              # Time to compute weight distance (seconds)
 layerwise_distance.eval_metric.memory_usage                   # Memory for distance computation (GB)
-layerwise_distance.eval_metric.power_consumption              # GPU utilization for computation (%)
+layerwise_distance.eval_metric.compute_utilisation              # GPU utilization for computation (%)
 ```
 
 ## 8. Completeness (`completeness`)
@@ -302,20 +302,20 @@ completeness.test.unlearning_method.completeness_forget       # Agreement on for
 ```
 completeness.test.unlearning_method.core_time_elapsed         # Time to perform unlearning (seconds)
 completeness.test.unlearning_method.memory_usage              # Peak memory during unlearning (GB)
-completeness.test.unlearning_method.power_consumption         # GPU compute utilization during unlearning (%)
+completeness.test.unlearning_method.compute_utilisation         # GPU compute utilization during unlearning (%)
 ```
 
 **Evaluation resource fields (nested for each subset):**
 ```
 completeness.test.eval_metric.completeness_whole.core_time_elapsed   # Time for whole set evaluation (seconds)
 completeness.test.eval_metric.completeness_whole.memory_usage        # Memory for whole set (GB)
-completeness.test.eval_metric.completeness_whole.power_consumption   # GPU utilization for whole set (%)
+completeness.test.eval_metric.completeness_whole.compute_utilisation   # GPU utilization for whole set (%)
 completeness.test.eval_metric.completeness_retain.core_time_elapsed  # Time for retain set evaluation (seconds)
 completeness.test.eval_metric.completeness_retain.memory_usage       # Memory for retain set (GB)
-completeness.test.eval_metric.completeness_retain.power_consumption  # GPU utilization for retain set (%)
+completeness.test.eval_metric.completeness_retain.compute_utilisation  # GPU utilization for retain set (%)
 completeness.test.eval_metric.completeness_forget.core_time_elapsed  # Time for forget set evaluation (seconds)
 completeness.test.eval_metric.completeness_forget.memory_usage       # Memory for forget set (GB)
-completeness.test.eval_metric.completeness_forget.power_consumption  # GPU utilization for forget set (%)
+completeness.test.eval_metric.completeness_forget.compute_utilisation  # GPU utilization for forget set (%)
 ```
 
 ## 9. Time (`time`)
@@ -333,7 +333,7 @@ time.unlearning_method.gpu_ids                          # GPUs used during unlea
 **Unlearning resource fields:**
 ```
 time.unlearning_method.memory_usage                     # Peak memory during unlearning (GB)
-time.unlearning_method.power_consumption                # GPU compute utilization during unlearning (%)
+time.unlearning_method.compute_utilisation                # GPU compute utilization during unlearning (%)
 ```
 **Note:** `core_time_elapsed` appears as both a metric value AND a resource field for time.
 
@@ -341,7 +341,7 @@ time.unlearning_method.power_consumption                # GPU compute utilizatio
 ```
 time.eval_metric.core_time_elapsed                      # Time to compute speedup metric (seconds)
 time.eval_metric.memory_usage                           # Memory for speedup computation (GB)
-time.eval_metric.power_consumption                      # GPU utilization for computation (%)
+time.eval_metric.compute_utilisation                      # GPU utilization for computation (%)
 ```
 
 ## 10. Resource Consumption (Implementation Note)
@@ -351,7 +351,7 @@ time.eval_metric.power_consumption                      # GPU utilization for co
 **In This Codebase:** Rather than implementing it as a separate metric, resource consumption is **embedded** into all 9 metrics above through these common fields:
 - `core_time_elapsed` - Execution time tracking (seconds)
 - `memory_usage` - CPU RSS + GPU VRAM tracking (GB)
-- `power_consumption` - GPU streaming multiprocessor utilization (%)
+- `compute_utilisation` - GPU streaming multiprocessor utilization (%)
 
 These fields appear in both:
 - `unlearning_method` category: Resources consumed **BY** the unlearning method itself

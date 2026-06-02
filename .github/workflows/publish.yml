@@ -1,0 +1,97 @@
+name: Publish to PyPI
+
+# Two ways to run:
+#   * Push a release tag like `v0.1.0`  -> publishes to production PyPI + cuts a
+#     GitHub Release.
+#   * Run manually from the Actions tab -> publishes to TestPyPI only (a dry-run
+#     to rehearse the OIDC pipeline before the real release).
+# Hyphenated tags (e.g. the `v0.1.0-paper` reference tag, or `v0.1.0-rc1`) are
+# intentionally skipped so they don't publish - see the `if:` guard on the build job.
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch: {} # manual run -> TestPyPI dry-run (never touches production)
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Skip pre-release / reference tags (anything with a hyphen). Final releases
+    # are plain semver: v0.1.0, v1.2.3, ... Manual runs always build, since
+    # github.ref_name is then a branch name (no hyphen).
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Build sdist + wheel and validate
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build                 # reads version from supreme.__version__ (torch-free)
+          python -m twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  # Manual dry-run: upload to TestPyPI so the full Trusted-Publishing (OIDC)
+  # pipeline can be rehearsed before a real release. workflow_dispatch only.
+  # skip-existing lets you re-run without failing once 0.1.0 already exists there.
+  testpypi-publish:
+    needs: build
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    # Matches the TestPyPI pending publisher (repo + publish.yml + environment pypi).
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
+
+  pypi-publish:
+    needs: build
+    # Production publish only on a real release tag push, never on a manual run.
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    # Trusted Publishing (OIDC) - no token stored in the repo. Configure a matching
+    # publisher on PyPI (see repo CI notes). The environment name must match there.
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        # To use an API token instead of Trusted Publishing, delete the
+        # `permissions`/`environment` above and uncomment:
+        # with:
+        #   password: ${{ secrets.PYPI_API_TOKEN }}
+
+  github-release:
+    needs: pypi-publish
+    if: ${{ github.event_name == 'push' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

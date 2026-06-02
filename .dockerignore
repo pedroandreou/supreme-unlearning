@@ -1,4 +1,5 @@
 # --- Virtual environments (local-only; not needed in the image) ---
+unlearning
 gpu_env
 .venv
 venv

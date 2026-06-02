@@ -44,13 +44,15 @@
 
 <p>
   <strong>📄 Publication</strong><br>
-  <a href="#"><img src="https://img.shields.io/badge/arXiv-TBA-lightgrey" alt="arXiv Preprint (TBA)"></a>
+  <a href="https://arxiv.org/abs/2606.00380"><img src="https://img.shields.io/badge/arXiv-2606.00380-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Preprint"></a>
   <a href="https://aiimlab.org/events/ECML_PKDD_2026_WIPE-OUT_2_Workshop_on_Machine_Unlearning_and_Privacy_Preservation.html"><img src="https://img.shields.io/badge/Under_Review-WIPE--OUT_2_(ECML--PKDD_2026)-yellow" alt="Under double-blind review at the WIPE-OUT 2 Workshop, ECML-PKDD 2026"></a>
   <a href="https://pedroandreou.github.io/supreme-unlearning-page/"><img src="https://img.shields.io/badge/Project_Page-Live-2ea44f?logo=githubpages&logoColor=white" alt="Project Page"></a>
 </p>
 
 <p>
   <strong>📦 Repository</strong><br>
+  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI" alt="PyPI"></a>
+  <a href="https://test.pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/badge/TestPyPI-supreme--unlearning-orange?logo=pypi&logoColor=white" alt="TestPyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
 </p>
 
@@ -70,7 +72,7 @@
 2. **Unlearn** the chosen subset using the selected unlearning method.
 3. **Evaluate** the unlearned model against a from-scratch *retrained* baseline (trained only on the data that was kept), using a configurable set of metrics that cover forgetting, utility, privacy, behavioural/parametric equivalence, and efficiency.
 
-It ships ready-to-use implementations of **5 datasets, 2 model architectures, 11 unlearning methods, and 10 evaluation metrics**, all selectable through command-line flags.
+It ships ready-to-use implementations of **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, and 10 evaluation metrics**, all selectable through command-line flags.
 
 **What makes SUPREME different:**
 
@@ -79,23 +81,23 @@ It ships ready-to-use implementations of **5 datasets, 2 model architectures, 11
 - **Registry-based extensibility.** Add a dataset, model, unlearning method, or metric by implementing a small interface and registering its module path, with no framework changes required (see [`docs/extending.md`](docs/extending.md)).
 - **Efficient.** When several experiments share the same training configuration, the model is trained once and reused across them, guarded by a file lock so parallel SLURM jobs and concurrent local runs stay consistent.
 
-For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`src/README.md`](src/README.md) and [`docs/notation.md`](docs/notation.md).
+For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`supreme/README.md`](supreme/README.md) and [`docs/notation.md`](docs/notation.md).
 
 ---
 
 ## 🗃️ Available Components
 
-Registry-based components are **user-extensible** - implement the relevant interface and register the module path (see [`docs/extending.md`](docs/extending.md)). The components provided via Lightning Fabric cover the supported hardware and execution configurations.
+Registry-based components are **user-extensible** - implement the relevant interface and register the module path, either in-tree or **from your own package** (runtime API or packaging entry points, no edits to SUPREME). See [`docs/extending.md`](docs/extending.md). The components provided via Lightning Fabric cover the supported hardware and execution configurations.
 
 ### Registry-based (user-extensible)
 
 | Component | Available implementations |
 |---|---|
-| **Datasets** | [CIFAR-10](src/datasets/datasets.py), [CIFAR-20](src/datasets/datasets.py), [CIFAR-100](src/datasets/datasets.py), [PinsFaceRecognition](src/datasets/datasets.py), [Caltech-101](src/datasets/datasets.py) |
-| **Models** | [ResNet18](src/models/ResNet18.py), [Vision Transformer (ViT)](src/models/ViT.py) |
-| **Baselines** | [Retrain](src/methods/baselines/retrain.py), [Original](src/methods/baselines/original.py) |
-| **Unlearning methods** | [Fine-Tuning (FT)](src/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/methods/unlearning_methods/random_labeling.py), [UNSIR](src/methods/unlearning_methods/unsir.py), [SSD](src/methods/unlearning_methods/ssd.py), [LFSSD](src/methods/unlearning_methods/lfssd.py), [ASSD](src/methods/unlearning_methods/assd.py), [SCRUB](src/methods/unlearning_methods/scrub.py), [JIT](src/methods/unlearning_methods/jit.py) |
-| **Evaluation metrics** | [Accuracy](src/eval_metrics/accuracy.py), [Loss/Error](src/utils/training/training_utils.py), [ZRF](src/eval_metrics/zrf.py), [Activation Distance](src/eval_metrics/activation_distance.py), [JS-Divergence](src/eval_metrics/jsdiv.py), [Layer-wise Distance](src/eval_metrics/layerwise_distance.py), [Membership Inference Attack](src/eval_metrics/membership_inference_attack.py), [Completeness](src/eval_metrics/completeness.py), [Resource Consumption](src/eval_metrics/resource_consumption.py), [Time](src/eval_metrics/time.py) |
+| **Datasets** | [CIFAR-10](supreme/datasets/datasets.py), [CIFAR-20](supreme/datasets/datasets.py), [CIFAR-100](supreme/datasets/datasets.py), [PinsFaceRecognition](supreme/datasets/datasets.py), [Caltech-101](supreme/datasets/datasets.py) |
+| **Models** | [ResNet18](supreme/models/ResNet18.py), [Vision Transformer (ViT)](supreme/models/ViT.py) |
+| **Baselines** | [Retrain](supreme/methods/baselines/retrain.py), [Original](supreme/methods/baselines/original.py) |
+| **Unlearning methods** | [Fine-Tuning (FT)](supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](supreme/methods/unlearning_methods/unsir.py), [SSD](supreme/methods/unlearning_methods/ssd.py), [LFSSD](supreme/methods/unlearning_methods/lfssd.py), [ASSD](supreme/methods/unlearning_methods/assd.py), [SCRUB](supreme/methods/unlearning_methods/scrub.py), [JIT](supreme/methods/unlearning_methods/jit.py) |
+| **Evaluation metrics** | [Accuracy](supreme/eval_metrics/accuracy.py), [Loss/Error](supreme/utils/training/training_utils.py), [ZRF](supreme/eval_metrics/zrf.py), [Activation Distance](supreme/eval_metrics/activation_distance.py), [JS-Divergence](supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](supreme/eval_metrics/membership_inference_attack.py), [Completeness](supreme/eval_metrics/completeness.py), [Resource Consumption](supreme/eval_metrics/resource_consumption.py), [Time](supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
 
 > Paper-evaluated subset: Retrain, FT, BadT, RL, UNSIR, SSD, LFSSD. The remaining methods (ASSD, SCRUB, JIT) are experimental implementations that aren't in the paper's evaluation but can be selected via `--methods`.
@@ -116,20 +118,21 @@ Registry-based components are **user-extensible** - implement the relevant inter
 ```bash
 # 1. Clone
 git clone https://github.com/pedroandreou/supreme-unlearning.git
-cd supreme
+cd supreme-unlearning
 
-# 2. Set up environment
-python3.9 -m venv gpu_env
-source gpu_env/bin/activate
-pip install -r requirements.cuda_12_1.txt   # NVIDIA GPU (Linux / WSL2). Apple Silicon: use requirements.mps.txt
-pip install -e .
+# 2. Set up environment - the Makefile is the single entry point: it creates the
+#    venv (named `unlearning` by default; override with VENV=<name>), installs the
+#    pinned deps + SUPREME (editable), and enables the git hook. (Prompts if it
+#    already exists; pass ON_EXISTING=reuse to skip.)
+make cuda                  # NVIDIA GPU (Linux / WSL2).  Apple Silicon / CPU: `make mps`
+source unlearning/bin/activate
 
 # 3. Configure W&B + HF tokens
 cp .env.example .env
-# edit .env with your WANDB_API_KEY and HF_TOKEN
+# edit .env with your WANDB_KEY, WANDB_USERNAME and HUGGING_FACE_HUB_TOKEN
 
 # 4. Smoke test - one seed, one method, one dataset
-bash src/run_local.sh \
+bash supreme/run_local.sh \
   --gpu 0 --models ViT --training-seeds 260 \
   --methods retrain,finetune,ssd \
   --strategies random_ --datasets Cifar10 \
@@ -148,10 +151,10 @@ The pipeline runs **train → unlearn → evaluate** automatically. Re-running i
 
 ```bash
 # All 10 seeds, all methods, all datasets - defaults
-bash src/run_local.sh --gpu 0
+bash supreme/run_local.sh --gpu 0
 
 # Filter the sweep
-bash src/run_local.sh \
+bash supreme/run_local.sh \
   --gpu 0,1 \
   --models ViT \
   --training-seeds 260,261,262 \
@@ -167,7 +170,7 @@ bash src/run_local.sh \
 | `--training-seeds` | Comma-separated training seeds (outer loop, `I`). | `260`–`269` |
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
 | `--evaluation-seeds` | Space-separated indices for `K` | `"0"` (matched) |
-| `--methods` | Unlearning methods to run | all 15 |
+| `--methods` | Unlearning methods to run | all 11 (2 baselines + 9 methods) |
 | `--strategies` | `fullclass`, `subclass`, `random_` | all |
 | `--datasets` | Datasets to use | all 5 |
 | `--forget-percs` | Forget % for `random_` strategy | `0.001`–`0.10` |
@@ -176,19 +179,19 @@ bash src/run_local.sh \
 
 ```bash
 # Preview the grid (no submission)
-./src/run_slurm.sh --dry-run
+./supreme/run_slurm.sh --dry-run
 
 # Submit all experiments, max 12 concurrent jobs
-./src/run_slurm.sh --max-concurrent 12
+./supreme/run_slurm.sh --max-concurrent 12
 
 # Subset
-./src/run_slurm.sh \
+./supreme/run_slurm.sh \
   --datasets Cifar10,Cifar20 \
   --models ViT \
   --training-seeds 260,261,262
 
 # Multi-GPU DDP per job
-./src/run_slurm.sh --gpus 4
+./supreme/run_slurm.sh --gpus 4
 ```
 
 Each submitted job runs one `(seed, dataset, model)` cell independently; cells run in parallel across the cluster. Distributed-strategy selection (DDP / FSDP / DeepSpeed) is documented in [`docs/implementation_notes.md → Distributed Strategies`](docs/implementation_notes.md#distributed-strategies).
@@ -197,11 +200,37 @@ Each submitted job runs one `(seed, dataset, model)` cell independently; cells r
 
 ## 🔁 Reproducing the paper
 
-Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](src/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md).
+Reproducing the paper's numbers is a two-step process: run the experiment grid on Pins Face Recognition (both architectures, both scenarios, all 10 seeds) and then render the three paper LaTeX tables from the W&B-logged results using [`supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb`](supreme/utils/wandb_utils/results_analysis/pins_paper_tables.ipynb). The exact command, the table-rendering workflow, and the troubleshooting notes are documented in [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md). For a runnable, step-by-step walkthrough (install → smoke test → full grid → tables → extending), see the notebook [`notebooks/reproduce_experiments.ipynb`](notebooks/reproduce_experiments.ipynb).
 
 ---
 
 ## ➕ Extending SUPREME
+
+SUPREME is pip-installable (`pip install supreme-unlearning`, imported as
+`supreme`) and reusable as a library.
+Register your own components from your own package - no edits to framework code:
+
+```python
+import supreme
+
+supreme.register_unlearning_method("mymethod", "my_pkg.mymethod")
+supreme.register_model("MyNet", "my_pkg.models:MyNet")
+supreme.register_dataset("MyDS", "my_pkg.data:MyDS",
+                         root="/data/myds", class_dict={"cat": 0, "dog": 1})
+
+supreme.run_unlearning(["-method", "mymethod", "-net", "MyNet",
+                        "-dataset", "MyDS", "-seed", "260"])
+```
+
+A runnable, end-to-end walkthrough from an external user's point of view -
+`pip install supreme-unlearning` then register your own method/metric/model/dataset - is in
+the notebook [`notebooks/custom_components.ipynb`](notebooks/custom_components.ipynb).
+
+Components can equivalently be advertised by an installed plugin package via
+packaging entry points (`supreme.models`, `supreme.unlearning_methods`,
+`supreme.metrics`, `supreme.plugins`). The public API (`supreme.register_*`,
+`supreme.run_training`, `supreme.run_unlearning`, `supreme.project_config`) is
+the supported surface; everything under `supreme.utils.*` is internal.
 
 Adding a dataset, model, method, or metric follows a consistent register-and-implement pattern. Walkthroughs and Fabric-integration rules live in [`docs/extending.md`](docs/extending.md):
 
@@ -214,12 +243,43 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome - bug reports, new components, and documentation alike.
+
+- **Found a bug or want a feature?** Open an issue - the
+  [bug-report and feature-request templates](.github/ISSUE_TEMPLATE) appear
+  automatically at
+  [New issue → choose a template](https://github.com/pedroandreou/supreme-unlearning/issues/new/choose).
+- **Adding a dataset, model, method, or metric?** Most components register from
+  your own package with no framework edits - see
+  [`docs/extending.md`](docs/extending.md). You can ship it as a `pip`-installable
+  plugin or upstream it via a pull request.
+- **Opening a pull request?** Run `make style` then `make quality` (the same
+  `ruff` lint + format checks CI runs), and follow the
+  [PR template](.github/PULL_REQUEST_TEMPLATE.md). Full workflow in the
+  [contributing guide](docs/contributing.md).
+- **Share your method and results** in [`community/`](community/README.md) and add
+  a row to the [leaderboard](community/leaderboard.md).
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lints, format-checks,
+and validates the package build on every push and PR. A version tag like `v0.1.0`
+triggers [`.github/workflows/publish.yml`](.github/workflows/publish.yml) to build
+and publish the release to PyPI (a manual run targets TestPyPI as a dry-run), and
+[`.github/workflows/docker.yml`](.github/workflows/docker.yml) builds the CUDA image
+to GHCR. Notable changes per release are tracked in [`CHANGELOG.md`](CHANGELOG.md).
+
+---
+
 ## 📚 Documentation
 
 | Document | Covers |
 |---|---|
+| [`docs/contributing.md`](docs/contributing.md) | How to report issues, add components, and open a pull request |
+| [`CHANGELOG.md`](CHANGELOG.md) | Notable changes per release (Keep a Changelog / SemVer) |
+| [`community/`](community/README.md) | Community-contributed methods, templates, and the results leaderboard |
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
-| [`src/README.md`](src/README.md) | Formal algorithm specification (matched and decoupled protocols) |
+| [`supreme/README.md`](supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |
 | [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md) | Single command for the paper's experiment grid plus the W&B-export-to-LaTeX-tables workflow |
 | [`docs/script_arguments.md`](docs/script_arguments.md) | Full argument reference for `train_main.py` and `unlearn_main.py` |
@@ -240,18 +300,29 @@ Adding a dataset, model, method, or metric follows a consistent register-and-imp
   title  = {SUPREME: Standardised Unlearning Platform for REproducible Method Evaluation},
   author = {Petros Andreou, Jamie Lanyon, Axel Finke, Georgina Cosma},
   year   = {2026},
-  howpublished = {}
+  eprint = {2606.00380},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.LG},
+  url    = {https://arxiv.org/abs/2606.00380}
 }
 ```
 
 This work was conducted at [Loughborough University](https://www.lboro.ac.uk/).
-
-<p>
-  <a href="https://www.lboro.ac.uk/"><img src="https://img.shields.io/badge/Loughborough_University-9B1B30?style=flat&logoColor=white" alt="Loughborough University"></a>
-</p>
 
 ---
 
 ## 📄 License
 
 Released under the [MIT License](LICENSE).
+
+---
+
+## ⭐ Star History
+
+<a href="https://star-history.com/#pedroandreou/supreme-unlearning&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
+  </picture>
+</a>

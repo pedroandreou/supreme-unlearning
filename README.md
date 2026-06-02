@@ -1,6 +1,6 @@
 <div align="center">
 
-<h3><strong>⚡ SUPREME - Standardised Unlearning Platform for REproducible Method Evaluation</strong></h3>
+<h3><strong>⚡ SUPREME - A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation</strong></h3>
 
 ![*SUPREME*](assets/SUPREME-wordmark.svg)
 
@@ -31,7 +31,7 @@
   <br>
   <em>Environment:</em>
   <a href="https://www.docker.com/"><img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker"></a>
-  <a href="#"><img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers"></a>
+  <a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/pedroandreou/supreme-unlearning"><img src="https://img.shields.io/static/v1?label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode" alt="Open in Dev Containers"></a>
   <br>
   <em>Debug & profile:</em>
   <a href="https://github.com/microsoft/debugpy"><img src="https://img.shields.io/badge/debugpy-007ACC?logo=visualstudiocode&logoColor=white" alt="debugpy"></a>
@@ -62,24 +62,22 @@
 
 ## 📖 Overview
 
-**SUPREME** is an open-source framework for evaluating *machine unlearning* methods on image classification tasks.
+**SUPREME** is an open-source framework for evaluating *machine unlearning* methods on image classification tasks at scale.
 
-**What is machine unlearning?** Given a model that was trained on some data, machine unlearning removes the influence of a chosen subset of that data (a class, a sub-class, or a random sample of examples) *without* retraining the model from scratch. Doing this well is hard: a good unlearned model should behave as if it had never seen the forgotten data, while still classifying everything else accurately. Many methods have been proposed, and they need a fair, repeatable way to be compared.
+Machine unlearning removes the influence of a chosen subset of training data (a class, a sub-class, or a random sample) from an already-trained model, *without* retraining from scratch. A good unlearned model should behave as if it had never seen the forgotten data while still classifying everything else accurately. Comparing the many proposed methods fairly demands a standardised, repeatable harness, and SUPREME is that harness.
 
-**What SUPREME does.** It runs the same three-stage pipeline end to end for any registered combination of dataset, model, unlearning method, and evaluation metric:
+**The gap it fills.** Existing image-classification unlearning frameworks - [MUBox](https://dl.acm.org/doi/10.1145/3734436.3734454), [DeepUnlearn](https://github.com/xcadet/deepunlearn), and [ERASURE](https://github.com/aiim-research/ERASURE) - run on a single device, which caps how many methods, scenarios, and seeds can be evaluated in reasonable time. SUPREME distributes the **entire** train → unlearn → evaluate pipeline across multiple GPUs and nodes, removing that bottleneck. It does for image-classification unlearning what [Open-Unlearning](https://github.com/locuslab/open-unlearning) did for LLM unlearning in the text domain: turn a single-device research problem into a scalable, reproducible benchmark. To our knowledge it is the first multi-GPU framework for the field.
 
-1. **Train** a baseline model on the full dataset.
-2. **Unlearn** the chosen subset using the selected unlearning method.
-3. **Evaluate** the unlearned model against a from-scratch *retrained* baseline (trained only on the data that was kept), using a configurable set of metrics that cover forgetting, utility, privacy, behavioural/parametric equivalence, and efficiency.
+**What it offers out of the box:**
 
-It ships **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, and 9 selectable evaluation metrics** (plus loss, reported automatically alongside accuracy), all selectable through command-line flags.
+- **A complete, automated pipeline.** Train a baseline on the full dataset, unlearn the chosen subset with the selected method, then evaluate the result against a from-scratch *retrained* reference, all from one command. Re-runs detect and skip work that is already done.
+- **A broad component library.** **5 datasets, 2 model architectures, 2 baselines, 9 unlearning methods, 9 evaluation metrics** (covering forgetting, utility, privacy, behavioural/parametric equivalence, and efficiency), and **3 unlearning scenarios** (full-class, subclass, random-sample), all selectable through command-line flags.
+- **Distributed, multi-precision execution.** Built on PyTorch and Lightning Fabric. DDP, FSDP, and DeepSpeed ZeRO 1/2/3 apply to *all three stages*, with mixed precision (fp16 / bf16, FP8, 4-/8-bit) and CUDA / Apple Silicon (MPS) / TPU / CPU back-ends. SLURM helpers fan experiments out across a cluster.
+- **Statistically honest evaluation.** A single random seed [misrepresents how an unlearning method really behaves](https://arxiv.org/abs/2510.26714), because randomness enters at three independent points: **training** (weight initialisation and data shuffling produce different base models), **unlearning** (the unlearning algorithm itself is stochastic), and **evaluation** (sampling and metric computation add their own noise). SUPREME varies the seed at each of these three stages separately, so you can see how much of the spread in a result comes from the base model, from the unlearning run, and from measurement, and report the full distribution rather than a single point estimate. The seed count at each stage is configurable per run.
+- **Extensibility without forking.** It is pip-installable (`pip install supreme-unlearning`) and registry-based: add a dataset, model, method, or metric from your own package by implementing a small interface and registering its module path, with no edits to framework code (see [`docs/extending.md`](docs/extending.md)).
+- **Efficient reuse.** Experiments that share a training configuration train the model once and reuse it, guarded by a file lock so parallel SLURM jobs and concurrent local runs stay consistent.
 
-**What makes SUPREME different:**
-
-- **Reproducible.** Recent work has shown that single-seed unlearning results can misrepresent a method's true behaviour. SUPREME runs the same experiment under multiple seeds, independently for the training, unlearning, and evaluation stages, so you measure distributions, not point estimates. The number of seeds at each stage is configurable per run.
-- **Multi-GPU and multi-precision.** Built on PyTorch and Lightning Fabric. Distribution (DDP, FSDP, DeepSpeed ZeRO 1/2/3) applies to *all three stages*, with mixed-precision (fp16 / bf16) and NVIDIA / Apple Silicon / CPU back-ends.
-- **Registry-based extensibility.** Add a dataset, model, unlearning method, or metric by implementing a small interface and registering its module path, with no framework changes required (see [`docs/extending.md`](docs/extending.md)).
-- **Efficient.** When several experiments share the same training configuration, the model is trained once and reused across them, guarded by a file lock so parallel SLURM jobs and concurrent local runs stay consistent.
+SUPREME evolved from the codebases of [Selective Synaptic Dampening (SSD)](https://github.com/if-loops/selective-synaptic-dampening) and [bad-teaching unlearning](https://github.com/vikram2000b/bad-teaching-unlearning), generalising them from single-method, single-device scripts into a standardised, distributed evaluation platform.
 
 For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`supreme/README.md`](supreme/README.md) and [`docs/notation.md`](docs/notation.md).
 
@@ -263,9 +261,10 @@ Contributions are welcome - bug reports, new components, and documentation alike
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) lints, format-checks,
 and validates the package build on every push and PR. A version tag like `v0.1.0`
 triggers [`.github/workflows/publish.yml`](.github/workflows/publish.yml) to build
-and publish the release to PyPI (a manual run targets TestPyPI as a dry-run), and
-[`.github/workflows/docker.yml`](.github/workflows/docker.yml) builds the CUDA image
-to GHCR. Notable changes per release are tracked in [`CHANGELOG.md`](CHANGELOG.md).
+and publish the release to PyPI (a manual run targets TestPyPI as a dry-run). The
+CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](.github/workflows/docker.yml)
+(runtime image) and [`.github/workflows/devcontainer.yml`](.github/workflows/devcontainer.yml)
+(prebuilt dev container). Notable changes per release are tracked in [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -295,7 +294,7 @@ to GHCR. Notable changes per release are tracked in [`CHANGELOG.md`](CHANGELOG.m
 
 ```bibtex
 @misc{supreme2026,
-  title  = {SUPREME: Standardised Unlearning Platform for REproducible Method Evaluation},
+  title  = {SUPREME: A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation},
   author = {Petros Andreou, Jamie Lanyon, Axel Finke, Georgina Cosma},
   year   = {2026},
   eprint = {2606.00380},

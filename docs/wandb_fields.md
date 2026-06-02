@@ -1,10 +1,10 @@
 # W&B Metrics Field Documentation
 
-This document contains the W&B field naming conventions, paper-to-WandB mappings, and complete per-metric field paths for SUPREME. Field names are defined in [metrics_main.py](../supreme/eval_metrics/metrics_main.py).
+This document contains the W&B field naming conventions, paper-to-WandB mappings, and complete per-metric field paths for SUPREME. Field names are defined in [metrics_main.py](../src/supreme/eval_metrics/metrics_main.py).
 
 ## Evaluation Resource Tracking Flag
 
-By default, SUPREME tracks resource consumption (time/memory/power) for **unlearning methods** but **NOT** for evaluation metrics computation. This is controlled by the `track_evaluation_resources` flag in [run_local.sh](../supreme/run_local.sh):
+By default, SUPREME tracks resource consumption (time/memory/power) for **unlearning methods** but **NOT** for evaluation metrics computation. This is controlled by the `track_evaluation_resources` flag in [run_local.sh](../src/supreme/run_local.sh):
 
 ```bash
 track_evaluation_resources=false  # Default: disabled

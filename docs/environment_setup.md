@@ -4,7 +4,7 @@ Two supported flows: a **virtual environment** (recommended for stable multi-day
 
 ## Prerequisites
 
-- Python 3.9 (if `python3.9` isn't on your PATH, a version manager such as [pyenv](https://github.com/pyenv/pyenv) works — see §3a)
+- Python 3.9 (if `python3.9` isn't on your PATH, a version manager such as [pyenv](https://github.com/pyenv/pyenv) works - see §3a)
 - One of: NVIDIA GPU with CUDA 12.1, Apple Silicon (MPS), or CPU
 - Hugging Face Hub token (required for automatic ViT model downloads)
 - Weights & Biases account + API key (evaluation results are logged exclusively to W&B)
@@ -16,7 +16,7 @@ Two supported flows: a **virtual environment** (recommended for stable multi-day
 | **Virtual environment** (§3a) | ✅ `requirements.cuda_12_1.txt` | ✅ `requirements.cuda_12_1.txt` | ✅ `requirements.mps.txt` | CPU only (slow) |
 | **Docker Dev Container** (§3b) | ✅ | ✅ via WSL2 + NVIDIA Container Toolkit | ❌ | ❌ |
 
-The Docker image is built on a CUDA 12.1 base and the compose file requires `runtime: nvidia` — it will not start without an NVIDIA GPU visible to Docker. **Apple Silicon and any non-NVIDIA host must use the virtual environment path (§3a)**; Docker Desktop on macOS cannot expose the M-series GPU to containers.
+The Docker image is built on a CUDA 12.1 base and the compose file requires `runtime: nvidia` - it will not start without an NVIDIA GPU visible to Docker. **Apple Silicon and any non-NVIDIA host must use the virtual environment path (§3a)**; Docker Desktop on macOS cannot expose the M-series GPU to containers.
 
 ## 1. Clone the repository
 
@@ -85,8 +85,8 @@ Run `make help` to list every target - e.g. `make quality` / `make style`
 file uses the standard PyPI PyTorch build, which includes MPS support natively;
 `bitsandbytes` and `nvidia-ml-py` are omitted as they are CUDA-only.
 
-SUPREME is also a regular pip package — published on PyPI as `supreme-unlearning`
-and imported as `supreme` — so to reuse it from another project you can install
+SUPREME is also a regular pip package - published on PyPI as `supreme-unlearning`
+and imported as `supreme` - so to reuse it from another project you can install
 it directly (optionally with the CUDA extra for the DeepSpeed ZeRO strategy,
 bitsandbytes precision, and NVIDIA telemetry):
 
@@ -119,12 +119,12 @@ If the prompt has disappeared, use `View → Command Palette → Developer: Relo
 
 ## 4. macOS-only: install bash 4+
 
-`supreme/run_local.sh` uses bash 4 features (`mapfile`, etc.). macOS ships with bash 3.2.
+`src/supreme/run_local.sh` uses bash 4 features (`mapfile`, etc.). macOS ships with bash 3.2.
 
 ```bash
 brew install bash
 # Then run experiments with:
-/opt/homebrew/bin/bash supreme/run_local.sh --gpu 0 ...
+/opt/homebrew/bin/bash src/supreme/run_local.sh --gpu 0 ...
 ```
 
 ## Verifying the install

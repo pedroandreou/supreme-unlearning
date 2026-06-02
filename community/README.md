@@ -28,7 +28,7 @@ SUPREME is registry-based and pip-installable, so you can share a component
    Then add a folder here (and a leaderboard row) so people can find it and
    reproduce your numbers.
 
-2. **Upstream it in-tree** via a pull request into `supreme/`, with a folder here
+2. **Upstream it in-tree** via a pull request into `src/supreme/`, with a folder here
    documenting it.
 
 Either way, copy [`methods/template/`](methods/template/) and fill it in. See the

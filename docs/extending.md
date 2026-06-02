@@ -12,8 +12,8 @@ There are **two ways to register**, both requiring no edits to SUPREME's code:
 - **Option A - From your own package (recommended for reuse).** Register from
   outside the installed `supreme` package, via the runtime API or packaging
   entry points. Covered in [Registering from outside the package](#registering-from-outside-the-package).
-- **Option B - In-tree.** Add files under `supreme/` and list the name in
-  [`supreme/utils/project_config.py`](../supreme/utils/project_config.py). Useful
+- **Option B - In-tree.** Add files under `src/supreme/` and list the name in
+  [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py). Useful
   when you are vendoring/forking the framework. Covered in the per-component
   walkthroughs below.
 
@@ -110,7 +110,7 @@ def setup():
 ```
 
 > **Externally registered metrics.** Built-in metrics are dispatched by
-> `supreme/eval_metrics/metrics_main.py`. Any requested metric name that is not
+> `src/supreme/eval_metrics/metrics_main.py`. Any requested metric name that is not
 > built in is resolved through the registry and invoked automatically, so your
 > metric runs with no edits to that file. Decorate it with
 > `@track_evaluation_metric` (as the built-ins do) so it returns the standard
@@ -138,7 +138,7 @@ are documented in full below.
 
 ### 1. Register the dataset name
 
-In [`supreme/utils/project_config.py`](../supreme/utils/project_config.py):
+In [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py):
 
 ```python
 dataset_names = [
@@ -153,18 +153,18 @@ dataset_names = [
 
 ### 2. Place dataset files and register the directory
 
-Put your files under `supreme/datasets/data/your_dataset_directory/`, then map the dataset name to the directory in [`supreme/utils/generic_utils.py`](../supreme/utils/generic_utils.py):
+Put your files under `src/supreme/datasets/data/your_dataset_directory/`, then map the dataset name to the directory in [`src/supreme/utils/generic_utils.py`](../src/supreme/utils/generic_utils.py):
 
 ```python
 def get_root_directory(dataset_name):
     if dataset_name == "YourNewDataset":
-        return "supreme/datasets/data/your_dataset_directory/"
+        return "src/supreme/datasets/data/your_dataset_directory/"
     # ... existing mappings
 ```
 
 ### 3. Define the class dictionary
 
-In [`supreme/utils/project_config.py`](../supreme/utils/project_config.py), add a dict mapping class names to integer labels (search for `cifar20_dict` for the pattern):
+In [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py), add a dict mapping class names to integer labels (search for `cifar20_dict` for the pattern):
 
 ```python
 your_new_dataset_dict = {
@@ -188,13 +188,13 @@ dataset_to_dict = {
 
 ### 4. Compute and add normalisation constants
 
-Each dataset needs its own per-channel mean/std. Add your dataset to [`supreme/utils/compute_dataset_stats.py`](../supreme/utils/compute_dataset_stats.py), then run:
+Each dataset needs its own per-channel mean/std. Add your dataset to [`src/supreme/utils/compute_dataset_stats.py`](../src/supreme/utils/compute_dataset_stats.py), then run:
 
 ```bash
-python supreme/utils/compute_dataset_stats.py
+python src/supreme/utils/compute_dataset_stats.py
 ```
 
-Add the computed values at the top of [`supreme/datasets/datasets.py`](../supreme/datasets/datasets.py):
+Add the computed values at the top of [`src/supreme/datasets/datasets.py`](../src/supreme/datasets/datasets.py):
 
 ```python
 YOUR_DATASET_MEAN = (...)
@@ -207,7 +207,7 @@ Use them in the `Normalize` transform inside your dataset class. **Do not reuse 
 
 ### 5. Implement the dataset class
 
-In [`supreme/datasets/datasets.py`](../supreme/datasets/datasets.py):
+In [`src/supreme/datasets/datasets.py`](../src/supreme/datasets/datasets.py):
 
 ```python
 class YourNewDataset(SomeTorchvisionDataset):   # e.g. ImageFolder, CIFAR10, ...
@@ -220,7 +220,7 @@ class YourNewDataset(SomeTorchvisionDataset):   # e.g. ImageFolder, CIFAR10, ...
         return x, torch.Tensor([]), y   # 3-tuple: (x, placeholder, y)
 ```
 
-Reference: see the `PinsFaceRecognition` class in [`supreme/datasets/datasets.py`](../supreme/datasets/datasets.py) for a complete example. For dataset-specific setup (e.g. manual downloads), see [`docs/adding_pinsfacerecognition.md`](adding_pinsfacerecognition.md).
+Reference: see the `PinsFaceRecognition` class in [`src/supreme/datasets/datasets.py`](../src/supreme/datasets/datasets.py) for a complete example. For dataset-specific setup (e.g. manual downloads), see [`docs/adding_pinsfacerecognition.md`](adding_pinsfacerecognition.md).
 
 ---
 
@@ -228,7 +228,7 @@ Reference: see the `PinsFaceRecognition` class in [`supreme/datasets/datasets.py
 
 ### 1. Register the model name
 
-In [`supreme/utils/project_config.py`](../supreme/utils/project_config.py):
+In [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py):
 
 ```python
 model_names = [
@@ -240,7 +240,7 @@ model_names = [
 
 ### 2. Create the model file
 
-`supreme/models/YourNewModel.py`:
+`src/supreme/models/YourNewModel.py`:
 
 ```python
 def YourNewModel(args):
@@ -250,7 +250,7 @@ def YourNewModel(args):
     return model
 ```
 
-References: [`ResNet18.py`](../supreme/models/ResNet18.py) (built from scratch) and [`ViT.py`](../supreme/models/ViT.py) (loaded from HuggingFace).
+References: [`ResNet18.py`](../src/supreme/models/ResNet18.py) (built from scratch) and [`ViT.py`](../src/supreme/models/ViT.py) (loaded from HuggingFace).
 
 ---
 
@@ -260,7 +260,7 @@ References: [`ResNet18.py`](../supreme/models/ResNet18.py) (built from scratch) 
 
 ### 1. Register the method name
 
-In [`supreme/utils/project_config.py`](../supreme/utils/project_config.py):
+In [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py):
 
 ```python
 unlearning_methods = [
@@ -275,7 +275,7 @@ The file name, the entry function name, and the registration name **must match**
 
 ### 2. Create the method file
 
-`supreme/methods/unlearning_methods/your_method.py`:
+`src/supreme/methods/unlearning_methods/your_method.py`:
 
 ```python
 def your_method(fabric, model, retain_train_dataloader, forget_train_dataloader,
@@ -331,13 +331,13 @@ teacher_raw.load_state_dict(state)
 teacher = setup_model_for_inference(fabric, teacher_raw, distributed_strategy_name)
 ```
 
-**Step 3 - set up DataLoaders.** Standard retain/forget train/test loaders are pre-configured by the framework (see [`supreme/utils/unlearning/unlearn_main.py`](../supreme/utils/unlearning/unlearn_main.py)). For custom loaders:
+**Step 3 - set up DataLoaders.** Standard retain/forget train/test loaders are pre-configured by the framework (see [`src/supreme/utils/unlearning/unlearn_main.py`](../src/supreme/utils/unlearning/unlearn_main.py)). For custom loaders:
 
 ```python
 loader1, loader2 = fabric.setup_dataloaders(loader1, loader2)
 ```
 
-Examples: [UNSIR's custom dataloader](../supreme/methods/unlearning_methods/unsir.py), [Bad Teacher's custom dataloader](../supreme/methods/unlearning_methods/bad_teacher.py).
+Examples: [UNSIR's custom dataloader](../src/supreme/methods/unlearning_methods/unsir.py), [Bad Teacher's custom dataloader](../src/supreme/methods/unlearning_methods/bad_teacher.py).
 
 **Step 4 - code cleanup.** Remove all manual device management - Fabric handles it:
 
@@ -381,13 +381,13 @@ random_indices = indices_tensor.cpu().tolist()
 The same applies to computed thresholds (e.g., `np.percentile`) that can vary between processes due to floating-point ordering. Compute on rank 0 and broadcast.
 
 Real examples in this codebase:
-- [UNSIR noise synchronisation](../supreme/methods/unlearning_methods/unsir.py)
-- [Bad Teacher subset sampling](../supreme/methods/unlearning_methods/bad_teacher.py)
-- [Random Labeling label assignment](../supreme/methods/unlearning_methods/random_labeling.py)
+- [UNSIR noise synchronisation](../src/supreme/methods/unlearning_methods/unsir.py)
+- [Bad Teacher subset sampling](../src/supreme/methods/unlearning_methods/bad_teacher.py)
+- [Random Labeling label assignment](../src/supreme/methods/unlearning_methods/random_labeling.py)
 
 ### 5. Wire up method-specific arguments
 
-In [`supreme/utils/unlearning/unlearn_main.py`](../supreme/utils/unlearning/unlearn_main.py), find the `elif method_name == "..."` block and add your method's custom kwargs:
+In [`src/supreme/utils/unlearning/unlearn_main.py`](../src/supreme/utils/unlearning/unlearn_main.py), find the `elif method_name == "..."` block and add your method's custom kwargs:
 
 ```python
 elif method_name == "your_method":
@@ -417,11 +417,11 @@ def your_method(
 
 Base arguments (`fabric`, `wandb_logging_flag`, `type_of_unlearning_strategy`, `model`, `model_name`, `num_gpus`) are passed to every method automatically.
 
-Example: see how [`bad_teacher`](../supreme/methods/unlearning_methods/bad_teacher.py) receives `unlearning_teacher`, `retain_train_dataloader`, and `forget_train_dataloader` on top of the base set.
+Example: see how [`bad_teacher`](../src/supreme/methods/unlearning_methods/bad_teacher.py) receives `unlearning_teacher`, `retain_train_dataloader`, and `forget_train_dataloader` on top of the base set.
 
 ### 6. Add the method to the execution list
 
-In [`supreme/run_local.sh`](../supreme/run_local.sh) and [`supreme/run_slurm.sh`](../supreme/run_slurm.sh), append your method to `DEFAULT_METHODS`:
+In [`src/supreme/run_local.sh`](../src/supreme/run_local.sh) and [`src/supreme/run_slurm.sh`](../src/supreme/run_slurm.sh), append your method to `DEFAULT_METHODS`:
 
 ```bash
 DEFAULT_METHODS="retrain,original,finetune,bad_teacher,random_labeling,unsir,ssd,lfssd,...,your_method"
@@ -431,8 +431,8 @@ DEFAULT_METHODS="retrain,original,finetune,bad_teacher,random_labeling,unsir,ssd
 
 Save time with pre-built loops:
 
-- `fit_one_learning_cycle` (in [`supreme/utils/training/training_utils.py`](../supreme/utils/training/training_utils.py)) - standard fine-tuning. Used by [`finetune.py`](../supreme/methods/unlearning_methods/finetune.py), [`retrain.py`](../supreme/methods/baselines/retrain.py).
-- `fit_one_unlearning_cycle` (in [`supreme/utils/unlearning/unlearning_utils.py`](../supreme/utils/unlearning/unlearning_utils.py)) - unlearning iterations. Used by [`random_labeling.py`](../supreme/methods/unlearning_methods/random_labeling.py), [`unsir.py`](../supreme/methods/unlearning_methods/unsir.py).
+- `fit_one_learning_cycle` (in [`src/supreme/utils/training/training_utils.py`](../src/supreme/utils/training/training_utils.py)) - standard fine-tuning. Used by [`finetune.py`](../src/supreme/methods/unlearning_methods/finetune.py), [`retrain.py`](../src/supreme/methods/baselines/retrain.py).
+- `fit_one_unlearning_cycle` (in [`src/supreme/utils/unlearning/unlearning_utils.py`](../src/supreme/utils/unlearning/unlearning_utils.py)) - unlearning iterations. Used by [`random_labeling.py`](../src/supreme/methods/unlearning_methods/random_labeling.py), [`unsir.py`](../src/supreme/methods/unlearning_methods/unsir.py).
 
 Reference: [Lightning Fabric - Converting PyTorch Code](https://lightning.ai/docs/fabric/stable/fundamentals/convert.html).
 
@@ -442,7 +442,7 @@ Reference: [Lightning Fabric - Converting PyTorch Code](https://lightning.ai/doc
 
 ### 1. Register the metric name
 
-In [`supreme/utils/project_config.py`](../supreme/utils/project_config.py):
+In [`src/supreme/utils/project_config.py`](../src/supreme/utils/project_config.py):
 
 ```python
 evaluation_metrics = [
@@ -463,7 +463,7 @@ metrics_requiring_retrain = {
 
 ### 2. Create the metric file
 
-`supreme/eval_metrics/your_metric.py`:
+`src/supreme/eval_metrics/your_metric.py`:
 
 ```python
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
@@ -482,7 +482,7 @@ def your_metric(fabric, num_gpus, model, retain_dataloader,
 
 ### 3. Import the metric
 
-In [`supreme/eval_metrics/metrics_main.py`](../supreme/eval_metrics/metrics_main.py):
+In [`src/supreme/eval_metrics/metrics_main.py`](../src/supreme/eval_metrics/metrics_main.py):
 
 ```python
 from supreme.eval_metrics.your_metric import your_metric
@@ -492,12 +492,12 @@ from supreme.eval_metrics.your_metric import your_metric
 
 Results must be aggregated across processes using `fabric.all_gather()`:
 
-- `.mean()` - average across processes (e.g., [accuracy.py](../supreme/eval_metrics/accuracy.py), [zrf.py](../supreme/eval_metrics/zrf.py))
+- `.mean()` - average across processes (e.g., [accuracy.py](../src/supreme/eval_metrics/accuracy.py), [zrf.py](../src/supreme/eval_metrics/zrf.py))
 - `.sum()` - sum across processes (e.g., total correct predictions)
 
 **Model copying.** If your metric modifies model state, copy the unwrapped module: `deepcopy(unlearned_model.module if hasattr(unlearned_model, "module") else unlearned_model)`. The `hasattr` check is needed because FSDP/DeepSpeed inference-only models are moved to device without `fabric.setup()` wrapping (to avoid parameter-sharding issues), so they don't have a `.module` attribute. DDP models always have `.module`.
 
 References:
-- Metric without retrained reference: [`accuracy.py`](../supreme/eval_metrics/accuracy.py)
-- Metric requiring retrained reference: [`activation_distance.py`](../supreme/eval_metrics/activation_distance.py)
-- Entry point: [`metrics_main.py`](../supreme/eval_metrics/metrics_main.py)
+- Metric without retrained reference: [`accuracy.py`](../src/supreme/eval_metrics/accuracy.py)
+- Metric requiring retrained reference: [`activation_distance.py`](../src/supreme/eval_metrics/activation_distance.py)
+- Entry point: [`metrics_main.py`](../src/supreme/eval_metrics/metrics_main.py)

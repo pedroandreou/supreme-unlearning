@@ -16,7 +16,7 @@ set -euo pipefail
 # See docs/script_arguments.md for the full flag reference.
 METHOD="your_method"
 
-bash supreme/run_local.sh \
+bash src/supreme/run_local.sh \
 	--gpu 0 \
 	--models ViT \
 	--methods "$METHOD" \

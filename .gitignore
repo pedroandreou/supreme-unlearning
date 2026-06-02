@@ -188,7 +188,7 @@ cython_debug/
 logs/
 
 # Datasets
-supreme/datasets/data/
+src/supreme/datasets/data/
 # .kaggle
 
 # Output files
@@ -198,13 +198,13 @@ supreme/datasets/data/
 **/unlearning.log
 
 # Output errors
-supreme/core.*
+src/supreme/core.*
 
 # For logging results
 wandb
 
 # Backfill logging utilities
-supreme/utils/wandb_utils/backfill_logging/
+src/supreme/utils/wandb_utils/backfill_logging/
 
 # Scalene Profiler
 profile.html
@@ -217,14 +217,14 @@ pure_pip.Dockerfile.cuda_11_1
 requirements.cuda_11_1.txt
 rules_for_ai.txt
 original_src/
-supreme/utils/wandb_utils/wandb_metrics_summary/*
-supreme/utils/wandb_utils/results_analysis/wandb_metrics_summary.zip
-supreme/utils/wandb_utils/combined_results/*
-supreme/utils/wandb_utils/metric_visualizations/*
-supreme/eval_metrics/not_requiring_retrained_model/epistemic_uncertainty.py
-supreme/eval_metrics/requiring_retrained_model/kl_divergence.py
-supreme/eval_metrics/requiring_retrained_model/direct_eval_metrics/l2_distance.py
-supreme/MAIN_unlearn_models_1.sh
+src/supreme/utils/wandb_utils/wandb_metrics_summary/*
+src/supreme/utils/wandb_utils/results_analysis/wandb_metrics_summary.zip
+src/supreme/utils/wandb_utils/combined_results/*
+src/supreme/utils/wandb_utils/metric_visualizations/*
+src/supreme/eval_metrics/not_requiring_retrained_model/epistemic_uncertainty.py
+src/supreme/eval_metrics/requiring_retrained_model/kl_divergence.py
+src/supreme/eval_metrics/requiring_retrained_model/direct_eval_metrics/l2_distance.py
+src/supreme/MAIN_unlearn_models_1.sh
 
 # Dockerfiles
 pip_uv.Dockerfile.cuda_12_1
@@ -240,8 +240,8 @@ appendix/
 current_progress.MD
 
 # time complexity analysis
-supreme/utils/time_complexity_analyzer.py
-supreme/utils/results/
+src/supreme/utils/time_complexity_analyzer.py
+src/supreme/utils/results/
 
 # Presentation files
 presentation/
@@ -249,8 +249,8 @@ presentation/
 # Model
 vit-base-patch16-224-local/
 *.tex
-supreme/utils/wandb_utils/results_analysis/*_results_table.md
-supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb
+src/supreme/utils/wandb_utils/results_analysis/*_results_table.md
+src/supreme/utils/wandb_utils/results_analysis/all_results_exploration.ipynb
 
 
 combined_results/
@@ -260,25 +260,25 @@ analysis_results/
 table_exports/
 charts/
 MAIN.sh.backup
-supreme/utils/wandb_utils/latex_generation/results/
+src/supreme/utils/wandb_utils/latex_generation/results/
 excel_to_latex.py.bak
-supreme/utils/wandb_utils/latex_generation/latex_table.tex.backup
+src/supreme/utils/wandb_utils/latex_generation/latex_table.tex.backup
 
 # Project-specific ignores
-supreme/test_gpu_binding.py
-supreme/utils/generate_supreme_diagram.py
+src/supreme/test_gpu_binding.py
+src/supreme/utils/generate_supreme_diagram.py
 generate_supreme_diagram.py
-supreme/utils/wandb_utils/latex_generation/helpers/table_to_image_compiler.py
-supreme/utils/wandb_utils/latex_generation/pipeline/
+src/supreme/utils/wandb_utils/latex_generation/helpers/table_to_image_compiler.py
+src/supreme/utils/wandb_utils/latex_generation/pipeline/
 
 generate_sbatch_commands.py
-supreme/debug_gpu_visibility.py
+src/supreme/debug_gpu_visibility.py
 SUPREME_Diagram.pdf
 SUPREME_Diagram_updated.pdf
 REVIEW.md
-supreme/utils/wandb_utils/latex_generation/figures/
-supreme/utils/wandb_utils/results_extraction/combined_results_*
-supreme/utils/wandb_utils/results_extraction/wandb_metrics_summary_*
+src/supreme/utils/wandb_utils/latex_generation/figures/
+src/supreme/utils/wandb_utils/results_extraction/combined_results_*
+src/supreme/utils/wandb_utils/results_extraction/wandb_metrics_summary_*
 scripts/
 generation_log.txt
 paper1/
@@ -289,7 +289,7 @@ inspect_pins_splits.py
 .retrain_rerun_state.json
 
 # Stefan comparison scripts with our results
-supreme/utils/wandb_utils/results_extraction/compare_stefan_results_*
-supreme/utils/wandb_utils/results_extraction/run_all_comparisons.py
+src/supreme/utils/wandb_utils/results_extraction/compare_stefan_results_*
+src/supreme/utils/wandb_utils/results_extraction/run_all_comparisons.py
 archive.zip
 slurm-*.out

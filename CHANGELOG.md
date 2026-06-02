@@ -5,6 +5,23 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-06-02
+
+### Added
+
+- CPU-only pytest suite covering the registry resolution contract, eval-metric
+  math, model forward shapes, and an import smoke test over every module, wired
+  into CI as a dedicated `tests` job alongside lint and build.
+- CI status badge in the README.
+
+### Changed
+
+- The `supreme` package now lives under `src/` (src-layout). The import name
+  (`import supreme`) and distribution name (`supreme-unlearning`) are unchanged
+  and the built wheel is identical; only the on-disk source location differs.
+- Committed notebooks now retain their outputs: removed the `nbstripout`
+  pre-commit hook added in 0.1.1.
+
 ## [0.1.1] - 2026-06-02
 
 Documentation, packaging, and developer-tooling release. No functional changes
@@ -36,7 +53,7 @@ to the `supreme` package.
 
 ## [0.1.0] - 2026-06-02
 
-First public release of **SUPREME** — a registry-based, multi-GPU framework for
+First public release of **SUPREME** - a registry-based, multi-GPU framework for
 reproducible image-unlearning evaluation.
 
 Install with `pip install supreme-unlearning` (import as `supreme`). Console
@@ -48,7 +65,7 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
   metadata, dependency pins (PyTorch + Lightning stack), extras (`[cuda]`,
   `[tensorboard]`, `[dev]`), dynamic version, console scripts and entry-point
   groups for plugins. `setup.py` reduced to a compatibility shim.
-- **Public API** (`supreme/__init__.py`, torch-free so registration needs no GPU
+- **Public API** (`src/supreme/__init__.py`, torch-free so registration needs no GPU
   stack): `register_model`, `register_baseline`, `register_unlearning_method`,
   `register_metric`, `register_dataset`, `run_training`, `run_unlearning`,
   `project_config`, `__version__`.
@@ -70,7 +87,7 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
 - **Renamed package `src` → `supreme`** (mechanical, behaviour-identical): all
   imports, registry module-path strings, bash launch paths, Docker paths and docs
   updated; external citation URLs preserved.
-- **Registry** extended additively — resolution order is runtime overrides →
+- **Registry** extended additively - resolution order is runtime overrides →
   entry points → built-in convention; built-in resolution is unchanged.
 - Renamed the resource metric `power_consumption` → `compute_utilisation` (the
   paper's term) across producer and consumers.

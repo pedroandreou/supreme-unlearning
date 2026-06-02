@@ -27,8 +27,8 @@ body:
     attributes:
       label: How are you running SUPREME?
       options:
-        - label: "Local runner (`supreme/run_local.sh`)"
-        - label: "SLURM runner (`supreme/run_slurm.sh`)"
+        - label: "Local runner (`src/supreme/run_local.sh`)"
+        - label: "SLURM runner (`src/supreme/run_slurm.sh`)"
         - label: "Library / Python API (`import supreme`)"
         - label: "My own modified scripts or custom-registered components"
 
@@ -54,7 +54,7 @@ body:
         3.
 
         ```bash
-        bash supreme/run_local.sh --gpu 0 --models ViT \
+        bash src/supreme/run_local.sh --gpu 0 --models ViT \
           --methods retrain,ssd --strategies random_ \
           --datasets Cifar10 --forget-percs 0.01
         ```

@@ -1,8 +1,11 @@
 name: CI
 
-# Lint + format check on every push to main and every PR. Runs `make quality`
-# directly (ruff pinned to match .pre-commit-config.yaml) so the target dirs live
-# only in the Makefile. Fast - no torch needed.
+# Three independent jobs on every push to main and every PR:
+#   * quality    - ruff lint + format check (fast, no torch). Runs `make quality`
+#                  directly (ruff pinned to match .pre-commit-config.yaml) so the
+#                  target dirs live only in the Makefile.
+#   * build-check - package builds and its metadata is valid.
+#   * tests      - the CPU-only pytest suite (editable install pulls torch).
 on:
   push:
     branches: [main]
@@ -41,3 +44,25 @@ jobs:
           python -m pip install --upgrade build twine
           python -m build
           python -m twine check dist/*
+
+  tests:
+    # Runs the CPU-only unit suite (tests/). The editable install pulls torch +
+    # the rest of the stack; pip is cached on pyproject.toml so only the first
+    # run pays the full download. No GPU, dataset, or Hugging Face fetch needed.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+          cache: "pip"
+          cache-dependency-path: "pyproject.toml"
+      # Install the dev extra so the import smoke test can load modules that pull
+      # in debugpy (the debugger integration), and so pytest is present. The dev
+      # extra is the documented full-dev install (see pyproject [dev]).
+      - name: Install package + dev tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: Run tests
+        run: pytest

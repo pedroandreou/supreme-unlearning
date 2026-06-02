@@ -2,7 +2,7 @@ services:
   cuda_12_1_from_scratch:
     # Pull the prebuilt dev container image (no `build:`, so "Reopen in Container"
     # pulls instead of building). Switch the extended service back to
-    # cuda_12_1_from_scratch to build locally from pure_pip.Dockerfile.cuda_12_1.
+    # cuda_12_1_from_scratch to build locally from docker/pure_pip.Dockerfile.cuda_12_1.
     extends:
       file: docker-compose.yml
       service: cuda_12_1_devcontainer
@@ -46,7 +46,7 @@ services:
       - vscode-server:/home/vscode/.vscode-server
       # Removed the .gitconfig mount since we handle git config in setup.sh
       # - ~/.gitconfig:/home/vscode/.gitconfig:cached
-      - ./.devcontainer:/home/vscode/.devcontainer:cached
+      - ../.devcontainer:/home/vscode/.devcontainer:cached
     # # Add an init command to fix permissions if needed
     # command: >
     #   bash -c "
@@ -68,7 +68,7 @@ services:
     #         - __pycache__/
     #         - "*.pyc"
     #     - action: rebuild
-    #       path: ./requirements.cuda_12_1.txt
+    #       path: ../requirements/requirements.cuda_12_1.txt
 
 volumes:
   vscode-server:

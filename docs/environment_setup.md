@@ -13,7 +13,7 @@ Two supported flows: a **virtual environment** (recommended for stable multi-day
 
 | Install path | Linux + NVIDIA | Windows + NVIDIA (WSL2) | Apple Silicon Mac (M1/M2/M3/M4) | Intel Mac / other |
 |---|---|---|---|---|
-| **Virtual environment** (§3a) | ✅ `requirements.cuda_12_1.txt` | ✅ `requirements.cuda_12_1.txt` | ✅ `requirements.mps.txt` | CPU only (slow) |
+| **Virtual environment** (§3a) | ✅ `requirements/requirements.cuda_12_1.txt` | ✅ `requirements/requirements.cuda_12_1.txt` | ✅ `requirements/requirements.mps.txt` | CPU only (slow) |
 | **Docker Dev Container** (§3b) | ✅ | ✅ via WSL2 + NVIDIA Container Toolkit | ❌ | ❌ |
 
 The Docker image is built on a CUDA 12.1 base and the compose file requires `runtime: nvidia` - it will not start without an NVIDIA GPU visible to Docker. **Apple Silicon and any non-NVIDIA host must use the virtual environment path (§3a)**; Docker Desktop on macOS cannot expose the M-series GPU to containers.
@@ -111,7 +111,7 @@ With VS Code and Docker installed and the [Dev Containers extension](https://mar
 
 By default this **pulls a prebuilt image** from the GitHub Container Registry (`ghcr.io/pedroandreou/supreme-unlearning-devcontainer`, published by [`.github/workflows/devcontainer.yml`](../.github/workflows/devcontainer.yml)), so the container is ready as fast as it downloads, with no local build. The `postCreateCommand` still runs on first open to finish provisioning.
 
-**Prefer to build locally instead?** In [`docker-compose.dev.yml`](../docker-compose.dev.yml) change the extended service from `cuda_12_1_devcontainer` back to `cuda_12_1_from_scratch`, then reopen. The first build takes several minutes; subsequent builds use Docker cache.
+**Prefer to build locally instead?** In [`docker/docker-compose.dev.yml`](../docker/docker-compose.dev.yml) change the extended service from `cuda_12_1_devcontainer` back to `cuda_12_1_from_scratch`, then reopen. The first build takes several minutes; subsequent builds use Docker cache.
 
 If the prompt has disappeared, use `View → Command Palette → Developer: Reload Window`, or `Dev Containers: Rebuild Without Cache and Reopen in Container`. You may need to rebuild if CUDA becomes unavailable after extended use.
 

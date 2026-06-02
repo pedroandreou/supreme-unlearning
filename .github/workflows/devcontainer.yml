@@ -38,7 +38,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # docker-compose.yml references `.env` (gitignored, absent on a fresh
+      # docker/docker-compose.yml references `.env` (gitignored, absent on a fresh
       # checkout); seed it so the Dev Containers CLI can parse the compose file.
       - name: Seed .env for compose parsing
         run: cp -n .env.example .env || true

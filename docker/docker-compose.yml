@@ -4,9 +4,9 @@ x-common-config: &common-config # anchor
   environment:
     - CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
   env_file:
-    - .env
+    - ../.env
   volumes:
-    - ./:/app/host:rw
+    - ../:/app/host:rw
     - vscode-server:/home/vscode/.vscode-server:rw
     - ${HOME}/.vscode-server/extensions:/home/vscode/.vscode-server/extensions:ro
   deploy:
@@ -33,9 +33,11 @@ services:
   cuda_12_1_from_scratch:
     container_name: framework_cuda_12_1_from_scratch
     build:
-      context: .
-      # dockerfile: pip_uv.Dockerfile.cuda_12_1
-      dockerfile: pure_pip.Dockerfile.cuda_12_1
+      # Build context is the repo root (one level up); the dockerfile path below
+      # is resolved relative to that context.
+      context: ..
+      # dockerfile: docker/pip_uv.Dockerfile.cuda_12_1
+      dockerfile: docker/pure_pip.Dockerfile.cuda_12_1
       args:
         BUILDKIT_INLINE_CACHE: 1
     image: framework-cuda-12-1:dev

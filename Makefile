@@ -7,7 +7,7 @@
 #
 # The automated environments deliberately do NOT call it (they install into the
 # system / container Python, not a venv) and instead mirror these same recipes:
-#   - Docker:  pure_pip.Dockerfile.cuda_12_1  (mirrors `cuda` + the editable install)
+#   - Docker:  docker/pure_pip.Dockerfile.cuda_12_1  (mirrors `cuda` + the editable install)
 #   - CI lint: .github/workflows/ci.yml       (calls `make quality RUFF=ruff`)
 #   - CI build/publish: ci.yml + publish.yml  (mirror the `build` recipe below)
 # When you change a recipe here, update its mirror.
@@ -61,11 +61,11 @@ help:  ## Show this help
 # --- Environment setup ----------------------------------------------------
 
 cuda: venv  ## Create/refresh the venv with CUDA 12.1 deps + editable package + git hook
-	$(PIP) install -r requirements.cuda_12_1.txt
+	$(PIP) install -r requirements/requirements.cuda_12_1.txt
 	@$(MAKE) --no-print-directory dev
 
 mps: venv  ## Create/refresh the venv with Apple-Silicon (MPS)/CPU deps + editable package + git hook
-	$(PIP) install -r requirements.mps.txt
+	$(PIP) install -r requirements/requirements.mps.txt
 	@$(MAKE) --no-print-directory dev
 
 venv:  ## Create the venv (prompts to reuse/recreate if it exists; ON_EXISTING skips the prompt)

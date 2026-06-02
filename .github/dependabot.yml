@@ -16,6 +16,15 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "deps"
+    # The PyTorch stack is version-locked: torch, torchvision, torchaudio and
+    # lightning must move together. Don't let Dependabot bump them in isolation
+    # (that breaks installs); upgrade the whole stack deliberately by hand.
+    ignore:
+      - dependency-name: "torch"
+      - dependency-name: "torchvision"
+      - dependency-name: "torchaudio"
+      - dependency-name: "lightning"
+      - dependency-name: "pytorch-lightning"
 
   # GitHub Actions used across .github/workflows/.
   - package-ecosystem: "github-actions"

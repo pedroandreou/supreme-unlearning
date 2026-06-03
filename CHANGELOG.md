@@ -5,6 +5,29 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-06-03
+
+### Fixed
+
+- `make cuda` and `pip install supreme-unlearning[cuda]` no longer fail on hosts
+  that have the NVIDIA driver but no CUDA toolkit. DeepSpeed was compiling CUDA ops
+  at install time and aborting with `CUDA_HOME does not exist`; it is now an opt-in
+  extra instead of a default CUDA dependency.
+
+### Changed
+
+- DeepSpeed split out of the `[cuda]` extra into its own `[deepspeed]` extra (the
+  `[cuda]` extra now installs only wheel-based packages and is safe on any NVIDIA
+  host). Opt in with `pip install supreme-unlearning[deepspeed]`, `make deepspeed`,
+  or `requirements/requirements.deepspeed.txt` once a CUDA toolkit (`nvcc`/
+  `CUDA_HOME`) is available. The CUDA-devel Docker image still ships DeepSpeed.
+
+### Added
+
+- `docs/environment_setup.md`: note that the NVIDIA Container Toolkit is a
+  host-daemon prerequisite for GPU-in-Docker (and that the native venv needs no
+  toolkit), plus a `torch.cuda` GPU self-check snippet.
+
 ## [0.1.2] - 2026-06-02
 
 ### Added

@@ -206,7 +206,7 @@ bash src/supreme/run_local.sh \
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `--gpu` | GPU ID(s) - `0` single, `0,1,2,3` multi-GPU | `0` |
+| `--gpu` | GPU ID(s) - `0` single, `0,1,2,3` multi-GPU (multi-GPU uses DDP by default; override with `DISTRIBUTED_STRATEGY=fsdp\|deepspeed`) | `0` |
 | `--models` | `ResNet18`, `ViT` | both |
 | `--training-seeds` | Comma-separated training seeds (outer loop, `I`). | `260`–`269` |
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
@@ -231,7 +231,8 @@ bash src/supreme/run_local.sh \
   --models ViT \
   --training-seeds 260,261,262
 
-# Multi-GPU DDP per job
+# 4 GPUs per job; multi-GPU jobs use DDP by default
+# (override with DISTRIBUTED_STRATEGY=fsdp|deepspeed)
 ./src/supreme/run_slurm.sh --gpus 4
 ```
 

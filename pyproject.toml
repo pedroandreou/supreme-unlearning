@@ -48,13 +48,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# NVIDIA CUDA-only extras (DeepSpeed ZeRO strategy, bitsandbytes precision,
-# NVIDIA power/utilisation telemetry). Not available on Apple Silicon.
+# NVIDIA CUDA-only extras: bitsandbytes precision + NVIDIA power/utilisation
+# telemetry. Both ship as wheels, so this installs cleanly on any NVIDIA host.
+# Not available on Apple Silicon.
 cuda = [
-    "deepspeed==0.14.5",
     "bitsandbytes==0.42.0",
     "nvidia-ml-py==13.580.82",
 ]
+# DeepSpeed ZeRO strategy. Kept as a separate extra because it compiles CUDA ops
+# at install time and needs a CUDA toolkit (nvcc/CUDA_HOME), not just the driver -
+# bundling it in `cuda` made `pip install ...[cuda]` fail on driver-only hosts.
+deepspeed = ["deepspeed==0.14.5"]
 tensorboard = ["tensorboard"]
 dev = ["pre-commit", "debugpy", "pytest"]
 

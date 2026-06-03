@@ -60,8 +60,12 @@ RUN pip3 install --upgrade pip setuptools wheel
 # Copy requirements first to leverage Docker cache.
 # This + the editable install below mirror `make cuda`/`make dev` for the container
 # (system Python, no venv). Keep in sync with the Makefile.
-COPY --chown=$USERNAME:$USERNAME requirements/requirements.cuda_12_1.txt /app/
+COPY --chown=$USERNAME:$USERNAME requirements/requirements.cuda_12_1.txt requirements/requirements.deepspeed.txt /app/
 RUN pip3 install -r requirements.cuda_12_1.txt
+# DeepSpeed is optional and excluded from requirements.cuda_12_1.txt (it builds CUDA
+# ops at install time and needs a toolkit). This base image is a CUDA 12.1 *devel*
+# image and ships nvcc, so install it here to keep the DeepSpeed strategy available.
+RUN pip3 install -r requirements.deepspeed.txt
 
 # Copy the entire project directory into the container
 COPY --chown=$USERNAME:$USERNAME . /app/host

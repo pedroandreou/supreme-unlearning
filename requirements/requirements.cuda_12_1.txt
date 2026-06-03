@@ -26,7 +26,10 @@ seaborn==0.13.2
 debugpy
 nvidia-ml-py==13.580.82
 psutil==7.2.2
-deepspeed==0.14.5  # Optional: for DeepSpeed distributed strategy. Must match PyTorch 2.1.0 (>=0.15 requires PyTorch 2.4+)
+# deepspeed: Optional, for the DeepSpeed distributed strategy. Pulled out of the
+# default install because it compiles CUDA ops at install time and aborts on hosts
+# that have the NVIDIA driver but no CUDA toolkit (no nvcc/CUDA_HOME). Opt in with
+# `make deepspeed` or: pip install -r requirements/requirements.deepspeed.txt
 # pynvml - removed: nvidia-ml-py is the newer replacement
 # --- Developer tooling (enabled by default via `make dev`; see Makefile + .pre-commit-config.yaml) ---
 pre-commit==4.0.1  # manages the git hook that runs ruff/shfmt on commit

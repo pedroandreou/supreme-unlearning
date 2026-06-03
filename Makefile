@@ -28,6 +28,10 @@
 #
 #   source unlearning/bin/activate      # or: source $(VENV)/bin/activate
 #
+# DeepSpeed is optional and NOT installed by `make cuda`: it compiles CUDA ops at
+# install time and fails on hosts with only the NVIDIA driver and no CUDA toolkit
+# (nvcc/CUDA_HOME). Opt in once a toolkit is present:  make deepspeed
+#
 # Non-interactive (notebooks / CI): pass ON_EXISTING=reuse or ON_EXISTING=recreate
 #   make mps ON_EXISTING=reuse
 #
@@ -35,7 +39,7 @@
 # to `python3.9`, falling back to the newest installed pyenv 3.9.x:
 #   make mps BASE_PYTHON=$HOME/.pyenv/versions/3.9.12/bin/python
 
-.PHONY: help cuda mps dev hooks build publish publish-test clean quality style \
+.PHONY: help cuda mps dev deepspeed hooks build publish publish-test clean quality style \
         test precommit venv _create_venv _ensure_venv
 
 # Virtual environment location (override with VENV=<name>) and the tools inside it.
@@ -109,6 +113,17 @@ dev:  ## Editable install + enable the pre-commit git hook (into the venv)
 	@echo ""
 	@echo "Setup complete. Activate the environment for interactive use:"
 	@echo "    source $(VENV)/bin/activate"
+
+deepspeed:  ## Optional: install DeepSpeed (needs a CUDA toolkit - nvcc/CUDA_HOME, not just the driver)
+	@command -v nvcc >/dev/null 2>&1 || [ -n "$$CUDA_HOME" ] || { \
+		echo "ERROR: no CUDA toolkit found (no 'nvcc' on PATH and CUDA_HOME is unset)."; \
+		echo "  DeepSpeed compiles CUDA ops at install time and needs a toolkit, not just the driver."; \
+		echo "  Install a CUDA 12.1 toolkit and set CUDA_HOME, e.g.:"; \
+		echo "    export CUDA_HOME=/usr/local/cuda-12.1                 # system toolkit"; \
+		echo "    conda install -c nvidia cuda-toolkit=12.1 && export CUDA_HOME=\$$CONDA_PREFIX"; \
+		exit 1; \
+	}
+	$(PIP) install -r requirements/requirements.deepspeed.txt
 
 hooks:  ## (Re)install the pre-commit git hook only
 	$(VENV)/bin/pre-commit install

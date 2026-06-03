@@ -87,14 +87,22 @@ file uses the standard PyPI PyTorch build, which includes MPS support natively;
 
 SUPREME is also a regular pip package - published on PyPI as `supreme-unlearning`
 and imported as `supreme` - so to reuse it from another project you can install
-it directly (optionally with the CUDA extra for the DeepSpeed ZeRO strategy,
-bitsandbytes precision, and NVIDIA telemetry):
+it directly (optionally with the CUDA extra for bitsandbytes precision and NVIDIA
+telemetry, and/or the DeepSpeed extra for the ZeRO strategy):
 
 ```bash
 pip install supreme-unlearning            # core (CPU / MPS)
-pip install "supreme-unlearning[cuda]"    # + deepspeed, bitsandbytes, nvidia-ml-py (NVIDIA only)
+pip install "supreme-unlearning[cuda]"    # + bitsandbytes, nvidia-ml-py (NVIDIA only; wheels, installs cleanly)
+pip install "supreme-unlearning[deepspeed]"     # + deepspeed (compiles CUDA ops: needs a CUDA toolkit / CUDA_HOME, not just the driver)
 pip install "supreme-unlearning[tensorboard]"   # + TensorBoard logger
 ```
+
+> **DeepSpeed needs a CUDA toolkit, not just the driver.** It builds CUDA ops at
+> install time and aborts with `CUDA_HOME does not exist` on hosts that only have
+> the NVIDIA driver. Install a CUDA 12.1 toolkit and `export CUDA_HOME=...` first
+> (e.g. `/usr/local/cuda-12.1`, or `$CONDA_PREFIX` after
+> `conda install -c nvidia cuda-toolkit=12.1`). This is why DeepSpeed is excluded
+> from the default `make cuda` install (`make deepspeed` opts in).
 
 This installs the `supreme-train` and `supreme-unlearn` console scripts and the
 importable public API (`import supreme`). When SUPREME is installed as a wheel
@@ -104,6 +112,37 @@ directory so `logs/` and checkpoints are created there.
 ## 3b. Docker Dev Container (alternative)
 
 > **Requires an NVIDIA GPU.** Linux or Windows + WSL2 only. Apple Silicon and other non-NVIDIA hosts: use §3a instead.
+
+> **Host prerequisite: the NVIDIA Container Toolkit.** The compose services use
+> `runtime: nvidia`, so the host needs more than the GPU driver - it needs the
+> NVIDIA Container Toolkit, which registers the `nvidia` Docker runtime. Without
+> it, `nvidia-smi` works on the host but containers fail with
+> `unknown or invalid runtime name: nvidia` (compose) or
+> `failed to discover GPU vendor from CDI` (`docker run --gpus all`). Install it
+> once (Debian/Ubuntu; needs sudo):
+>
+> ```bash
+> curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey \
+>   | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
+> curl -s -L https://nvidia.github.io/libnvidia-container/stable/deb/nvidia-container-toolkit.list \
+>   | sed 's#deb https://#deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://#g' \
+>   | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+> sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
+> sudo nvidia-ctk runtime configure --runtime=docker   # registers the nvidia runtime
+> sudo systemctl restart docker
+> docker run --rm --gpus all ubuntu nvidia-smi          # sanity check: should list your GPUs
+> ```
+
+> **On a shared / managed GPU host (no admin rights)? Use §3a instead.** The
+> NVIDIA Container Toolkit is a **host-daemon** component: it must be installed on
+> the host that runs `dockerd`, and it cannot be installed from inside a container
+> (the dev container's passwordless sudo only grants root *within* the container,
+> not on the host). On a cluster where your account can't install host packages -
+> e.g. `sudo -l` shows only a couple of whitelisted commands - you cannot enable
+> GPU-in-Docker yourself; ask the cluster admins to run the block above, **or skip
+> Docker entirely and use the virtual environment (§3a)**. The venv talks to the
+> NVIDIA driver directly and needs no container toolkit, so it runs on the GPUs
+> with no elevated privileges. Confirm with the GPU self-check below.
 
 With VS Code and Docker installed and the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), open the Command Palette (`View → Command Palette`) and run **Dev Containers: Reopen in Container**. You should see a prompt like this:
 
@@ -134,5 +173,17 @@ python -c "import torch; print('torch', torch.__version__, '| cuda', torch.cuda.
 python -c "import supreme; print('SUPREME', supreme.__version__, '| API:', 'register_unlearning_method' in dir(supreme))"
 python -c "from supreme.utils.unlearning import unlearn_main; print('SUPREME import OK')"
 ```
+
+**GPU self-check (NVIDIA hosts).** Confirms PyTorch sees and can use the GPUs -
+works the same in the venv (§3a) or inside the container (§3b):
+
+```bash
+python -c "import torch; n=torch.cuda.device_count(); print('cuda', torch.cuda.is_available(), '| cuda ver', torch.version.cuda, '| GPUs', n, '|', [torch.cuda.get_device_name(i) for i in range(n)])"
+```
+
+`cuda True` with a non-empty GPU list means you're ready to train. `cuda False`
+on a machine whose `nvidia-smi` shows GPUs usually means a CPU-only PyTorch build
+(reinstall via `make cuda`) or, inside Docker, that the container was started
+without GPU access (see the NVIDIA Container Toolkit note in §3b).
 
 Then run a minimal smoke test - see [README → Running Experiments](../README.md#-running-experiments).

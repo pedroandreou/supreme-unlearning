@@ -1,0 +1,20 @@
+# Optional dependency: DeepSpeed distributed strategy.
+#
+# Kept separate from requirements.cuda_12_1.txt because deepspeed builds CUDA ops at
+# install time and FAILS on hosts that have only the NVIDIA driver (nvidia-smi works)
+# but no CUDA toolkit - i.e. no `nvcc` and no CUDA_HOME. Bundling it made the whole
+# `make cuda` install error out on such machines.
+#
+# Requirements to install this:
+#   - a CUDA 12.1 toolkit on PATH (nvcc) with CUDA_HOME set, e.g.
+#       export CUDA_HOME=/usr/local/cuda-12.1      # system toolkit
+#       export CUDA_HOME=$CONDA_PREFIX             # if installed via `conda install -c nvidia cuda-toolkit=12.1`
+#
+# Install (after `make cuda`):
+#   make deepspeed
+#   # or, directly into the venv:
+#   unlearning/bin/pip install -r requirements/requirements.deepspeed.txt
+#
+# The CUDA devel Docker image (docker/pure_pip.Dockerfile.cuda_12_1) already ships the
+# toolkit, so it installs this file as part of the image build.
+deepspeed==0.14.5  # Must match PyTorch 2.1.0 (>=0.15 requires PyTorch 2.4+)

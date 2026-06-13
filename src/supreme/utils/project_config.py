@@ -29,6 +29,8 @@ unlearning_methods = [
     "unsir",
     "ssd",
     "lfssd",
+    "ssd_det",
+    "lfssd_det",
     "assd",
     # "neg_grad",
     "scrub",

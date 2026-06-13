@@ -598,7 +598,7 @@ def setup_unlearning(
                 "lr": lr,
             }
         )
-    elif method_name in ("ssd", "lfssd"):
+    elif method_name in ("ssd", "lfssd", "ssd_det", "lfssd_det"):
         # Change alpha here as described in the SSD paper
         # Paper: "Fast Machine Unlearning Without Retraining Through Selective Synaptic Dampening" at https://arxiv.org/pdf/2308.07707
         # Paper: "LOSS-FREE MACHINE UNLEARNING" at https://arxiv.org/pdf/2402.19308
@@ -608,12 +608,16 @@ def setup_unlearning(
         # whereas in the SSD paper itself, it uses an alpha of 5 for the ViT model
         # regardess though, we went to the latest published version of the paper which is the LFSSD paper
 
+        # The deterministic variants (ssd_det / lfssd_det) reuse the same
+        # hyperparameters as their stochastic counterparts (ssd / lfssd); they
+        # differ only in how per-sample importances are computed (see ssd_det.py).
+
         model_size_scaler = 1  # alpha is 10
         dampening_constant = 1
 
         if type_of_unlearning_strategy == "fullclass":
             if dataset_name == "Cifar20":
-                if method_name == "ssd":
+                if method_name in ("ssd", "ssd_det"):
                     if model_name == "ResNet18":
                         model_size_scaler = 1  # alpha is 10
                     else:  # ViT
@@ -621,42 +625,42 @@ def setup_unlearning(
                         # but in LFSSD paper, it is 1 so alpha is 10
                         # we went to the latest published version of the paper which is the LFSSD paper
                         model_size_scaler = 1  # alpha is 10
-                elif method_name == "lfssd":
+                elif method_name in ("lfssd", "lfssd_det"):
                     # regardless of model architecture
                     model_size_scaler = 0.5  # alpha is 5
 
             elif dataset_name == "Cifar100":
-                if method_name == "ssd":
+                if method_name in ("ssd", "ssd_det"):
                     if model_name == "ResNet18":
                         model_size_scaler = 1  # alpha is 10
                     else:  # ViT
                         model_size_scaler = 1  # alpha is 10
-                elif method_name == "lfssd":
+                elif method_name in ("lfssd", "lfssd_det"):
                     # regardless of model architecture
                     model_size_scaler = 1  # alpha is 10
 
             elif dataset_name == "PinsFaceRecognition":
-                if method_name == "ssd":
+                if method_name in ("ssd", "ssd_det"):
                     model_size_scaler = 5  # alpha is 50
                     dampening_constant = 0.1
-                elif method_name == "lfssd":
+                elif method_name in ("lfssd", "lfssd_det"):
                     # regardless of model architecture
                     model_size_scaler = 1  # alpha is 10
 
         elif type_of_unlearning_strategy == "subclass":
             # Cifar20 dataset
-            if method_name == "ssd":
+            if method_name in ("ssd", "ssd_det"):
                 if model_name == "ResNet18":
                     model_size_scaler = 1  # alpha is 10
                 elif model_name == "ViT":
                     model_size_scaler = 2.5  # alpha is 25
-            elif method_name == "lfssd":
+            elif method_name in ("lfssd", "lfssd_det"):
                 model_size_scaler = 1  # alpha is 10
 
         elif type_of_unlearning_strategy == "random_":
-            if method_name == "ssd":
+            if method_name in ("ssd", "ssd_det"):
                 model_size_scaler = 1  # alpha is 10
-            elif method_name == "lfssd":
+            elif method_name in ("lfssd", "lfssd_det"):
                 model_size_scaler = 0.35  # alpha is 3.5
 
         # Calculate final alpha value
@@ -664,7 +668,7 @@ def setup_unlearning(
 
         # Print the selected hyperparameters and reasoning
         fabric.print(f"\n{'='*80}")
-        fabric.print("SSD/LFSSD Hyperparameter Selection:")
+        fabric.print("SSD/LFSSD/SSD-Det/LFSSD-Det Hyperparameter Selection:")
         fabric.print(f"  Method: {method_name.upper()}")
         fabric.print(f"  Dataset: {dataset_name}")
         fabric.print(f"  Model: {model_name}")
@@ -672,7 +676,7 @@ def setup_unlearning(
         fabric.print(f"  Selected Alpha (selection_weighting): {selection_weighting}")
         fabric.print(f"  Selected Lambda (dampening_constant): {dampening_constant}")
         fabric.print(
-            f"  Rationale: Based on hyperparameters from the {'LFSSD' if method_name == 'lfssd' else 'SSD (following LFSSD paper updates)'} paper"
+            f"  Rationale: Based on hyperparameters from the {'LFSSD' if method_name in ('lfssd', 'lfssd_det') else 'SSD (following LFSSD paper updates)'} paper"
         )
         fabric.print(
             f"             for {dataset_name} dataset with {model_name} architecture"

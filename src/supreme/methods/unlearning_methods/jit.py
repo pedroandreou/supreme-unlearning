@@ -1,5 +1,8 @@
 """JIT (Just-In-Time) unlearning method.
 
+Paper: "An Information Theoretic Approach to Machine Unlearning" (https://arxiv.org/abs/2402.01401)
+Reference: https://github.com/jwf40/Information-Theoretic-Unlearning
+
 Notes:
 Adapted from Information-Theoretic-Unlearning-main/supreme/lipschitz.py.
 

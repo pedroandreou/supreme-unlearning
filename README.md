@@ -139,7 +139,7 @@ Registry-based components are **user-extensible** - implement the relevant inter
 | **Datasets** | [CIFAR-10](src/supreme/datasets/datasets.py), [CIFAR-20](src/supreme/datasets/datasets.py), [CIFAR-100](src/supreme/datasets/datasets.py), [PinsFaceRecognition](src/supreme/datasets/datasets.py), [Caltech-101](src/supreme/datasets/datasets.py) |
 | **Models** | [ResNet18](src/supreme/models/ResNet18.py), [Vision Transformer (ViT)](src/supreme/models/ViT.py) |
 | **Baselines** | [Retrain](src/supreme/methods/baselines/retrain.py), [Original](src/supreme/methods/baselines/original.py) |
-| **Unlearning methods** | [Fine-Tuning (FT)](src/supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](src/supreme/methods/unlearning_methods/unsir.py), [SSD](src/supreme/methods/unlearning_methods/ssd.py), [LFSSD](src/supreme/methods/unlearning_methods/lfssd.py), [ASSD](src/supreme/methods/unlearning_methods/assd.py), [SCRUB](src/supreme/methods/unlearning_methods/scrub.py), [JIT](src/supreme/methods/unlearning_methods/jit.py) |
+| **Unlearning methods** | [Fine-Tuning (FT)](src/supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](src/supreme/methods/unlearning_methods/unsir.py), [SSD](src/supreme/methods/unlearning_methods/ssd.py), [LFSSD](src/supreme/methods/unlearning_methods/lfssd.py), [SSD-Det](src/supreme/methods/unlearning_methods/ssd_det.py), [LFSSD-Det](src/supreme/methods/unlearning_methods/lfssd_det.py), [ASSD](src/supreme/methods/unlearning_methods/assd.py), [SCRUB](src/supreme/methods/unlearning_methods/scrub.py), [JIT](src/supreme/methods/unlearning_methods/jit.py) |
 | **Evaluation metrics** | [Accuracy](src/supreme/eval_metrics/accuracy.py), [Loss/Error](src/supreme/utils/training/training_utils.py), [ZRF](src/supreme/eval_metrics/zrf.py), [Activation Distance](src/supreme/eval_metrics/activation_distance.py), [JS-Divergence](src/supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](src/supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](src/supreme/eval_metrics/membership_inference_attack.py), [Completeness](src/supreme/eval_metrics/completeness.py), [Resource Consumption](src/supreme/eval_metrics/resource_consumption.py), [Time](src/supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
 
@@ -211,7 +211,7 @@ bash src/supreme/run_local.sh \
 | `--training-seeds` | Comma-separated training seeds (outer loop, `I`). | `260`–`269` |
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
 | `--evaluation-seeds` | Space-separated indices for `K` | `"0"` (matched) |
-| `--methods` | Unlearning methods to run | all 11 (2 baselines + 9 methods) |
+| `--methods` | Unlearning methods to run | all 13 (2 baselines + 11 methods) |
 | `--strategies` | `fullclass`, `subclass`, `random_` | all |
 | `--datasets` | Datasets to use | all 5 |
 | `--forget-percs` | Forget % for `random_` strategy | `0.001`–`0.10` |
@@ -325,8 +325,11 @@ CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](
 
 If you use SUPREME in your research, please cite our work. When you use a specific
 unlearning method, please also cite its original paper (linked in each method's
-source-file header); the foundational SSD/LFSSD and Bad Teacher papers are
-included below.
+source-file header). The SSD and Bad Teacher papers are included below because
+SUPREME evolved from their codebases - [Selective Synaptic Dampening (SSD)](https://github.com/if-loops/selective-synaptic-dampening)
+and [bad-teaching unlearning](https://github.com/vikram2000b/bad-teaching-unlearning) -
+which we generalised from single-method, single-device scripts into a standardised,
+distributed evaluation platform.
 
 ```bibtex
 @misc{supreme2026,
@@ -344,13 +347,6 @@ included below.
   booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
   year      = {2024},
   url       = {https://arxiv.org/abs/2308.07707}
-}
-@inproceedings{foster2024lossfree,
-  title     = {Loss-Free Machine Unlearning},
-  author    = {Foster, Jack and Schoepf, Stefan and Brintrup, Alexandra},
-  booktitle = {ICLR 2024 Tiny Papers Track},
-  year      = {2024},
-  url       = {https://arxiv.org/abs/2402.19308}
 }
 @inproceedings{chundawat2023badteacher,
   title     = {Can Bad Teaching Induce Forgetting? Unlearning in Deep Networks using an Incompetent Teacher},

@@ -176,7 +176,9 @@ class ParameterPerturber:
                 self.opt.zero_grad()
                 # Only retain graph if there are more samples to process in this batch
                 retain = i < len(losses) - 1
-                if hasattr(self.model, "_forward_module") or hasattr(self.model, "module"):
+                if hasattr(self.model, "_forward_module") or hasattr(
+                    self.model, "module"
+                ):
                     self.fabric.backward(losses[i], retain_graph=retain)
                 else:
                     losses[i].backward(retain_graph=retain)

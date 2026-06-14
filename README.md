@@ -368,6 +368,7 @@ the authors of the following projects, and ask that you cite the original papers
 (linked in each method's source-file header) when using the corresponding methods:
 
 - [if-loops/selective-synaptic-dampening](https://github.com/if-loops/selective-synaptic-dampening) - SSD, LFSSD
+- ["On the importance of multiple training seeds for evaluating machine unlearning"](https://arxiv.org/abs/2510.26714) - the **corrected, deterministic** SSD/LFSSD implementations used by **SSD-Det** and **LFSSD-Det**. The corrected formulation is given in Appendix B ("Implementation of SSD and LFSSD"); please cite this paper when using the `-det` variants.
 - [vikram2000b/bad-teaching-unlearning](https://github.com/vikram2000b/bad-teaching-unlearning) - Bad Teacher
 - [vikram2000b/Fast-Machine-Unlearning](https://github.com/vikram2000b/Fast-Machine-Unlearning) - UNSIR
 - [jwf40/Information-Theoretic-Unlearning](https://github.com/jwf40/Information-Theoretic-Unlearning) - JIT

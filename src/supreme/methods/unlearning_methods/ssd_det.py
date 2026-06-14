@@ -3,6 +3,11 @@
 Paper: "Fast Machine Unlearning Without Retraining Through Selective Synaptic Dampening" (https://arxiv.org/abs/2308.07707)
 Reference: https://github.com/if-loops/selective-synaptic-dampening/blob/75fdea18497b0f5d654b136753a386fe74b9cd26/src/ssd.py#L35
 
+Corrected implementation: the deterministic, order-independent SSD formulation used
+here is presented in "On the importance of multiple training seeds for evaluating
+machine unlearning" (https://arxiv.org/abs/2510.26714), Appendix B ("Implementation of
+SSD and LFSSD"). Please cite that paper when using this -det (corrected) variant of SSD.
+
 Notes:
 Deterministic variant of SSD (see ssd.py) that computes true per-sample squared
 gradients as described in the paper, rather than squared batch-mean gradients.

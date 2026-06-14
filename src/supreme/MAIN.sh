@@ -72,7 +72,7 @@ force_reunlearning="${FORCE_REUNLEARNING:-false}"
 force_reevaluation="${FORCE_REEVALUATION:-false}"
 
 # Logging
-wandb_logging_flag_training=false
+wandb_logging_flag_training="${WANDB_LOG_TRAINING:-false}"
 wandb_logging_flag_unlearning=false
 wandb_logging_flag_evaluation=true
 wandb_resume_existing="${WANDB_RESUME_EXISTING:-false}"
@@ -329,7 +329,7 @@ run_evaluation() {
 	echo ""
 	echo "----------------------------------------------"
 	echo "EVALUATING: $method on $dataset ($net_type)"
-	echo "Training Seed: $TRAINING_SEED | Unlearning Seed: $current_unlearning_seed | Evaluation Seed: $current_evaluation_seed"
+	echo "PHASE 3 ▶ Evaluation          │ evaluation seed $current_evaluation_seed  (evaluation seed ${_kpos:-1} of $K)    · unlearning seed $current_unlearning_seed · training seed $TRAINING_SEED"
 	echo "----------------------------------------------"
 
 	# Save and unset SLURM variables for single-GPU evaluation
@@ -387,7 +387,9 @@ run_evaluation() {
 # K-loop wrapper: evaluate the same Mu/Mr against each evaluation seed
 run_evaluation_loop() {
 	local saved_eval_seed="$current_evaluation_seed"
+	_kpos=0
 	for k in "${EVALUATION_SEEDS[@]}"; do
+		_kpos=$((_kpos + 1))
 		if [ "$K" -eq 1 ]; then
 			current_evaluation_seed="$current_unlearning_seed"
 		else
@@ -403,7 +405,12 @@ run_evaluation_loop() {
 # ==============================================================================
 
 echo "=============================================="
-echo "PHASE 1: TRAINING (seed=$TRAINING_SEED, model=$MODEL)"
+if [ -n "${TRAINING_SEED_INDEX:-}" ] && [ -n "${TRAINING_SEED_TOTAL:-}" ]; then
+	_tpos="(training seed ${TRAINING_SEED_INDEX} of ${TRAINING_SEED_TOTAL})"
+else
+	_tpos="(training seed ${TRAINING_SEED})"
+fi
+echo "PHASE 1 ▶ Training base model │ training seed ${TRAINING_SEED}  ${_tpos} │ ${MODEL}/${DATASET}"
 echo "=============================================="
 
 n_classes=${N_CLASSES["$DATASET"]}
@@ -503,11 +510,13 @@ echo "=============================================="
 echo "PHASE 2 + 3: UNLEARNING + EVALUATION"
 echo "Strategy: $STRATEGY | Dataset: $DATASET | Model: $MODEL"
 echo "Forget Target: $FORGET_TARGET"
-echo "Training Seed: $TRAINING_SEED | J=$J unlearning seed(s) | K=$K evaluation seed(s)"
+echo "Run plan │ training seed $TRAINING_SEED │ $J unlearning seed(s) × $K evaluation seed(s) each"
 echo "=============================================="
 echo ""
 
+_jpos=0
 for j in "${UNLEARNING_SEEDS[@]}"; do
+	_jpos=$((_jpos + 1))
 	# Seed math: collapse to TRAINING_SEED for J=1 (matches paper formula s_u = s_t when J=1);
 	# namespace by *1000 for J>1 to keep unlearning seeds globally unique across training seeds.
 	if [ "$J" -eq 1 ]; then
@@ -519,7 +528,7 @@ for j in "${UNLEARNING_SEEDS[@]}"; do
 
 	echo ""
 	echo "========================================================"
-	echo "Unlearning Seed: $current_unlearning_seed (j=$j, Training Seed: $TRAINING_SEED)"
+	echo "PHASE 2 ▶ Unlearning          │ unlearning seed $current_unlearning_seed  (unlearning seed $_jpos of $J)   · training seed $TRAINING_SEED"
 	echo "========================================================"
 
 	# The seed variable used by unlearn_main.py

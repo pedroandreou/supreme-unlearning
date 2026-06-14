@@ -280,6 +280,17 @@ for SEED in "${SEED_VALUES[@]}"; do
 					echo "                              dataset=$DATASET model=$MODEL target=$TARGET"
 					echo "##############################################################"
 
+					# Progress display: global training-seed position. Honors
+					# ALL_TRAINING_SEEDS (set by the sharded launcher to all seeds)
+					# so each shard shows "i of 10", not "i of <slice size>".
+					IFS=',' read -ra _ALL_SEEDS <<<"${ALL_TRAINING_SEEDS:-$SEEDS_ARG}"
+					TRAINING_SEED_TOTAL=${#_ALL_SEEDS[@]}
+					TRAINING_SEED_INDEX=0
+					for _i in "${!_ALL_SEEDS[@]}"; do
+						if [ "${_ALL_SEEDS[$_i]}" = "$SEED" ]; then TRAINING_SEED_INDEX=$((_i + 1)); fi
+					done
+					export TRAINING_SEED_INDEX TRAINING_SEED_TOTAL
+
 					bash "$WORKER" "$SEED" "$STRATEGY" "$DATASET" "$MODEL" "$TARGET"
 				done
 			done

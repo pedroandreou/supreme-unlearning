@@ -3,6 +3,11 @@
 Paper: "LOSS-FREE MACHINE UNLEARNING" (https://arxiv.org/pdf/2402.19308)
 Reference: https://github.com/if-loops/selective-synaptic-dampening/blob/main/README.md
 
+Corrected implementation: the deterministic, order-independent LFSSD formulation used
+here is presented in "On the importance of multiple training seeds for evaluating
+machine unlearning" (https://arxiv.org/abs/2510.26714), Appendix B ("Implementation of
+SSD and LFSSD"). Please cite that paper when using this -det (corrected) variant of LFSSD.
+
 Notes:
 Deterministic variant of LFSSD (see lfssd.py) that computes true per-sample
 gradients, analogous to ssd_det.py vs ssd.py.

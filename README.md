@@ -45,7 +45,7 @@
 <p>
   <strong>📄 Publication</strong><br>
   <a href="https://arxiv.org/abs/2606.00380"><img src="https://img.shields.io/badge/arXiv-2606.00380-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Preprint"></a>
-  <a href="https://aiimlab.org/events/ECML_PKDD_2026_WIPE-OUT_2_Workshop_on_Machine_Unlearning_and_Privacy_Preservation.html"><img src="https://img.shields.io/badge/Under_Review-WIPE--OUT_2_(ECML--PKDD_2026)-yellow" alt="Under double-blind review at the WIPE-OUT 2 Workshop, ECML-PKDD 2026"></a>
+  <a href="https://aiimlab.org/events/ECML_PKDD_2026_WIPE-OUT_2_Workshop_on_Machine_Unlearning_and_Privacy_Preservation.html"><img src="https://img.shields.io/badge/Published-WIPE--OUT_2_(ECML--PKDD_2026)-brightgreen" alt="Published at the WIPE-OUT 2 Workshop, ECML-PKDD 2026"></a>
   <a href="https://pedroandreou.github.io/supreme-unlearning-page/"><img src="https://img.shields.io/badge/Project_Page-Live-2ea44f?logo=githubpages&logoColor=white" alt="Project Page"></a>
 </p>
 

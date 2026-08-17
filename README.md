@@ -120,7 +120,7 @@ live in [`src/supreme/registry.py`](src/supreme/registry.py). Full walkthrough:
 | [`src/supreme/__init__.py`](src/supreme/__init__.py) | Public API surface (`run_*`, `register_*`) |
 | [`src/supreme/registry.py`](src/supreme/registry.py) | Name → component resolution and plugin entry points |
 | [`src/supreme/methods/unlearning_methods/`](src/supreme/methods/unlearning_methods/) | Unlearning method implementations |
-| [`src/supreme/methods/baselines/`](src/supreme/methods/baselines/) | Retrain / Original baselines |
+| [`src/supreme/methods/baselines/`](src/supreme/methods/baselines/) | Retrain baseline + Original (no-unlearning) reference |
 | [`src/supreme/models/`](src/supreme/models/) | ResNet18, ViT |
 | [`src/supreme/datasets/datasets.py`](src/supreme/datasets/datasets.py) | The 5 datasets |
 | [`src/supreme/eval_metrics/`](src/supreme/eval_metrics/) | The 9 evaluation metrics |
@@ -140,7 +140,7 @@ Registry-based components are **user-extensible** - implement the relevant inter
 |---|---|
 | **Datasets** | [CIFAR-10](src/supreme/datasets/datasets.py), [CIFAR-20](src/supreme/datasets/datasets.py), [CIFAR-100](src/supreme/datasets/datasets.py), [PinsFaceRecognition](src/supreme/datasets/datasets.py), [Caltech-101](src/supreme/datasets/datasets.py) |
 | **Models** | [ResNet18](src/supreme/models/ResNet18.py), [Vision Transformer (ViT)](src/supreme/models/ViT.py) |
-| **Baselines** | [Retrain](src/supreme/methods/baselines/retrain.py), [Original](src/supreme/methods/baselines/original.py) |
+| **Baseline & reference** | [Retrain](src/supreme/methods/baselines/retrain.py) (gold-standard baseline), [Original](src/supreme/methods/baselines/original.py) (unmodified reference) |
 | **Unlearning methods** | [Fine-Tuning (FT)](src/supreme/methods/unlearning_methods/finetune.py), [Bad Teacher (BadT)](src/supreme/methods/unlearning_methods/bad_teacher.py), [Random Labels (RL)](src/supreme/methods/unlearning_methods/random_labeling.py), [UNSIR](src/supreme/methods/unlearning_methods/unsir.py), [SSD](src/supreme/methods/unlearning_methods/ssd.py), [LFSSD](src/supreme/methods/unlearning_methods/lfssd.py), [SSD-Det](src/supreme/methods/unlearning_methods/ssd_det.py), [LFSSD-Det](src/supreme/methods/unlearning_methods/lfssd_det.py), [ASSD](src/supreme/methods/unlearning_methods/assd.py), [SCRUB](src/supreme/methods/unlearning_methods/scrub.py), [JIT](src/supreme/methods/unlearning_methods/jit.py) |
 | **Evaluation metrics** | [Accuracy](src/supreme/eval_metrics/accuracy.py), [Loss/Error](src/supreme/utils/training/training_utils.py), [ZRF](src/supreme/eval_metrics/zrf.py), [Activation Distance](src/supreme/eval_metrics/activation_distance.py), [JS-Divergence](src/supreme/eval_metrics/jsdiv.py), [Layer-wise Distance](src/supreme/eval_metrics/layerwise_distance.py), [Membership Inference Attack](src/supreme/eval_metrics/membership_inference_attack.py), [Completeness](src/supreme/eval_metrics/completeness.py), [Resource Consumption](src/supreme/eval_metrics/resource_consumption.py), [Time](src/supreme/eval_metrics/time.py) |
 | **Unlearning scenarios** | Full-class, Subclass, Random sample |
@@ -213,7 +213,7 @@ bash src/supreme/run_local.sh \
 | `--training-seeds` | Comma-separated training seeds (outer loop, `I`). | `260`–`269` |
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
 | `--evaluation-seeds` | Space-separated indices for `K` | `"0"` (matched) |
-| `--methods` | Unlearning methods to run | all 13 (2 baselines + 11 methods) |
+| `--methods` | Unlearning methods to run | all 13 (11 methods + Retrain baseline + Original reference) |
 | `--strategies` | `fullclass`, `subclass`, `random_` | all |
 | `--datasets` | Datasets to use | all 5 |
 | `--forget-percs` | Forget % for `random_` strategy | `0.001`–`0.10` |

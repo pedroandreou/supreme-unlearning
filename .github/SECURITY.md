@@ -30,3 +30,28 @@ When reporting, please include:
 You can expect an initial acknowledgement within a few days. Once a fix is
 ready, it will be released and the advisory published with credit to the
 reporter unless anonymity is requested.
+
+## Dependency pinning and known advisories
+
+SUPREME pins its full dependency stack (PyTorch 2.1.0, Lightning 2.1.0,
+Transformers 4.35.0, DeepSpeed 0.14.5, ...) to the exact environment used to
+produce the results in the WIPE-OUT 2 (ECML-PKDD 2026) paper. These versions
+are interdependent (e.g. DeepSpeed 0.14.x is the last line compatible with
+PyTorch 2.1), so they are kept frozen for reproducibility rather than upgraded
+as new dependency advisories appear.
+
+Published advisories against these pinned versions (e.g. `torch.load` /
+checkpoint deserialization issues) are exploitable only when loading
+**untrusted** checkpoints, weights, or Hub models. SUPREME is a research
+framework intended to train, unlearn, and evaluate models from sources you
+control:
+
+- Only load checkpoints and datasets you produced yourself or obtained from a
+  source you trust.
+- Do not point SUPREME at model files or Hub repositories from unknown parties.
+- Run experiments in an isolated environment (venv/container) as an
+  unprivileged user.
+
+Dependabot alerts covered by this policy are dismissed as "tolerable risk"
+with a pointer to this document. Vulnerabilities in SUPREME's own code are
+always in scope - please report them as described above.

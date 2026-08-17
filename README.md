@@ -75,6 +75,8 @@ SUPREME evolved from the codebases of [Selective Synaptic Dampening (SSD)](https
 
 For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`src/supreme/README.md`](src/supreme/README.md) and [`docs/notation.md`](docs/notation.md).
 
+> **🔒 Security note:** SUPREME pins the exact dependency stack used for the WIPE-OUT 2 (ECML-PKDD 2026) paper to keep results reproducible. Some pinned versions have published advisories that apply only when loading untrusted checkpoints or models - see [SECURITY.md](.github/SECURITY.md) for details and safe-usage guidance.
+
 ---
 
 ## 📦 SUPREME as a Library

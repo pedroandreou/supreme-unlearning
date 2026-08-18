@@ -214,9 +214,10 @@ bash src/supreme/run_local.sh \
 | `--unlearning-seeds` | Space-separated indices for `J` (e.g. `"0 1 2"` for `J=3`) | `"0"` (matched) |
 | `--evaluation-seeds` | Space-separated indices for `K` | `"0"` (matched) |
 | `--methods` | Unlearning methods to run | all 13 (11 methods + Retrain baseline + Original reference) |
-| `--strategies` | `fullclass`, `subclass`, `random_` | all |
+| `--strategies` | Unlearning scenarios to run: `fullclass`, `subclass`, `random_` | all |
 | `--datasets` | Datasets to use | all 5 |
-| `--forget-percs` | Forget % for `random_` strategy | `0.001`–`0.10` |
+| `--forget-percs` | Forget % for the `random_` scenario | `0.001`–`0.10` |
+| `DISTRIBUTED_STRATEGY` (env var) | Distributed training strategy for multi-GPU runs: `ddp`, `fsdp`, `deepspeed` - unrelated to `--strategies`, which selects unlearning scenarios | `ddp` |
 
 ### SLURM (HPC, login node)
 

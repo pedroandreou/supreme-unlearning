@@ -50,11 +50,11 @@ Defined in [common_args.py](../src/supreme/utils/parsers/common_args.py):
 | `-method` | str | required | Unlearning method name (from `project_config.all_methods`) |
 | `-precision` | str | required | Precision mode |
 | `-eval_metrics` | str | required | Comma-separated metrics (e.g., `accuracy,zrf,mia`) |
-| `-type_of_unlearning_strategy` | str | required | Unlearning strategy: `fullclass`, `subclass`, or `random_`. Read by an initial parser before strategy-specific args are added. |
+| `-type_of_unlearning_strategy` | str | required | Unlearning scenario: `fullclass`, `subclass`, or `random_` (the flag name predates the "scenario" terminology). Read by an initial parser before scenario-specific args are added. |
 | `-seed` | int | `0` | Random seed |
 | `-epochs` | int | `1` | Number of unlearning epochs |
 
-### Strategy-specific arguments
+### Scenario-specific arguments
 
 Determined by the `-type_of_unlearning_strategy` flag:
 
@@ -81,7 +81,7 @@ Determined by the `-type_of_unlearning_strategy` flag:
 |----------|------|---------|-------------|
 | `-classes` | int | required | Number of classes |
 | `-forget_perc` | float | required | Percentage of training set to forget |
-| `-batch_size` | int | `128` | Batch size (default higher for random strategy) |
+| `-batch_size` | int | `128` | Batch size (default higher for the random scenario) |
 
 ### Optional flags
 

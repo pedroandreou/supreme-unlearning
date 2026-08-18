@@ -52,7 +52,7 @@ supreme.register_dataset(
     "MyDS",
     "my_pkg.data:MyDS",
     root="/data/myds",                  # optional data root (else default layout)
-    class_dict={"cat": 0, "dog": 1},    # for full/sub-class unlearning strategies
+    class_dict={"cat": 0, "dog": 1},    # for full/sub-class unlearning scenarios
     rn_epochs=100, rn_milestones=[30, 60, 80],   # ResNet schedule (optional)
     vit_epochs=8,  vit_milestones=[7],            # ViT schedule (optional)
 )

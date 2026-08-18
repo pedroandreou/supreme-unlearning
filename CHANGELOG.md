@@ -5,6 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.4] - 2026-08-18
+
+### Added
+
+- Deterministic SSD/LFSSD variants (SSD-Det, LFSSD-Det), with the JIT docstring
+  aligned to match.
+- Training-stage W&B logging toggle and clearer per-phase progress output.
+
+### Changed
+
+- Corrected the SSD/LFSSD citations for the `-det` variants.
+- README: publication badge updated from "Under Review" to "Published at the
+  WIPE-OUT 2 Workshop (ECML-PKDD 2026)".
+- Docs: "unlearning scenario" is now used consistently for
+  fullclass/subclass/random_ (disambiguated from Lightning's distributed
+  strategies), and the former "2 baselines" wording now describes Retrain as the
+  gold-standard baseline and Original as the unmodified reference.
+- `docker/docker-compose.yml`: the `cuda_12_1_pulled` service now points at the
+  `0.1.4` runtime image (was `0.1.2`).
+
+### Security
+
+- `SECURITY.md`: documented the dependency-pinning policy - the stack stays
+  frozen to the paper-reproduction environment, and dependency advisories that
+  require loading untrusted checkpoints/models are dismissed as tolerable risk,
+  with safe-usage guidance for users.
+
 ## [0.1.3] - 2026-06-03
 
 ### Fixed
@@ -129,5 +156,8 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
   untracked dataset images), anchored venv ignores, `.dockerignore` /
   `.vscode/tasks.json` paths, and added `SLURM_ACCOUNT` to `.env.example`.
 
+[0.1.4]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.4
+[0.1.3]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.3
+[0.1.2]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.2
 [0.1.1]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.1
 [0.1.0]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.0

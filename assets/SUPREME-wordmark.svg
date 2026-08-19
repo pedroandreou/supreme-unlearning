@@ -1,4 +1,4 @@
-<svg width="1600" height="1130" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1130">
+<svg width="1600" height="1160" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1160">
   <!-- Background with subtle gradient -->
   <defs>
     <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -40,15 +40,15 @@
     </filter>
   </defs>
 
-  <rect width="1600" height="1130" fill="url(#bg-gradient)"/>
+  <rect width="1600" height="1160" fill="url(#bg-gradient)"/>
 
   <!-- Decorative yellow lines (top) -->
   <line x1="0" y1="15" x2="1600" y2="15" stroke="#FFD700" stroke-width="3" opacity="0.8"/>
   <line x1="0" y1="25" x2="1600" y2="25" stroke="#FFED4E" stroke-width="2" opacity="0.6"/>
 
   <!-- Decorative yellow lines (bottom) -->
-  <line x1="0" y1="1110" x2="1600" y2="1110" stroke="#FFED4E" stroke-width="2" opacity="0.6"/>
-  <line x1="0" y1="1120" x2="1600" y2="1120" stroke="#FFD700" stroke-width="3" opacity="0.8"/>
+  <line x1="0" y1="1140" x2="1600" y2="1140" stroke="#FFED4E" stroke-width="2" opacity="0.6"/>
+  <line x1="0" y1="1150" x2="1600" y2="1150" stroke="#FFD700" stroke-width="3" opacity="0.8"/>
 
   <!-- ============================================================
        LAYER 2: PIPELINE STAGES
@@ -214,10 +214,10 @@
        LAYER 3: SEED PROTOCOLS
        Three protocol options sharing a unified visual style, with seed
        symbols inside coloured per the stage legend above.
-       translate(0, +55) keeps the L2->L3 centre-column gap at ~90px,
-       matching the L1->L2 gap above for a uniform layer rhythm.
+       translate(0, +85) gives the L2->L3 gap extra clearance (~120px)
+       below the loop-context caption.
        ============================================================ -->
-  <g id="seed-protocol-strip" transform="translate(0, 55)">
+  <g id="seed-protocol-strip" transform="translate(0, 85)">
     <text x="800" y="855" font-family="Arial, sans-serif" font-size="28"
           fill="#FFD700" text-anchor="middle" font-weight="bold" letter-spacing="4">SEED PROTOCOLS</text>
     <text x="800" y="874" font-family="Arial, sans-serif" font-size="14"

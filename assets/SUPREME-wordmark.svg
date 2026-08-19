@@ -117,6 +117,12 @@
       <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
     </path>
 
+    <!-- Dataflow labels: what each stage hands to the next (Alg. 1). -->
+    <text x="695" y="642" font-family="Arial, sans-serif" font-size="17"
+          text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.9">M_o</text>
+    <text x="900" y="642" font-family="Arial, sans-serif" font-size="17"
+          text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.9">M_u, M_r</text>
+
     <!-- Stage names: under each crystal -->
     <text x="595" y="765" font-family="Arial, sans-serif" font-size="18"
           fill="#66FF66" text-anchor="middle" font-weight="bold" letter-spacing="2">TRAINING</text>
@@ -149,6 +155,13 @@
       ×<tspan fill="#B19CD9" font-weight="700"> K</tspan> per <tspan fill="#FFED4E" font-weight="700">s_u</tspan>
     </text>
 
+    <!-- Loop context: Alg. 1 nests the seed loops inside forget-target and
+         method loops. T runs once per s_t; U and E repeat per (c, a). -->
+    <text x="800" y="871" font-family="Arial, sans-serif" font-size="15"
+          text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.75">
+      U &amp; E also loop over forget targets <tspan font-weight="700">c</tspan> and unlearning methods <tspan font-weight="700">a</tspan> (Alg. 1 of the paper)
+    </text>
+
     <!-- Notation legend on the left. Title + six text lines defining the three
          seed symbols (s_t / s_u / s_e) and the three count letters (I / J / K).
          Block is vertically centred between the section header above (~y=530)
@@ -175,6 +188,15 @@
     <text x="35" y="782" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
       <tspan fill="#B19CD9" font-weight="700" font-size="22">K</tspan> = evaluation seeds per <tspan fill="#FFED4E" font-weight="700">s_u</tspan>
     </text>
+    <text x="35" y="812" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
+      <tspan fill="#66FF66" font-weight="700" font-size="22">M_o</tspan> = original model
+    </text>
+    <text x="35" y="837" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
+      <tspan fill="#FFED4E" font-weight="700" font-size="22">M_u</tspan> = unlearned model
+    </text>
+    <text x="35" y="862" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
+      <tspan fill="#FFED4E" font-weight="700" font-size="22">M_r</tspan> = retrained reference (also uses <tspan fill="#FFED4E" font-weight="700">s_u</tspan>)
+    </text>
   </g>
 
   <!-- Big seed-protocol strip placed below the icon area. A single pipeline supports
@@ -190,6 +212,10 @@
   <g id="seed-protocol-strip" transform="translate(0, 55)">
     <text x="800" y="855" font-family="Arial, sans-serif" font-size="28"
           fill="#FFD700" text-anchor="middle" font-weight="bold" letter-spacing="4">SEED PROTOCOLS</text>
+    <text x="800" y="874" font-family="Arial, sans-serif" font-size="14"
+          text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.7">
+      framework invocation modes of Algorithm 1's seed indexing (set via the unlearning- &amp; evaluation-seed flags)
+    </text>
 
     <!-- Each box shows three pieces of information:
            Title (with I/J/K colour-coded to their seeds)
@@ -199,7 +225,7 @@
 
     <!-- Matched: J = K = 1 -->
     <g>
-      <rect x="290" y="880" width="320" height="120" rx="14"
+      <rect x="290" y="890" width="320" height="110" rx="14"
             fill="#1a1a2e" fill-opacity="0.55" stroke="#FFD700" stroke-width="4"/>
       <text x="450" y="915" font-family="Arial, sans-serif" font-size="24"
             text-anchor="middle" font-weight="700" fill="#FFFFFF">MATCHED</text>
@@ -209,13 +235,13 @@
       </text>
       <text x="450" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
-        <tspan fill="#66FF66">I</tspan> runs per grid
+        <tspan fill="#66FF66">I</tspan> runs per grid cell
       </text>
     </g>
 
     <!-- Decoupled I×J: J > 1, K = 1 -->
     <g>
-      <rect x="640" y="880" width="320" height="120" rx="14"
+      <rect x="640" y="890" width="320" height="110" rx="14"
             fill="#1a1a2e" fill-opacity="0.55" stroke="#FFD700" stroke-width="4"/>
       <text x="800" y="915" font-family="Arial, sans-serif" font-size="24"
             text-anchor="middle" font-weight="700" fill="#FFFFFF">
@@ -227,13 +253,13 @@
       </text>
       <text x="800" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
-        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> runs per grid
+        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> runs per grid cell
       </text>
     </g>
 
     <!-- Decoupled I×J×K: J > 1, K > 1 -->
     <g>
-      <rect x="990" y="880" width="320" height="120" rx="14"
+      <rect x="990" y="890" width="320" height="110" rx="14"
             fill="#1a1a2e" fill-opacity="0.55" stroke="#FFD700" stroke-width="4"/>
       <text x="1150" y="915" font-family="Arial, sans-serif" font-size="24"
             text-anchor="middle" font-weight="700" fill="#FFFFFF">
@@ -245,7 +271,7 @@
       </text>
       <text x="1150" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
-        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> × <tspan fill="#B19CD9">K</tspan> runs per grid
+        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> × <tspan fill="#B19CD9">K</tspan> runs per grid cell
       </text>
     </g>
   </g>

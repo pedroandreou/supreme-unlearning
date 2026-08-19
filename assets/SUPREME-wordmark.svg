@@ -30,6 +30,14 @@
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <filter id="glow-cyan" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
   </defs>
 
   <rect width="1600" height="1130" fill="url(#bg-gradient)"/>
@@ -63,21 +71,21 @@
             fill="#66FF66" opacity="0.9"/>
       <text x="595" y="675" font-family="Arial, sans-serif" font-size="44"
             fill="#FFFFFF" text-anchor="middle" font-weight="900">T</text>
-      <circle cx="595" cy="660" r="32" fill="#4CAF50" opacity="0.2">
+      <circle cx="595" cy="660" r="32" fill="#43A047" opacity="0.2">
         <animate attributeName="r" values="32;38;32" dur="2s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values="0.2;0.4;0.2" dur="2s" repeatCount="indefinite"/>
       </circle>
     </g>
 
-    <!-- UNLEARNING crystal (gold, centre) - represents s_u -->
-    <g filter="url(#glow-gold)">
+    <!-- UNLEARNING crystal (cyan, centre) - represents s_u -->
+    <g filter="url(#glow-cyan)">
       <path d="M 740 715 L 776 595 L 824 595 L 860 715 L 800 730 Z"
-            fill="#FFD700" stroke="#FFED4E" stroke-width="3.5" opacity="0.98"/>
+            fill="#00BCD4" stroke="#4DD0E1" stroke-width="3.5" opacity="0.98"/>
       <path d="M 776 595 L 800 580 L 848 580 L 824 595 Z"
-            fill="#FFED4E" opacity="0.9"/>
+            fill="#4DD0E1" opacity="0.9"/>
       <text x="800" y="675" font-family="Arial, sans-serif" font-size="44"
             fill="#1a1a1a" text-anchor="middle" font-weight="900">U</text>
-      <circle cx="800" cy="660" r="32" fill="#FFD700" opacity="0.2">
+      <circle cx="800" cy="660" r="32" fill="#00BCD4" opacity="0.2">
         <animate attributeName="r" values="32;38;32" dur="2s" repeatCount="indefinite"/>
         <animate attributeName="opacity" values="0.2;0.4;0.2" dur="2s" repeatCount="indefinite"/>
       </circle>
@@ -127,7 +135,7 @@
     <text x="595" y="765" font-family="Arial, sans-serif" font-size="18"
           fill="#66FF66" text-anchor="middle" font-weight="bold" letter-spacing="2">TRAINING</text>
     <text x="800" y="765" font-family="Arial, sans-serif" font-size="18"
-          fill="#FFED4E" text-anchor="middle" font-weight="bold" letter-spacing="2">UNLEARNING</text>
+          fill="#4DD0E1" text-anchor="middle" font-weight="bold" letter-spacing="2">UNLEARNING</text>
     <text x="1005" y="765" font-family="Arial, sans-serif" font-size="18"
           fill="#B19CD9" text-anchor="middle" font-weight="bold" letter-spacing="2">EVALUATION</text>
 
@@ -135,7 +143,7 @@
     <text x="595" y="800" font-family="Arial, sans-serif" font-size="28"
           fill="#66FF66" text-anchor="middle" font-weight="700" font-style="italic">s_t</text>
     <text x="800" y="800" font-family="Arial, sans-serif" font-size="28"
-          fill="#FFED4E" text-anchor="middle" font-weight="700" font-style="italic">s_u</text>
+          fill="#4DD0E1" text-anchor="middle" font-weight="700" font-style="italic">s_u</text>
     <text x="1005" y="800" font-family="Arial, sans-serif" font-size="28"
           fill="#B19CD9" text-anchor="middle" font-weight="700" font-style="italic">s_e</text>
 
@@ -148,11 +156,11 @@
     </text>
     <text x="800" y="835" font-family="Arial, sans-serif" font-size="16"
           text-anchor="middle" font-style="italic" fill="#FFFFFF">
-      ×<tspan fill="#FFED4E" font-weight="700"> J</tspan> per <tspan fill="#66FF66" font-weight="700">s_t</tspan>
+      ×<tspan fill="#4DD0E1" font-weight="700"> J</tspan> per <tspan fill="#66FF66" font-weight="700">s_t</tspan>
     </text>
     <text x="1005" y="835" font-family="Arial, sans-serif" font-size="16"
           text-anchor="middle" font-style="italic" fill="#FFFFFF">
-      ×<tspan fill="#B19CD9" font-weight="700"> K</tspan> per <tspan fill="#FFED4E" font-weight="700">s_u</tspan>
+      ×<tspan fill="#B19CD9" font-weight="700"> K</tspan> per <tspan fill="#4DD0E1" font-weight="700">s_u</tspan>
     </text>
 
     <!-- Loop context: Alg. 1 nests the seed loops inside forget-target and
@@ -174,7 +182,7 @@
       <tspan fill="#66FF66" font-weight="700" font-size="22">s_t</tspan> = training seed
     </text>
     <text x="35" y="677" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
-      <tspan fill="#FFED4E" font-weight="700" font-size="22">s_u</tspan> = unlearning seed
+      <tspan fill="#4DD0E1" font-weight="700" font-size="22">s_u</tspan> = unlearning seed
     </text>
     <text x="35" y="702" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
       <tspan fill="#B19CD9" font-weight="700" font-size="22">s_e</tspan> = evaluation seed
@@ -183,19 +191,19 @@
       <tspan fill="#66FF66" font-weight="700" font-size="22">I</tspan> = number of training seeds
     </text>
     <text x="35" y="757" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
-      <tspan fill="#FFED4E" font-weight="700" font-size="22">J</tspan> = unlearning seeds per <tspan fill="#66FF66" font-weight="700">s_t</tspan>
+      <tspan fill="#4DD0E1" font-weight="700" font-size="22">J</tspan> = unlearning seeds per <tspan fill="#66FF66" font-weight="700">s_t</tspan>
     </text>
     <text x="35" y="782" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
-      <tspan fill="#B19CD9" font-weight="700" font-size="22">K</tspan> = evaluation seeds per <tspan fill="#FFED4E" font-weight="700">s_u</tspan>
+      <tspan fill="#B19CD9" font-weight="700" font-size="22">K</tspan> = evaluation seeds per <tspan fill="#4DD0E1" font-weight="700">s_u</tspan>
     </text>
     <text x="35" y="812" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
       <tspan fill="#66FF66" font-weight="700" font-size="22">M_o</tspan> = original model
     </text>
     <text x="35" y="837" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
-      <tspan fill="#FFED4E" font-weight="700" font-size="22">M_u</tspan> = unlearned model
+      <tspan fill="#4DD0E1" font-weight="700" font-size="22">M_u</tspan> = unlearned model
     </text>
     <text x="35" y="862" font-family="Arial, sans-serif" font-size="18" font-style="italic" fill="#FFFFFF">
-      <tspan fill="#FFED4E" font-weight="700" font-size="22">M_r</tspan> = retrained reference (also uses <tspan fill="#FFED4E" font-weight="700">s_u</tspan>)
+      <tspan fill="#4DD0E1" font-weight="700" font-size="22">M_r</tspan> = retrained reference (also uses <tspan fill="#4DD0E1" font-weight="700">s_u</tspan>)
     </text>
   </g>
 
@@ -231,7 +239,7 @@
             text-anchor="middle" font-weight="700" fill="#FFFFFF">MATCHED</text>
       <text x="450" y="945" font-family="Arial, sans-serif" font-size="15"
             text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.75">
-        <tspan fill="#FFED4E" font-weight="700">J</tspan> = <tspan fill="#B19CD9" font-weight="700">K</tspan> = 1
+        <tspan fill="#4DD0E1" font-weight="700">J</tspan> = <tspan fill="#B19CD9" font-weight="700">K</tspan> = 1
       </text>
       <text x="450" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
@@ -245,15 +253,15 @@
             fill="#1a1a2e" fill-opacity="0.55" stroke="#FFD700" stroke-width="4"/>
       <text x="800" y="915" font-family="Arial, sans-serif" font-size="24"
             text-anchor="middle" font-weight="700" fill="#FFFFFF">
-        DECOUPLED <tspan fill="#66FF66">I</tspan>×<tspan fill="#FFED4E">J</tspan>
+        DECOUPLED <tspan fill="#66FF66">I</tspan>×<tspan fill="#4DD0E1">J</tspan>
       </text>
       <text x="800" y="945" font-family="Arial, sans-serif" font-size="15"
             text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.75">
-        <tspan fill="#FFED4E" font-weight="700">J</tspan> &gt; 1,  <tspan fill="#B19CD9" font-weight="700">K</tspan> = 1
+        <tspan fill="#4DD0E1" font-weight="700">J</tspan> &gt; 1,  <tspan fill="#B19CD9" font-weight="700">K</tspan> = 1
       </text>
       <text x="800" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
-        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> runs per grid cell
+        <tspan fill="#66FF66">I</tspan> × <tspan fill="#4DD0E1">J</tspan> runs per grid cell
       </text>
     </g>
 
@@ -263,15 +271,15 @@
             fill="#1a1a2e" fill-opacity="0.55" stroke="#FFD700" stroke-width="4"/>
       <text x="1150" y="915" font-family="Arial, sans-serif" font-size="24"
             text-anchor="middle" font-weight="700" fill="#FFFFFF">
-        DECOUPLED <tspan fill="#66FF66">I</tspan>×<tspan fill="#FFED4E">J</tspan>×<tspan fill="#B19CD9">K</tspan>
+        DECOUPLED <tspan fill="#66FF66">I</tspan>×<tspan fill="#4DD0E1">J</tspan>×<tspan fill="#B19CD9">K</tspan>
       </text>
       <text x="1150" y="945" font-family="Arial, sans-serif" font-size="15"
             text-anchor="middle" font-style="italic" fill="#FFFFFF" opacity="0.75">
-        <tspan fill="#FFED4E" font-weight="700">J</tspan> &gt; 1,  <tspan fill="#B19CD9" font-weight="700">K</tspan> &gt; 1
+        <tspan fill="#4DD0E1" font-weight="700">J</tspan> &gt; 1,  <tspan fill="#B19CD9" font-weight="700">K</tspan> &gt; 1
       </text>
       <text x="1150" y="982" font-family="Arial, sans-serif" font-size="18"
             text-anchor="middle" font-weight="700" fill="#FFD700">
-        <tspan fill="#66FF66">I</tspan> × <tspan fill="#FFED4E">J</tspan> × <tspan fill="#B19CD9">K</tspan> runs per grid cell
+        <tspan fill="#66FF66">I</tspan> × <tspan fill="#4DD0E1">J</tspan> × <tspan fill="#B19CD9">K</tspan> runs per grid cell
       </text>
     </g>
   </g>
@@ -289,7 +297,7 @@
 
   <!-- Feature badges. All share the same dark-fill + gold-outline style: they
        are six instances of one type (SUPREME capability tags), so the visual
-       grouping is uniform. Semantic colours (green/gold/purple) are reserved
+       grouping is uniform. Semantic colours (green/cyan/purple) are reserved
        for seeds elsewhere in the SVG. -->
   <g id="badges" transform="translate(380, 275)">
     <!-- Row 1: Infrastructure/Hardware features -->
@@ -331,8 +339,8 @@
   </g>
 
   <!-- Lightning Fabric panel (info-panel scheme: gold outline, dark fill).
-       The pulsing green dots are status indicators (semantic green = active),
-       not seed colours - they stay green. -->
+       The pulsing dots use the gold panel accent so the semantic stage colours
+       (green/cyan/purple) stay reserved for the pipeline. -->
   <g id="lightning-fabric" transform="translate(1280, 120)">
     <rect x="0" y="0" width="290" height="380" rx="10" fill="none"
           stroke="#FFD700" stroke-width="3" stroke-dasharray="8,4" opacity="0.8"/>
@@ -344,14 +352,14 @@
     <rect x="30" y="80" width="220" height="58" rx="6"
           fill="#1a1a2e" stroke="#FFD700" stroke-width="2"/>
     <text x="40" y="114" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF" font-weight="600">GPU 1</text>
-    <circle cx="225" cy="109" r="7" fill="#66FF66" stroke="#4CAF50" stroke-width="1.5">
+    <circle cx="225" cy="109" r="7" fill="#FFD700" stroke="#FFED4E" stroke-width="1.5">
       <animate attributeName="opacity" values="1;0.5;1" dur="1s" repeatCount="indefinite"/>
     </circle>
 
     <rect x="30" y="155" width="220" height="58" rx="6"
           fill="#1a1a2e" stroke="#FFD700" stroke-width="2"/>
     <text x="40" y="189" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF" font-weight="600">GPU 2</text>
-    <circle cx="225" cy="184" r="7" fill="#66FF66" stroke="#4CAF50" stroke-width="1.5">
+    <circle cx="225" cy="184" r="7" fill="#FFD700" stroke="#FFED4E" stroke-width="1.5">
       <animate attributeName="opacity" values="1;0.5;1" dur="1.3s" repeatCount="indefinite"/>
     </circle>
 
@@ -361,7 +369,7 @@
     <rect x="30" y="270" width="220" height="58" rx="6"
           fill="#1a1a2e" stroke="#FFD700" stroke-width="2"/>
     <text x="40" y="304" font-family="Arial, sans-serif" font-size="17" fill="#FFFFFF" font-weight="600">GPU P</text>
-    <circle cx="225" cy="299" r="7" fill="#66FF66" stroke="#4CAF50" stroke-width="1.5">
+    <circle cx="225" cy="299" r="7" fill="#FFD700" stroke="#FFED4E" stroke-width="1.5">
       <animate attributeName="opacity" values="1;0.5;1" dur="0.9s" repeatCount="indefinite"/>
     </circle>
   </g>

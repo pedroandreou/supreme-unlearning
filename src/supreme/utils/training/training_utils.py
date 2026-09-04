@@ -15,6 +15,10 @@ from supreme.registry import resolve_dataset_class
 from supreme.utils import project_config
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
 from supreme.utils.generic_utils import create_dataloader
+from supreme.eval_metrics.distributed import (
+    evaluation_valid_mask,
+    gather_rank_values,
+)
 
 
 class WarmUpLR(_LRScheduler):
@@ -194,7 +198,7 @@ def training_step(model, batch, criterion=F.cross_entropy, neggrad_flag=False):
 @track_evaluation_metric
 @torch.no_grad()
 def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=False):
-    def validation_step(model, batch):
+    def validation_step(model, batch, valid_mask):
         """
         Paper: "Can Bad Teaching Induce Forgetting? Unlearning in Deep Networks using an Incompetent Teacher" at https://arxiv.org/abs/2205.08096 uses clabels at GitHub Code: https://github.com/vikram2000b/bad-teaching-unlearning/blob/f1aa988f71cccf1be6d50e0c6f7b2b905e4c9126/utils.py#L18
         &&&
@@ -217,7 +221,8 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
         out_cpu = out.detach().cpu()
         clabels_cpu = clabels.detach().cpu()
 
-        loss_cpu = F.cross_entropy(out_cpu, clabels_cpu, reduction="mean")
+        per_sample_loss_cpu = F.cross_entropy(out_cpu, clabels_cpu, reduction="none")
+        loss_cpu = per_sample_loss_cpu.mean()
 
         acc_val_cpu = accuracy(out_cpu, clabels_cpu)
 
@@ -226,7 +231,18 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
         else:
             acc_tensor_cpu = acc_val_cpu.detach().cpu().float()
 
-        return {"Loss": loss_cpu, "Acc": acc_tensor_cpu}
+        predictions_cpu = out_cpu.argmax(dim=1)
+        valid_mask_cpu = valid_mask.detach().cpu()
+
+        return {
+            "Loss": loss_cpu,
+            "Acc": acc_tensor_cpu,
+            "LossSum": per_sample_loss_cpu[valid_mask_cpu].sum(),
+            "Correct": (predictions_cpu[valid_mask_cpu] == clabels_cpu[valid_mask_cpu])
+            .sum()
+            .float(),
+            "Count": valid_mask_cpu.sum().float(),
+        }
 
     def validation_epoch_end(fabric, outputs, do_global=False):
         batch_losses_cpu = torch.stack([x["Loss"] for x in outputs])
@@ -237,33 +253,42 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
         epoch_acc_cpu = batch_accs_cpu.mean()
 
         if do_global:
-            if fabric.world_size > 1:
-                # Gather the per-process means
-                gathered_losses_device = fabric.all_gather(epoch_loss_cpu)
-                gathered_accs_device = fabric.all_gather(epoch_acc_cpu)
+            local_stats = torch.stack(
+                [
+                    torch.stack([x["LossSum"] for x in outputs]).sum(),
+                    torch.stack([x["Correct"] for x in outputs]).sum(),
+                    torch.stack([x["Count"] for x in outputs]).sum(),
+                ]
+            ).double()
+            gathered_stats = gather_rank_values(fabric, local_stats)
+            global_stats = gathered_stats.sum(dim=0)
 
-                # The final value is the mean of the per-process means
-                epoch_loss_device = gathered_losses_device.mean()
-                epoch_acc_device = gathered_accs_device.mean()
+            if global_stats[2].item() == 0:
+                raise ValueError("Cannot evaluate an empty dataset")
 
-                epoch_loss = epoch_loss_device.item()
-                epoch_acc = epoch_acc_device.item()
+            epoch_loss = (global_stats[0] / global_stats[2]).item()
+            epoch_acc = (100.0 * global_stats[1] / global_stats[2]).item()
 
-            else:
-                # In single-process mode, local values are the global values
-                epoch_loss = epoch_loss_cpu.item()
-                epoch_acc = epoch_acc_cpu.item()
-                gathered_losses_device = torch.tensor([epoch_loss])
-                gathered_accs_device = torch.tensor([epoch_acc])
+            rank_counts = gathered_stats[:, 2]
+            gathered_losses_device = torch.where(
+                rank_counts > 0,
+                gathered_stats[:, 0] / rank_counts,
+                torch.nan,
+            )
+            gathered_accs_device = torch.where(
+                rank_counts > 0,
+                100.0 * gathered_stats[:, 1] / rank_counts,
+                torch.nan,
+            )
 
             return {
                 "Loss": {
                     "final_value": epoch_loss,
-                    "per_process": gathered_losses_device.tolist(),
+                    "per_process": gathered_losses_device.cpu().tolist(),
                 },
                 "Acc": {
                     "final_value": epoch_acc,
-                    "per_process": gathered_accs_device.tolist(),
+                    "per_process": gathered_accs_device.cpu().tolist(),
                 },
             }
 
@@ -278,6 +303,7 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
 
     model.eval()
     outputs = []
+    local_offset = 0
 
     # # Track epoch start
     # evaluate.track_epoch_start(fabric, 0, "accuracy")
@@ -286,10 +312,22 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
         # evaluate.track_batch_start(fabric)
 
         images, _, clabels = batch_data
+        valid_mask = (
+            evaluation_valid_mask(
+                fabric=fabric,
+                dataloader=test_dataloader,
+                local_offset=local_offset,
+                batch_size=clabels.shape[0],
+                device=clabels.device,
+            )
+            if do_global_aggregation
+            else torch.ones_like(clabels, dtype=torch.bool)
+        )
+        local_offset += clabels.shape[0]
 
         try:
             # print(f"Rank {fabric.global_rank}: About to run validation_step on batch {batch_idx}")
-            result = validation_step(model, batch_data)
+            result = validation_step(model, batch_data, valid_mask)
             # print(f"Rank {fabric.global_rank}: Finished validation_step on batch {batch_idx}")
 
             outputs.append(result)

@@ -59,6 +59,12 @@ def get_metric_scores(
     track_evaluation_resources=False,
     **kwargs,
 ):
+    # Stage 3 is inference-only. Apply eval mode to every participating model,
+    # including reference and teacher models that are not passed to evaluate().
+    for model in (original_model, unlearned_model, unlearning_teacher, retrained_model):
+        if model is not None:
+            model.eval()
+
     # If it's retrained model's run, then it hasn't been saved yet, so it's None and the unlearned_model variable is the retrained model
     # so we compare it with itself in the following metrics in the rest of the Python file as no unlearning method is applied to it
     reference_model = (
@@ -318,7 +324,7 @@ def get_metric_scores(
             model2=unlearned_model,
             test_dataloader=forget_test_dataloader,
             metric_name="jsdiv",
-            do_global_aggregation=False,
+            do_global_aggregation=do_global_aggregation,
             track_evaluation_resources=track_evaluation_resources,
         )
         test_jsdiv_forget_dict["metric_value_dict"]["final_value"] = (
@@ -456,7 +462,7 @@ def get_metric_scores(
             model1=reference_model,
             model2=unlearned_model,
             test_dataloader=forget_test_dataloader,
-            do_global_aggregation=False,
+            do_global_aggregation=do_global_aggregation,
             track_evaluation_resources=track_evaluation_resources,
         )
         fabric.print("Finished Calculating Activation Distance on Forget Set")
@@ -646,7 +652,7 @@ def get_metric_scores(
             model1=unlearned_model,
             model2=reference_model,
             test_dataloader=forget_test_dataloader,
-            do_global_aggregation=False,
+            do_global_aggregation=do_global_aggregation,
             track_evaluation_resources=track_evaluation_resources,
         )
         fabric.print("Finished Calculating Completeness on Forget Set")

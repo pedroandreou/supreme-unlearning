@@ -155,15 +155,19 @@ def cleanup(fabric, returned_variables=None):
 
     try:
         # FIRST: Close WandB if it's active (must be done before other cleanup)
-        try:
-            if wandb.run is not None:
-                fabric.print("Finalizing WandB run...")
-                if fabric.global_rank == 0:
-                    wandb.finish()
-                fabric.barrier()
-                fabric.print("WandB finalized")
-        except Exception as e:
-            fabric.print(f"Warning: WandB finalization issue: {e}")
+        wandb_was_active = fabric.global_rank == 0 and wandb.run is not None
+        if wandb_was_active:
+            fabric.print("Finalizing WandB run...")
+            try:
+                wandb.finish()
+            except Exception as e:
+                fabric.print(f"Warning: WandB finalization issue: {e}")
+
+        # Every rank must enter the same barrier even though only rank zero
+        # owns and finalizes the W&B run.
+        fabric.barrier()
+        if wandb_was_active:
+            fabric.print("WandB finalized")
 
         # Clear returned variables if they exist
         if returned_variables:

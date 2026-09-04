@@ -7,7 +7,10 @@ Reference: https://github.com/vikram2000b/bad-teaching-unlearning/blob/f1aa988f7
 import torch
 from torch.nn import functional as F
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
-from typing import List
+from supreme.eval_metrics.distributed import (
+    evaluation_valid_mask,
+    gather_rank_values,
+)
 
 
 @track_evaluation_metric
@@ -16,9 +19,9 @@ def actv_dist(fabric, model1, model2, test_dataloader, do_global_aggregation=Tru
     # # Track epoch start
     # actv_dist.track_epoch_start(fabric, 0, "activation_distance")
 
-    distances_on_cpu_list: List[
-        torch.Tensor
-    ] = []  # Store list of CPU tensors (each tensor is for a batch)
+    local_squared_distance = torch.tensor(0.0, dtype=torch.float64)
+    local_sample_count = torch.tensor(0.0, dtype=torch.float64)
+    local_offset = 0
 
     for batch_idx, batch in enumerate(test_dataloader):
         # actv_dist.track_batch_start(fabric)
@@ -40,28 +43,47 @@ def actv_dist(fabric, model1, model2, test_dataloader, do_global_aggregation=Tru
             torch.square(softmax_model1_out - softmax_model2_out),
             dim=1,  # Sum over class probabilities for each sample
         )
-        distances_on_cpu_list.append(diff_cpu)
+        valid_mask = evaluation_valid_mask(
+            fabric=fabric,
+            dataloader=test_dataloader,
+            local_offset=local_offset,
+            batch_size=diff_cpu.shape[0],
+            device=diff_cpu.device,
+        )
+        local_offset += diff_cpu.shape[0]
+        local_squared_distance += diff_cpu[valid_mask].double().sum()
+        local_sample_count += valid_mask.sum().double()
 
         # # Track batch end with mean distance for this batch
         # batch_mean = diff_cpu.mean().item()
         # actv_dist.track_batch_end(fabric, batch_idx, 0, batch_mean)
 
-    local_all_distances_cpu = torch.cat(distances_on_cpu_list, dim=0)
-
     if do_global_aggregation:
-        gathered_all_distances_tensor = fabric.all_gather(local_all_distances_cpu)
-        # Take sqrt after computing mean of squared distances
-        final_distance = torch.sqrt(gathered_all_distances_tensor.cpu().mean()).item()
+        gathered_stats = gather_rank_values(
+            fabric,
+            torch.stack([local_squared_distance, local_sample_count]),
+        )
     else:
-        gathered_all_distances_tensor = local_all_distances_cpu
-        final_distance = torch.sqrt(local_all_distances_cpu.mean()).item()
+        gathered_stats = torch.stack(
+            [local_squared_distance, local_sample_count]
+        ).reshape(1, -1)
+
+    total_stats = gathered_stats.sum(dim=0)
+    if total_stats[1].item() == 0:
+        raise ValueError("Cannot calculate activation distance on an empty dataset")
+    final_distance = torch.sqrt(total_stats[0] / total_stats[1]).item()
+    per_process = torch.where(
+        gathered_stats[:, 1] > 0,
+        torch.sqrt(gathered_stats[:, 0] / gathered_stats[:, 1]),
+        torch.nan,
+    )
 
     # # Track epoch end with final average distance
     # actv_dist.track_epoch_end(fabric, 0, final_distance)
 
     activ_dist_dict = {
         "final_value": final_distance,
-        "per_process": gathered_all_distances_tensor.tolist(),
+        "per_process": per_process.cpu().tolist(),
     }
 
     return activ_dist_dict

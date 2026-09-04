@@ -119,17 +119,14 @@ class EvaluationMetricTracker:
                 epoch=epoch,
                 metric_name=metric_name,
             )
-        fabric.barrier()
 
     def track_epoch_end(self, fabric, epoch, value=None):
         if fabric.global_rank == 0:
             fabric.call("on_evaluation_epoch_end", epoch=epoch, epoch_value=value)
-        fabric.barrier()
 
     def track_batch_start(self, fabric):
         if fabric.global_rank == 0:
             fabric.call("on_evaluation_batch_start")
-        fabric.barrier()
 
     def track_batch_end(self, fabric, batch_idx, epoch, value=None):
         if fabric.global_rank == 0:
@@ -139,7 +136,6 @@ class EvaluationMetricTracker:
                 epoch=epoch,
                 batch_value=value,
             )
-        fabric.barrier()
 
 
 # The decorator is now an instance of this class

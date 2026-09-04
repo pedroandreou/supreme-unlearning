@@ -1014,24 +1014,14 @@ def setup_unlearning(
       multiple GPUs for efficiency.
     - The unlearned model and logs are saved to disk.
 
-    Phase 2: Evaluation (Single-GPU)
+    Phase 2: Evaluation (Multi-GPU)
     - The script is then run a second time with `PERFORM_EVALUATION` set to "true".
-    - It reloads the models and data but executes the evaluation on a single GPU.
+    - It reloads the models and data in a fresh distributed process group.
 
-    This two-phase approach, while seeming inefficient due to reloading, is
-    necessary for two critical reasons:
-
-    1.  **Performance on Small Datasets**: Evaluation metrics are typically computed
-        on small test sets. In a multi-GPU setup, the overhead of distributed
-        processing on these small datasets makes evaluation significantly slower
-        than running it on a single GPU.
-
-    2.  **Technical Execution Constraints**: Attempting to run evaluation on only a
-        single process (e.g., global_rank == 0) within a live multi-GPU unlearning
-        script can cause the entire distributed process to hang.
-
-    By separating the execution, we ensure both unlearning and evaluation run in
-    their most optimal environments.
+    The subprocess boundary is intentional. It guarantees that every process from
+    unlearning has exited before evaluation creates its own process group. Within
+    evaluation, all ranks execute the same model-forward schedule, compute metrics
+    on distinct data shards, and participate in the same ordered collectives.
     """
 
     eval_result = None
@@ -1042,9 +1032,14 @@ def setup_unlearning(
             fabric.print(
                 f"\nChecking WandB for existing evaluation results (project: {project_name}, run: {run_name}, metrics: {eval_metrics})..."
             )
-            status, missing_metrics = check_wandb_run_exists(
-                project_name, run_name, eval_metrics
-            )
+            status = None
+            missing_metrics = None
+            if fabric.global_rank == 0:
+                status, missing_metrics = check_wandb_run_exists(
+                    project_name, run_name, eval_metrics
+                )
+            status = fabric.broadcast(status, src=0)
+            missing_metrics = fabric.broadcast(missing_metrics, src=0)
             if status == "all_exist":
                 fabric.print(
                     "\n################################################################################\n"
@@ -1833,7 +1828,10 @@ def main():
 
         # Cleanup model checkpoint after evaluation to save disk space
         if perform_evaluation and success and cleanup_checkpoints_after_eval:
-            cleanup_unlearning_checkpoint(fabric, method_name, cleanup_enabled=True)
+            fabric.barrier()
+            if fabric.global_rank == 0:
+                cleanup_unlearning_checkpoint(fabric, method_name, cleanup_enabled=True)
+            fabric.barrier()
 
         # Cleanup to prevent segfaults during distributed exit
         cleanup(fabric, returned_variables)

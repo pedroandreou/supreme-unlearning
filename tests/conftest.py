@@ -16,6 +16,7 @@ GPU, dataset, or Hugging Face fetch. Two helpers live here:
 import copy
 
 import pytest
+import torch
 
 from supreme import registry
 from supreme.utils import project_config
@@ -31,9 +32,16 @@ class FakeFabric:
 
     global_rank = 0
     world_size = 1
+    device = torch.device("cpu")
 
     def all_gather(self, data):
         return data
+
+    def broadcast(self, data, src=0):
+        return data
+
+    def barrier(self):
+        pass
 
     def print(self, *args, **kwargs):  # metrics occasionally log progress
         pass

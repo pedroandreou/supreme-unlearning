@@ -14,6 +14,10 @@ the models produce identical predictions.
 
 import torch
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
+from supreme.eval_metrics.distributed import (
+    evaluation_valid_mask,
+    gather_rank_values,
+)
 
 
 @track_evaluation_metric
@@ -31,8 +35,9 @@ def calculate_completeness(
     # # Track epoch start
     # calculate_completeness.track_epoch_start(fabric, 0, "completeness")
 
-    total_samples = 0
-    identical_predictions = 0
+    total_samples = torch.tensor(0.0, dtype=torch.float64)
+    identical_predictions = torch.tensor(0.0, dtype=torch.float64)
+    local_offset = 0
 
     with torch.no_grad():
         for batch_idx, batch in enumerate(test_dataloader):
@@ -48,14 +53,18 @@ def calculate_completeness(
             _, pred_model1 = torch.max(outputs_model1, 1)
             _, pred_model2 = torch.max(outputs_model2, 1)
 
-            # Move tensors to CPU before comparison
-            pred_model1_cpu = pred_model1.detach().cpu()
-            pred_model2_cpu = pred_model2.detach().cpu()
+            valid_mask = evaluation_valid_mask(
+                fabric=fabric,
+                dataloader=test_dataloader,
+                local_offset=local_offset,
+                batch_size=pred_model1.shape[0],
+                device=pred_model1.device,
+            )
+            local_offset += pred_model1.shape[0]
 
-            # Perform comparison on CPU
-            batch_identical = torch.sum(pred_model1_cpu == pred_model2_cpu).item()
-            identical_predictions += batch_identical
-            total_samples += pred_model1.size(0)
+            batch_identical = torch.sum((pred_model1 == pred_model2) & valid_mask)
+            identical_predictions += batch_identical.detach().cpu().double()
+            total_samples += valid_mask.sum().detach().cpu().double()
 
             # # Track batch end with current batch completeness
             # batch_completeness = (batch_identical / pred_model1.size(0)) * 100
@@ -65,18 +74,22 @@ def calculate_completeness(
 
     # Gather from all processes
     if do_global_aggregation:
-        gathered_all_identical_predictions = fabric.all_gather(identical_predictions)
-        gathered_all_total_samples = fabric.all_gather(total_samples)
-        total_identical_predictions = gathered_all_identical_predictions.sum().item()
-        total_samples = gathered_all_total_samples.sum().item()
+        gathered_stats = gather_rank_values(
+            fabric,
+            torch.stack([identical_predictions, total_samples]),
+        )
     else:
-        total_identical_predictions = identical_predictions
-        # total_samples is already the correct local value
-        gathered_all_identical_predictions = torch.tensor([total_identical_predictions])
-        gathered_all_total_samples = torch.tensor([total_samples])
+        gathered_stats = torch.stack([identical_predictions, total_samples]).reshape(
+            1, -1
+        )
+
+    total_identical_predictions = gathered_stats[:, 0].sum().item()
+    global_total_samples = gathered_stats[:, 1].sum().item()
 
     completeness_percentage = (
-        (total_identical_predictions / total_samples) * 100 if total_samples > 0 else 0
+        (total_identical_predictions / global_total_samples) * 100
+        if global_total_samples > 0
+        else 0
     )
 
     # # Track epoch end with final completeness percentage
@@ -84,8 +97,8 @@ def calculate_completeness(
 
     completeness_dict = {
         "final_value": completeness_percentage,
-        "per_process_identical_predictions": gathered_all_identical_predictions.tolist(),
-        "per_process_total_samples": gathered_all_total_samples.tolist(),
+        "per_process_identical_predictions": gathered_stats[:, 0].cpu().tolist(),
+        "per_process_total_samples": gathered_stats[:, 1].cpu().tolist(),
     }
 
     # Return a dictionary

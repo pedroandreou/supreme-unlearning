@@ -14,6 +14,7 @@ Reference: https://github.com/AdityaGolatkar/SelectiveForgetting/blob/master/For
 """
 
 import torch
+from supreme.eval_metrics.distributed import gather_rank_values
 from supreme.utils.unlearning.evaluation_utils import track_evaluation_metric
 
 
@@ -26,30 +27,18 @@ def lay_dist(fabric, start_idx, end_idx, param_pairs, do_global_aggregation=True
     # Process assigned parameters
     local_distance = torch.tensor(0.0, device=fabric.device)
 
-    for batch_idx, i in enumerate(range(start_idx, end_idx)):
-        lay_dist.track_batch_start(fabric)
-
+    for i in range(start_idx, end_idx):
         (k, p), (k0, p0) = param_pairs[i]
 
-        p_local = p.detach().cpu()
-        p0_local = p0.detach().cpu()
-
-        # Keep calculations on GPU if available
-        current_dist = (p_local - p0_local).pow(2).sum()
-        # print(f"Rank {rank}: Current distance: {current_dist}")
-        local_distance += current_dist
-
-        # # Track individual layer distance (this is per-layer, so take sqrt here)
-        layer_dist = torch.sqrt(current_dist).item()
-        lay_dist.track_batch_end(fabric, batch_idx, 0, layer_dist)
+        current_dist = (p.detach().float() - p0.detach().float()).pow(2).sum()
+        local_distance += current_dist.to(fabric.device)
 
     # Aggregate results across all ranks
     if do_global_aggregation:
-        all_distances = fabric.all_gather(local_distance)
-        total_squared_distance = all_distances.sum()
+        all_distances = gather_rank_values(fabric, local_distance.reshape(1))[:, 0]
     else:
         all_distances = local_distance.unsqueeze(0)
-        total_squared_distance = all_distances.sum()
+    total_squared_distance = all_distances.sum()
 
     # Apply final square root as per the paper's formula
     total_distance = torch.sqrt(total_squared_distance).item()

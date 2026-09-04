@@ -74,7 +74,7 @@ force_reevaluation="${FORCE_REEVALUATION:-false}"
 # Logging
 wandb_logging_flag_training="${WANDB_LOG_TRAINING:-false}"
 wandb_logging_flag_unlearning=false
-wandb_logging_flag_evaluation=true
+wandb_logging_flag_evaluation="${WANDB_LOG_EVALUATION:-true}"
 wandb_resume_existing="${WANDB_RESUME_EXISTING:-false}"
 export_class_distribution_info_flag=false
 track_evaluation_resources=false
@@ -332,24 +332,9 @@ run_evaluation() {
 	echo "PHASE 3 ▶ Evaluation          │ evaluation seed $current_evaluation_seed  (evaluation seed ${_kpos:-1} of $K)    · unlearning seed $current_unlearning_seed · training seed $TRAINING_SEED"
 	echo "----------------------------------------------"
 
-	# Save and unset SLURM variables for single-GPU evaluation
-	local original_cuda_visible_devices=$CUDA_VISIBLE_DEVICES
-	local original_slurm_ntasks=$SLURM_NTASKS
-	local original_slurm_procid=$SLURM_PROCID
-	local original_slurm_localid=$SLURM_LOCALID
-	local original_slurm_job_id=$SLURM_JOB_ID
-
-	if [ -n "$SLURM_JOB_ID" ]; then
-		export CUDA_VISIBLE_DEVICES="${CUDA_VISIBLE_DEVICES%%,*}"
-		unset SLURM_NTASKS SLURM_PROCID SLURM_LOCALID SLURM_JOB_ID
-		unset SLURM_NTASKS_PER_NODE SLURM_NNODES SLURM_NODEID
-	else
-		export CUDA_VISIBLE_DEVICES=${gpu_array[0]:-0}
-	fi
-
 	local eval_script="${root_dir}/src/supreme/utils/unlearning/unlearn_main.py"
 	# PERFORM_EVALUATION=true here → unlearn_main.py only runs the evaluation stage, so -seed = s_e
-	local eval_cmd="python \"$eval_script\" -method \"$method\" -eval_metrics \"${EVAL_METRICS}\" -net \"$net_type\" -dataset \"$dataset\" -type_of_unlearning_strategy \"$type_of_unlearning_strategy\" -seed \"$current_evaluation_seed\" -precision \"$precision\" -weight_path \"$full_weight_path\" $extra_args"
+	local eval_cmd="${PYTHON_LAUNCHER} \"$eval_script\" -method \"$method\" -eval_metrics \"${EVAL_METRICS}\" -net \"$net_type\" -dataset \"$dataset\" -type_of_unlearning_strategy \"$type_of_unlearning_strategy\" -seed \"$current_evaluation_seed\" -precision \"$precision\" -weight_path \"$full_weight_path\" $extra_args"
 
 	[ "$wandb_logging_flag_evaluation" = true ] && eval_cmd+=" -wandb_logging_flag"
 	[ "$cleanup_checkpoints_after_eval" = true ] && eval_cmd+=" -cleanup_checkpoints_after_eval"
@@ -361,11 +346,6 @@ run_evaluation() {
 
 		if eval "$check_cmd"; then
 			echo "SKIPPING: Results already exist in WandB for $method (train_seed=$TRAINING_SEED, unlearn_seed=$current_unlearning_seed, eval_seed=$current_evaluation_seed)"
-			export CUDA_VISIBLE_DEVICES="$original_cuda_visible_devices"
-			[ -n "$original_slurm_job_id" ] && export SLURM_JOB_ID="$original_slurm_job_id"
-			[ -n "$original_slurm_ntasks" ] && export SLURM_NTASKS="$original_slurm_ntasks"
-			[ -n "$original_slurm_procid" ] && export SLURM_PROCID="$original_slurm_procid"
-			[ -n "$original_slurm_localid" ] && export SLURM_LOCALID="$original_slurm_localid"
 			return 0
 		fi
 	fi
@@ -376,11 +356,6 @@ run_evaluation() {
 	unset PERFORM_EVALUATION
 	unset WANDB_RESUME_EXISTING
 
-	export CUDA_VISIBLE_DEVICES="$original_cuda_visible_devices"
-	[ -n "$original_slurm_job_id" ] && export SLURM_JOB_ID="$original_slurm_job_id"
-	[ -n "$original_slurm_ntasks" ] && export SLURM_NTASKS="$original_slurm_ntasks"
-	[ -n "$original_slurm_procid" ] && export SLURM_PROCID="$original_slurm_procid"
-	[ -n "$original_slurm_localid" ] && export SLURM_LOCALID="$original_slurm_localid"
 	return 0
 }
 

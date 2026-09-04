@@ -9,6 +9,16 @@ Reference: https://github.com/if-loops/selective-synaptic-dampening/blob/75fdea1
 
 import torch
 from torch.nn import functional as F
+from supreme.eval_metrics.distributed import gather_rank_values
+
+
+def js_divergence_elements(p, q):
+    """Return element-wise divergence contributions used by SUPREME's metric."""
+
+    m = (p + q) / 2
+    kl_div_p = F.kl_div(torch.log(p), m, reduction="none")
+    kl_div_q = F.kl_div(torch.log(q), m, reduction="none")
+    return 0.5 * (kl_div_p + kl_div_q)
 
 
 def JSDiv(fabric, p, q, do_global_aggregation=False):
@@ -18,23 +28,32 @@ def JSDiv(fabric, p, q, do_global_aggregation=False):
     m is the average of p and q, just as in the mathematical formula m = (M(x)+Td(x)) / 2
     """
     # fabric.print("JSDiv is about to be calculated")
-    m = (p + q) / 2
-    kl_div_p = F.kl_div(torch.log(p), m)
-    kl_div_q = F.kl_div(torch.log(q), m)
-
-    # Calculate local JS divergence
-    local_js_div = 0.5 * (kl_div_p + kl_div_q)
+    contributions = js_divergence_elements(p, q)
+    local_js_div = contributions.mean()
 
     final_js_div = None
     if do_global_aggregation:
-        # Gather results from all processes and average them
-        gathered_js_div = fabric.all_gather(local_js_div)
-        final_js_div = gathered_js_div.mean().item()
+        gathered_stats = gather_rank_values(
+            fabric,
+            torch.stack(
+                [
+                    contributions.double().sum(),
+                    torch.tensor(
+                        contributions.numel(),
+                        dtype=torch.float64,
+                        device=contributions.device,
+                    ),
+                ]
+            ),
+        )
+        total_stats = gathered_stats.sum(dim=0)
+        final_js_div = (total_stats[0] / total_stats[1]).item()
+        gathered_js_div = gathered_stats[:, 0] / gathered_stats[:, 1]
         # fabric.print("JSDiv is calculated successfully")
 
         jsdiv_dict = {
             "final_value": final_js_div,
-            "per_process": gathered_js_div.tolist(),
+            "per_process": gathered_js_div.cpu().tolist(),
         }
 
         return jsdiv_dict

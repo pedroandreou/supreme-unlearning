@@ -143,3 +143,11 @@ do not establish thousand-GPU readiness. The dataset-broadcast, full-checkpoint/
 full-parameter materialization and centralized MIA fitting limitations in the
 implementation guide remain. Process checks at the end of the earlier round
 found no surviving validation or network-probe workers.
+
+## Logical-node follow-up
+
+The [logical-node validation report](stage3_logical_node_validation.md) records
+the separate two-agent experiment on one physical host. It exercises global
+rank handling and distributed evaluation across logical nodes without changing
+the server configuration. Its results must not be interpreted as physical
+multi-host network validation.

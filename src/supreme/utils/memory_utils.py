@@ -53,20 +53,24 @@ def memory_usage_in_gb(func, *args, **kwargs):
             mem_usage.append(process.memory_info().rss / 1024**3)  # Convert to GB
             time.sleep(0.1)
 
-    t = Thread(target=monitor_memory)
+    t = Thread(target=monitor_memory, daemon=True)
     t.start()
 
     # Run the function and measure its execution time
-    start_time = time.time()
-    result = func(*args, **kwargs)
-    end_time = time.time()
-    execution_time = end_time - start_time
+    try:
+        fabric.barrier()
+        if torch.cuda.is_available() and torch.device(fabric.device).type == "cuda":
+            torch.cuda.synchronize(fabric.device)
+        start_time = time.perf_counter()
+        result = func(*args, **kwargs)
+        if torch.cuda.is_available() and torch.device(fabric.device).type == "cuda":
+            torch.cuda.synchronize(fabric.device)
+        execution_time = time.perf_counter() - start_time
+    finally:
+        done = True
+        t.join()
 
-    # Stop monitoring
-    done = True
-    t.join()
-
-    peak_mem_usage_gb = max(mem_usage) - baseline_mem
+    peak_mem_usage_gb = max([baseline_mem, *mem_usage]) - baseline_mem
 
     # Gather all process times
     core_time_elapsed_per_process = fabric.all_gather(execution_time)

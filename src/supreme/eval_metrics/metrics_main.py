@@ -10,7 +10,7 @@ from supreme.eval_metrics.membership_inference_attack import (
     get_membership_attack_prob,
 )
 from supreme.eval_metrics.layerwise_distance import (
-    lay_dist,
+    model_lay_dist,
 )
 from supreme.eval_metrics.completeness import (
     calculate_completeness,
@@ -19,18 +19,6 @@ from supreme.eval_metrics.time import (
     calculate_time,
 )
 from lightning.fabric import Fabric
-from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
-
-
-def _is_fsdp_wrapped(model):
-    """Return True if any submodule (or the model itself) is wrapped in FSDP.
-
-    Used for layerwise_distance: when a model is FSDP-wrapped, its parameters
-    are sharded across ranks, so element-wise comparison of local shards would
-    give wrong results. We must gather full params via summon_full_params()
-    before iterating named_parameters().
-    """
-    return any(isinstance(m, FSDP) for m in model.modules())
 
 
 # Returns metrics
@@ -524,65 +512,13 @@ def get_metric_scores(
         fabric.print("================================================")
         fabric.print("\nCalculating Layer-wise Distance", end=" ")
 
-        #########################################################
-        # This is the only metric that is parameter-based whereas
-        # all other metrics are data-based so they are automatically
-        # handled by our DDP setting whereas this one is not.
-        # So we need to manually distribute the parameters across ranks.
-        # We do the calculation here as we do not want to add the
-        # parameter distribution as part of the execution time of the metric
-        #########################################################
-
-        # FSDP requires gathering full parameters before iteration because they
-        # are sharded across ranks. Element-wise comparison of local shards would
-        # produce wrong results. We use FSDP.summon_full_params() as a context
-        # manager to temporarily gather full params on all ranks, and call
-        # lay_dist() INSIDE the context so parameters remain unsharded during
-        # the computation. Once the context exits, params revert to sharded state.
-        fsdp_active = _is_fsdp_wrapped(unlearned_model) or _is_fsdp_wrapped(
-            reference_model
+        layerwise_distance_dict = model_lay_dist(
+            fabric=fabric,
+            model1=unlearned_model,
+            model2=reference_model,
+            do_global_aggregation=do_global_aggregation,
+            track_evaluation_resources=track_evaluation_resources,
         )
-
-        def _compute_layerwise_distance():
-            # Get all parameter pairs
-            param_pairs = list(
-                zip(
-                    unlearned_model.named_parameters(),
-                    reference_model.named_parameters(),
-                )
-            )
-            total_params = len(param_pairs)
-
-            # Distribute parameters across ranks
-            rank = fabric.global_rank
-            world_size = fabric.world_size
-
-            # Calculate which parameters this rank should process
-            params_per_rank = total_params // world_size
-            start_idx = rank * params_per_rank
-            end_idx = (
-                start_idx + params_per_rank if rank < world_size - 1 else total_params
-            )
-
-            return lay_dist(
-                fabric=fabric,
-                start_idx=start_idx,
-                end_idx=end_idx,
-                param_pairs=param_pairs,
-                do_global_aggregation=do_global_aggregation,
-                track_evaluation_resources=track_evaluation_resources,
-            )
-
-        if fsdp_active:
-            # summon_full_params gathers full (non-sharded) params on every rank for
-            # correct element-wise parameter comparison. Memory spikes briefly.
-            with (
-                FSDP.summon_full_params(unlearned_model, writeback=False),
-                FSDP.summon_full_params(reference_model, writeback=False),
-            ):
-                layerwise_distance_dict = _compute_layerwise_distance()
-        else:
-            layerwise_distance_dict = _compute_layerwise_distance()
         fabric.print("Finished Calculating Layer-wise Distance")
         fabric.print(
             "The Layer-wise Distance value is: ",

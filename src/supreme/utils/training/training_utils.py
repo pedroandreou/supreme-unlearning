@@ -1,7 +1,4 @@
 from torch.nn import functional as F
-from supreme.eval_metrics.accuracy import (
-    accuracy,
-)
 import torch
 from torch.optim.lr_scheduler import _LRScheduler
 import wandb
@@ -218,26 +215,22 @@ def evaluate(fabric, model, test_dataloader, epoch=None, do_global_aggregation=F
             traceback.print_exc()
             raise
 
-        out_cpu = out.detach().cpu()
-        clabels_cpu = clabels.detach().cpu()
+        # Keep metric arithmetic on the device; only final summaries go to CPU.
+        out_cpu = out.detach().float()
+        clabels_cpu = clabels.detach().to(out.device)
 
         per_sample_loss_cpu = F.cross_entropy(out_cpu, clabels_cpu, reduction="none")
         loss_cpu = per_sample_loss_cpu.mean()
 
-        acc_val_cpu = accuracy(out_cpu, clabels_cpu)
-
-        if not isinstance(acc_val_cpu, torch.Tensor):
-            acc_tensor_cpu = torch.tensor(acc_val_cpu, device="cpu")
-        else:
-            acc_tensor_cpu = acc_val_cpu.detach().cpu().float()
+        acc_tensor_cpu = (out_cpu.argmax(dim=1) == clabels_cpu).float().mean() * 100
 
         predictions_cpu = out_cpu.argmax(dim=1)
-        valid_mask_cpu = valid_mask.detach().cpu()
+        valid_mask_cpu = valid_mask.detach().to(out.device)
 
         return {
             "Loss": loss_cpu,
             "Acc": acc_tensor_cpu,
-            "LossSum": per_sample_loss_cpu[valid_mask_cpu].sum(),
+            "LossSum": per_sample_loss_cpu[valid_mask_cpu].double().sum(),
             "Correct": (predictions_cpu[valid_mask_cpu] == clabels_cpu[valid_mask_cpu])
             .sum()
             .float(),

@@ -2,6 +2,7 @@ import os
 from supreme.utils.memory_utils import load_weights_efficiently
 import torch
 import json
+import tempfile
 from typing import Optional, Tuple, Dict, Any
 
 
@@ -263,7 +264,7 @@ def save_evaluation_results(fabric, method_name: str, eval_result: Dict) -> None
     paths = initialize_paths(log_dir, method_name)
     eval_path = os.path.join(paths["method_dir"], f"{method_name}_eval_results.json")
 
-    # If file exists, load and merge (append new metrics without overwriting existing ones)
+    # Preserve unrequested metrics, replacing leaves evaluated in this run.
     if os.path.exists(eval_path):
         with open(eval_path, "r") as f:
             existing = json.load(f)
@@ -276,17 +277,33 @@ def save_evaluation_results(fabric, method_name: str, eval_result: Dict) -> None
         merged = eval_result
         fabric.print(f"Saving evaluation metrics to {eval_path}")
 
-    with open(eval_path, "w") as f:
-        json.dump(merged, f, indent=4)
+    # A failed serialization or interrupted write must not corrupt prior results.
+    temporary_path = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            dir=paths["method_dir"],
+            prefix=".evaluation-",
+            suffix=".json",
+            delete=False,
+        ) as output:
+            temporary_path = output.name
+            json.dump(merged, output, indent=4)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary_path, eval_path)
+    finally:
+        if temporary_path is not None and os.path.exists(temporary_path):
+            os.unlink(temporary_path)
 
 
 def _deep_merge(base: dict, override: dict) -> None:
     """
     Recursively merge override into base in-place.
-    New keys from override are added; existing leaf values are not overwritten.
+    Newly evaluated leaves replace old values; unrequested metrics are retained.
     """
     for key, value in override.items():
         if key in base and isinstance(base[key], dict) and isinstance(value, dict):
             _deep_merge(base[key], value)
-        elif key not in base:
+        else:
             base[key] = value

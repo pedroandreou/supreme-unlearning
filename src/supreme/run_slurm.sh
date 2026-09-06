@@ -20,7 +20,9 @@
 #   --forget-percs LIST    Comma-separated forget percentages for random_ (default: 0.001,...,0.10)
 #   --fullclass-classes "c1 c2 ..."   Override fullclass forget targets
 #   --subclass-classes  "c1 c2 ..."   Override subclass forget targets
-#   --gpus N               GPUs per cell (default: 1)
+#   --gpus N               GPUs per node (default: 1; alias --gpus-per-node)
+#   --nodes N              Nodes per cell (default: 1)
+#   --batch-size-mode MODE global (paper-compatible) or per_device (scale throughput)
 #   --time HH:MM:SS        Time limit per cell (default: 48:00:00)
 #   --partition NAME       SLURM partition (default: gpu)
 #   --account NAME         SLURM account (default: $SLURM_ACCOUNT, from .env)
@@ -64,6 +66,8 @@ FORGET_PERCS="$DEFAULT_FORGET_PERCS"
 FULLCLASS_CLASSES_OVERRIDE=""
 SUBCLASS_CLASSES_OVERRIDE=""
 GPUS=1
+NODES=1
+BATCH_SIZE_MODE=${BATCH_SIZE_MODE:-global}
 TIME_LIMIT="48:00:00"
 PARTITION="gpu"
 # SLURM account: from the SLURM_ACCOUNT env var, or the SLURM_ACCOUNT entry in the
@@ -124,8 +128,16 @@ while [[ $# -gt 0 ]]; do
 		SUBCLASS_CLASSES_OVERRIDE="$2"
 		shift 2
 		;;
-	--gpus)
+	--gpus | --gpus-per-node)
 		GPUS="$2"
+		shift 2
+		;;
+	--nodes)
+		NODES="$2"
+		shift 2
+		;;
+	--batch-size-mode)
+		BATCH_SIZE_MODE="$2"
 		shift 2
 		;;
 	--time)
@@ -264,6 +276,18 @@ for SEED in "${SEED_ARRAY[@]}"; do
 	done
 done
 
+for resource_count in "$GPUS" "$NODES"; do
+	if ! [[ $resource_count =~ ^[1-9][0-9]*$ ]]; then
+		echo "--nodes and --gpus-per-node must be positive integers"
+		exit 2
+	fi
+done
+case "$BATCH_SIZE_MODE" in global | per_device) ;; *)
+	echo "Invalid batch-size mode"
+	exit 2
+	;;
+esac
+TOTAL_GPUS=$((NODES * GPUS))
 TOTAL_JOBS=${#CONFIGS[@]}
 
 if [ "$TOTAL_JOBS" -eq 0 ]; then
@@ -288,7 +312,8 @@ echo "Unlearning seed indices (J=$(echo $UNLEARNING_SEEDS_J | wc -w | tr -d ' ')
 echo "Evaluation seed indices  (K=$(echo $EVALUATION_SEEDS_K | wc -w | tr -d ' ')): $EVALUATION_SEEDS_K"
 echo "Total cells: $TOTAL_JOBS"
 echo "Max concurrent: $MAX_CONCURRENT"
-echo "GPUs per cell: $GPUS"
+echo "Nodes per cell: $NODES | GPUs per node: $GPUS | GPUs per cell: $TOTAL_GPUS"
+echo "Stage 1/2 batch-size mode: $BATCH_SIZE_MODE"
 echo "Time limit: $TIME_LIMIT"
 echo "Partition: $PARTITION"
 echo "Account: $ACCOUNT"
@@ -311,7 +336,7 @@ if [ "$DRY_RUN" = true ]; then
 		fi
 	done
 	echo ""
-	echo "Would submit $TOTAL_JOBS jobs (max $MAX_CONCURRENT concurrent, $GPUS GPU(s) each)."
+	echo "Would submit $TOTAL_JOBS jobs (max $MAX_CONCURRENT concurrent, $TOTAL_GPUS GPU(s) each)."
 	exit 0
 fi
 
@@ -339,6 +364,7 @@ EXPORT_VARS+=",UNLEARNING_SEEDS_J=${UNLEARNING_SEEDS_J// /;}"
 EXPORT_VARS+=",EVALUATION_SEEDS_K=${EVALUATION_SEEDS_K// /;}"
 EXPORT_VARS+=",WANDB_PROJECT_PREFIX=${WANDB_PROJECT_PREFIX}"
 EXPORT_VARS+=",PRECISION=${PRECISION}"
+EXPORT_VARS+=",BATCH_SIZE_MODE=${BATCH_SIZE_MODE}"
 [ "$FORCE_RETRAINING" = "true" ] && EXPORT_VARS+=",FORCE_RETRAINING=true"
 [ "$FORCE_RERUN" = "true" ] && EXPORT_VARS+=",FORCE_REUNLEARNING=true,FORCE_REEVALUATION=true"
 [ "$CLEANUP_CHECKPOINTS" = "true" ] && EXPORT_VARS+=",CLEANUP_CHECKPOINTS_AFTER_EVAL=true"
@@ -347,7 +373,7 @@ JOB_ID=$(sbatch \
 	--job-name="supreme" \
 	--account="$ACCOUNT" \
 	--partition="$PARTITION" \
-	--nodes=1 \
+	--nodes="$NODES" \
 	--ntasks-per-node="$GPUS" \
 	--gpus-per-node="$GPUS" \
 	--time="$TIME_LIMIT" \

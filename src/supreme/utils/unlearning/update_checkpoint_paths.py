@@ -51,13 +51,13 @@ def main():
     parser.add_argument(
         "-distributed_strategy",
         type=str,
-        default="ddp",
+        default=os.getenv("DISTRIBUTED_STRATEGY", "ddp"),
         help="Distributed strategy used (ddp, fsdp, deepspeed). Used for path construction.",
     )
     parser.add_argument(
         "-deepspeed_stage",
         type=int,
-        default=2,
+        default=int(os.getenv("DEEPSPEED_STAGE", "2")),
         help="DeepSpeed ZeRO stage (1, 2, or 3). Used for path construction when strategy is deepspeed.",
     )
     parser.add_argument(
@@ -86,8 +86,11 @@ def main():
     else:
         dist_str = "no_dist"
 
+    from supreme.utils.batching import training_batch_namespace
+
     base_checkpoint_path = os.path.join(
         project_config.CHECKPOINT_PATH,
+        training_batch_namespace(),
         f"precision_{args.precision}",
         gpu_str,
         dist_str,

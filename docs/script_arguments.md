@@ -85,6 +85,11 @@ Determined by the `-type_of_unlearning_strategy` flag:
 
 ### Optional flags
 
+When `PERFORM_EVALUATION=true`, `-batch_size` is per device. Stage 3 supports
+DDP, FSDP and DeepSpeed ZeRO 1/2/3; see [distributed evaluation](distributed_evaluation.md)
+for the inference layout and aggregation details. Stage 1/2 retain their existing
+batch-size scaling.
+
 | Argument | Type | Default | Description |
 |----------|------|---------|-------------|
 | `-force_re_evaluation` | flag | `False` | Re-evaluate even if results exist |

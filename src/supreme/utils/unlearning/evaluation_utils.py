@@ -10,6 +10,70 @@ from supreme.eval_metrics.resource_consumption import (
 from supreme.utils.memory_utils import memory_usage_in_gb
 
 
+def resource_log_fields(memory, compute, per_process=False):
+    """Flatten available resource fields, tolerating partial/legacy checkpoints.
+
+    Missing measurements stay absent; they are not replaced by invented zeros.
+    """
+    fields = {}
+    sources = (
+        (
+            memory or {},
+            {
+                "TotalGPUMemoryGB": "total_gpu_memory",
+                "TotalCPUMemoryGB": "total_cpu_memory",
+                "MaxGPUMemoryGB": "max_gpu_memory",
+                "MaxCPUMemoryGB": "max_cpu_memory",
+                "PerProcessGPUMemoryGB": "per_process.gpu_memory",
+                "PerProcessCPUMemoryGB": "per_process.cpu_memory",
+            },
+        ),
+        (
+            compute or {},
+            {
+                "GPUIDs": "gpu_ids",
+                "LogicalCPUCount": "logical_cpu_count",
+                "StartComputeUtilTotal": "start_compute_util.total",
+                "StartComputeUtilMax": "start_compute_util.max",
+                "EndComputeUtilTotal": "end_compute_util.total",
+                "EndComputeUtilMax": "end_compute_util.max",
+                "StartComputeUtilPerProcess": "start_compute_util.per_process",
+                "EndComputeUtilPerProcess": "end_compute_util.per_process",
+                "TotalAverageComputeUtil": "total_avg_compute_util",
+                "TotalPeakComputeUtil": "total_peak_compute_util",
+                "MaxAverageComputeUtil": "max_avg_compute_util",
+                "MaxPeakComputeUtil": "max_peak_compute_util",
+                "TotalComputeSeconds": "total_compute_seconds",
+                "TotalComputeHours": "total_compute_hours",
+                "TotalAverageCPUUtil": "total_avg_cpu_util",
+                "TotalPeakCPUUtil": "total_peak_cpu_util",
+                "MaxAverageCPUUtil": "max_avg_cpu_util",
+                "MaxPeakCPUUtil": "max_peak_cpu_util",
+                "TotalCPUSeconds": "total_cpu_seconds",
+                "TotalCPUHours": "total_cpu_hours",
+                "PerProcessAverageComputeUtil": "per_process.avg_compute_util",
+                "PerProcessPeakComputeUtil": "per_process.peak_compute_util",
+                "PerProcessComputeSeconds": "per_process.compute_seconds",
+                "PerProcessComputeHours": "per_process.compute_hours",
+                "PerProcessAverageCPUUtil": "per_process.avg_cpu_util",
+                "PerProcessPeakCPUUtil": "per_process.peak_cpu_util",
+                "PerProcessCPUSeconds": "per_process.cpu_seconds",
+                "PerProcessCPUHours": "per_process.cpu_hours",
+            },
+        ),
+    )
+    for source, mapping in sources:
+        for label, path in mapping.items():
+            if "PerProcess" in label and not per_process:
+                continue
+            value = source
+            for key in path.split("."):
+                value = value.get(key) if isinstance(value, dict) else None
+            if value is not None:
+                fields[label] = value
+    return fields
+
+
 def track_resources(func, *args, **kwargs):
     """
     Track time, memory, and SM utilization of a function execution.
@@ -44,35 +108,46 @@ def track_resources(func, *args, **kwargs):
     fabric = args[0] if args else kwargs.get("fabric", None)
     assert fabric is not None, "fabric is None"
 
-    # Start resource tracking
-    start_memory_tracking()
-    start_compute_util_data = start_compute_util_tracking(fabric)
-    start_cpu_util_data = start_cpu_util_tracking(fabric)
+    from supreme.eval_metrics.resource_consumption import cancel_resource_tracking
 
-    # Execute the function with memory tracking
-    peak_mem_usage_gb, result, core_time_dict = memory_usage_in_gb(
-        func, *args, **kwargs
-    )
+    start_compute_util_data = start_cpu_util_data = None
+    try:
+        # Start resource tracking
+        start_memory_tracking()
+        start_compute_util_data = start_compute_util_tracking(fabric)
+        start_cpu_util_data = start_cpu_util_tracking(fabric)
 
-    # Track resource usage
-    memory_usage_dict = track_memory_usage(fabric, peak_mem_usage_gb)
-    local_process_time = core_time_dict["per_process"][fabric.global_rank]
-    compute_util_dict = track_compute_util_usage(
-        fabric,
-        start_compute_util_data,
-        local_process_time,
-    )
-    cpu_util_dict = track_cpu_util_usage(
-        fabric,
-        start_cpu_util_data,
-        local_process_time,
-    )
-    # Merge CPU util keys into compute_util_dict so downstream consumers
-    # (and on-disk JSON) see a single combined resource dict without
-    # any signature changes.
-    compute_util_dict.update(cpu_util_dict)
+        # Execute the function with memory tracking
+        peak_mem_usage_gb, result, core_time_dict = memory_usage_in_gb(
+            func, *args, **kwargs
+        )
 
-    return result, core_time_dict, memory_usage_dict, compute_util_dict
+        # Track resource usage
+        memory_usage_dict = track_memory_usage(fabric, peak_mem_usage_gb)
+        local_process_time = core_time_dict["per_process"][fabric.global_rank]
+        compute_util_dict = track_compute_util_usage(
+            fabric,
+            start_compute_util_data,
+            local_process_time,
+        )
+        cpu_util_dict = track_cpu_util_usage(
+            fabric,
+            start_cpu_util_data,
+            local_process_time,
+        )
+        # Merge CPU util keys into compute_util_dict so downstream consumers
+        # (and on-disk JSON) see a single combined resource dict without
+        # any signature changes.
+        cpu_per_process = cpu_util_dict.get("per_process", {})
+        compute_util_dict.setdefault("per_process", {}).update(cpu_per_process)
+        compute_util_dict.update(
+            {key: value for key, value in cpu_util_dict.items() if key != "per_process"}
+        )
+
+        return result, core_time_dict, memory_usage_dict, compute_util_dict
+    except BaseException:
+        cancel_resource_tracking(start_compute_util_data, start_cpu_util_data)
+        raise
 
 
 class EvaluationMetricTracker:

@@ -35,8 +35,8 @@ def calculate_completeness(
     # # Track epoch start
     # calculate_completeness.track_epoch_start(fabric, 0, "completeness")
 
-    total_samples = torch.tensor(0.0, dtype=torch.float64)
-    identical_predictions = torch.tensor(0.0, dtype=torch.float64)
+    total_samples = torch.tensor(0.0, dtype=torch.float64, device=fabric.device)
+    identical_predictions = torch.tensor(0.0, dtype=torch.float64, device=fabric.device)
     local_offset = 0
 
     with torch.no_grad():
@@ -63,8 +63,8 @@ def calculate_completeness(
             local_offset += pred_model1.shape[0]
 
             batch_identical = torch.sum((pred_model1 == pred_model2) & valid_mask)
-            identical_predictions += batch_identical.detach().cpu().double()
-            total_samples += valid_mask.sum().detach().cpu().double()
+            identical_predictions += batch_identical.double()
+            total_samples += valid_mask.sum().double()
 
             # # Track batch end with current batch completeness
             # batch_completeness = (batch_identical / pred_model1.size(0)) * 100
@@ -86,6 +86,8 @@ def calculate_completeness(
     total_identical_predictions = gathered_stats[:, 0].sum().item()
     global_total_samples = gathered_stats[:, 1].sum().item()
 
+    if global_total_samples == 0:
+        raise ValueError("Cannot calculate completeness on an empty dataset")
     completeness_percentage = (
         (total_identical_predictions / global_total_samples) * 100
         if global_total_samples > 0

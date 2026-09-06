@@ -855,6 +855,18 @@ def setup_unlearning(
         )
     # ========================================================================================================================================================= #
 
+    evaluation_only = os.getenv("PERFORM_EVALUATION", "false").lower() == "true"
+    if evaluation_only and not files_exist:
+        raise FileNotFoundError(
+            "Stage 3 requires an existing unlearned checkpoint and logs. "
+            "Run Stage 2 first; evaluation will not silently retrain a model."
+        )
+    if evaluation_only and distributed_strategy_name != "ddp":
+        # Load full checkpoint weights before parameter sharding. The unlearning
+        # path wraps this model with an optimizer, but a checkpoint-only run
+        # skips that path and must explicitly set up its inference wrapper.
+        model = setup_model_for_inference(fabric, model, distributed_strategy_name)
+
     # IF MODEL HAS NOT ALREADY BEEN UNLEARNED WITH THIS METHOD
     if not files_exist:
         # Clear, prominent start banner for UNLEARNING phase
@@ -1111,102 +1123,27 @@ def setup_unlearning(
         # eval_result = None
         # if fabric.global_rank == 0:
         eval_result = get_metric_scores(**eval_kwargs)
+        from supreme.utils.batching import resolve_batch_size
+
+        eval_result["execution_config"] = {
+            **resolve_batch_size(batch_size, fabric.world_size),
+            "distributed_strategy": distributed_strategy_name,
+            "precision": precision,
+            "training_batch_size_mode": os.getenv("BATCH_SIZE_MODE", "global"),
+        }
         # fabric.barrier()
 
         # eval_result = fabric.broadcast(eval_result, src=0)
 
         # Always log during evaluation phase
         # Prepare the resource metrics from the UNLEARNING process to be logged at the top level
-        unlearning_resource_metrics = {}
-        if memory_usage_dict and compute_utilisation_dict:
-            # Base resource metrics (always included)
-            unlearning_resource_metrics = {
-                "TotalGPUMemoryGB": memory_usage_dict["total_gpu_memory"],
-                "TotalCPUMemoryGB": memory_usage_dict["total_cpu_memory"],
-                "MaxGPUMemoryGB": memory_usage_dict["max_gpu_memory"],
-                "MaxCPUMemoryGB": memory_usage_dict["max_cpu_memory"],
-                "GPUIDs": compute_utilisation_dict["gpu_ids"],
-                "StartComputeUtilTotal": compute_utilisation_dict["start_compute_util"][
-                    "total"
-                ],
-                "StartComputeUtilMax": compute_utilisation_dict["start_compute_util"][
-                    "max"
-                ],
-                "EndComputeUtilTotal": compute_utilisation_dict["end_compute_util"][
-                    "total"
-                ],
-                "EndComputeUtilMax": compute_utilisation_dict["end_compute_util"][
-                    "max"
-                ],
-                "TotalAverageComputeUtil": compute_utilisation_dict[
-                    "total_avg_compute_util"
-                ],
-                "TotalPeakComputeUtil": compute_utilisation_dict[
-                    "total_peak_compute_util"
-                ],
-                "MaxAverageComputeUtil": compute_utilisation_dict[
-                    "max_avg_compute_util"
-                ],
-                "MaxPeakComputeUtil": compute_utilisation_dict["max_peak_compute_util"],
-                "TotalComputeSeconds": compute_utilisation_dict[
-                    "total_compute_seconds"
-                ],
-                "TotalComputeHours": compute_utilisation_dict["total_compute_hours"],
-                "LogicalCPUCount": compute_utilisation_dict["logical_cpu_count"],
-                "TotalAverageCPUUtil": compute_utilisation_dict["total_avg_cpu_util"],
-                "TotalPeakCPUUtil": compute_utilisation_dict["total_peak_cpu_util"],
-                "MaxAverageCPUUtil": compute_utilisation_dict["max_avg_cpu_util"],
-                "MaxPeakCPUUtil": compute_utilisation_dict["max_peak_cpu_util"],
-                "TotalCPUSeconds": compute_utilisation_dict["total_cpu_seconds"],
-                "TotalCPUHours": compute_utilisation_dict["total_cpu_hours"],
-            }
+        from supreme.utils.unlearning.evaluation_utils import resource_log_fields
 
-            # Conditionally add per-process metrics
-            if os.getenv("LOG_PER_PROCESS_DATA", "false").lower() == "true":
-                unlearning_resource_metrics.update(
-                    {
-                        "PerProcessGPUMemoryGB": memory_usage_dict["per_process"][
-                            "gpu_memory"
-                        ],
-                        "PerProcessCPUMemoryGB": memory_usage_dict["per_process"][
-                            "cpu_memory"
-                        ],
-                        "StartComputeUtilPerProcess": compute_utilisation_dict[
-                            "start_compute_util"
-                        ]["per_process"],
-                        "EndComputeUtilPerProcess": compute_utilisation_dict[
-                            "end_compute_util"
-                        ]["per_process"],
-                        "PerProcessAverageComputeUtil": compute_utilisation_dict[
-                            "per_process"
-                        ]["avg_compute_util"],
-                        "PerProcessPeakComputeUtil": compute_utilisation_dict[
-                            "per_process"
-                        ]["peak_compute_util"],
-                        "PerProcessComputeSeconds": compute_utilisation_dict[
-                            "per_process"
-                        ]["compute_seconds"],
-                        "PerProcessComputeHours": compute_utilisation_dict[
-                            "per_process"
-                        ]["compute_hours"],
-                        "PerProcessAverageCPUUtil": compute_utilisation_dict[
-                            "per_process"
-                        ]["avg_cpu_util"],
-                        "PerProcessPeakCPUUtil": compute_utilisation_dict[
-                            "per_process"
-                        ]["peak_cpu_util"],
-                        "PerProcessCPUSeconds": compute_utilisation_dict["per_process"][
-                            "cpu_seconds"
-                        ],
-                        "PerProcessCPUHours": compute_utilisation_dict["per_process"][
-                            "cpu_hours"
-                        ],
-                    }
-                )
-        else:
-            fabric.print(
-                "Warning: Memory or power consumption data not available, skipping resource metric logging."
-            )
+        unlearning_resource_metrics = resource_log_fields(
+            memory_usage_dict,
+            compute_utilisation_dict,
+            per_process=os.getenv("LOG_PER_PROCESS_DATA", "false").lower() == "true",
+        )
 
         # Conditionally strip per-process data from evaluation results
         log_per_process = os.getenv("LOG_PER_PROCESS_DATA", "false").lower() == "true"
@@ -1239,7 +1176,9 @@ def setup_unlearning(
             except Exception as e:
                 fabric.print(f"Error during metrics printing: {e}")
 
-        # Save evaluation results locally as JSON (append if file already exists)
+        # Coordinate only this known rank-zero I/O operation, not arbitrary
+        # failure paths where other ranks may be in unrelated collectives.
+        save_error = None
         if fabric.global_rank == 0 and final_eval_result:
             try:
                 save_evaluation_results(
@@ -1248,7 +1187,10 @@ def setup_unlearning(
                     eval_result=final_eval_result,
                 )
             except Exception as e:
-                fabric.print(f"Warning: Failed to save evaluation results to JSON: {e}")
+                save_error = f"Failed to save evaluation results: {e}"
+        save_error = fabric.broadcast(save_error, src=0)
+        if save_error is not None:
+            raise RuntimeError(save_error)
     else:
         fabric.print(
             "Evaluation step skipped (PERFORM_EVALUATION=false). This run performed only the unlearning stage."
@@ -1506,6 +1448,25 @@ def main():
     fabric_devices = (
         1 if MPSAccelerator.is_available() else num_cuda_devices()
     )  # What each task actually sees (1 with GPU binding)
+    if (
+        os.getenv("PERFORM_EVALUATION", "false").lower() == "true"
+        and fabric_devices > 1
+        and "LOCAL_RANK" not in os.environ
+        and "SLURM_JOB_ID" not in os.environ
+    ):
+        # Also supervise direct `python unlearn_main.py` evaluation launches,
+        # not only the pipeline launcher. exec replaces this parent process.
+        command = [
+            sys.executable,
+            "-m",
+            "supreme.utils.fabric.launch_single_node",
+            f"--nproc-per-node={fabric_devices}",
+            os.path.abspath(__file__),
+            *sys.argv[1:],
+        ]
+        sys.stdout.flush()
+        sys.stderr.flush()
+        os.execv(sys.executable, command)
     slurm_ntasks = _os.environ.get("SLURM_NTASKS")
     if slurm_ntasks:
         num_gpus = int(slurm_ntasks)  # World size for paths/logging
@@ -1514,6 +1475,9 @@ def main():
     gpu_ids = get_visible_gpu_ids()
 
     batch_size = args.batch_size
+    from supreme.utils.batching import configure_batch_size_mode, resolve_batch_size
+
+    configure_batch_size_mode(args.batch_size_mode)
     lr = args.lr
     method_name = args.method.lower()
     seed = args.seed
@@ -1580,6 +1544,8 @@ def main():
             use_sync_batchnorm,
             distributed_strategy_name,
         ) = initialize_fabric(fabric_config)
+        num_gpus = fabric.world_size
+        fabric.print(f"Batch configuration: {resolve_batch_size(batch_size, num_gpus)}")
 
         if use_process_tracker:
             tracker = ProcessTracker(
@@ -1589,7 +1555,9 @@ def main():
                 type_of_unlearning_strategy=type_of_unlearning_strategy,
                 dataset_name=dataset_name,
                 num_gpus=num_gpus,
-                batch_size=batch_size,  # this does not need scaling because is for each process
+                batch_size=resolve_batch_size(batch_size, num_gpus)[
+                    "per_device_batch_size"
+                ],
             )
 
         # Define the forget class
@@ -1690,6 +1658,7 @@ def main():
             "alt_run_names": wandb_alt_run_names,
             "group_name": f"{method_name}_group",
             "experiment_config": {
+                **resolve_batch_size(batch_size, num_gpus),
                 "model_name": model_name,
                 "dataset_name": dataset_name,
                 "unlearning_strategy": type_of_unlearning_strategy,
@@ -1824,7 +1793,7 @@ def main():
                 )
             )
 
-        fabric.print(message)
+        (fabric.print if fabric is not None else print)(message)
 
         # Cleanup model checkpoint after evaluation to save disk space
         if perform_evaluation and success and cleanup_checkpoints_after_eval:
@@ -1834,7 +1803,10 @@ def main():
             fabric.barrier()
 
         # Cleanup to prevent segfaults during distributed exit
-        cleanup(fabric, returned_variables)
+        if success:
+            cleanup(fabric, returned_variables)
+        # On failure do not enter barriers or synchronize CUDA: a peer may
+        # already have exited. torchrun/srun supervises the worker group.
 
         # Process tracker cleanup
         if use_process_tracker and tracker:

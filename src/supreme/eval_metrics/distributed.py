@@ -44,6 +44,8 @@ def evaluation_valid_mask(
     shuffles the underlying indices.
     """
 
+    if getattr(dataloader, "drop_last", False):
+        raise RuntimeError("Evaluation requires DataLoader drop_last=False")
     if fabric.world_size == 1:
         return torch.ones(batch_size, dtype=torch.bool, device=device)
 
@@ -94,6 +96,10 @@ def gather_masked_rows(fabric, local_values: Tensor, local_valid: Tensor) -> Ten
     )
     gathered_lengths = gather_rank_values(fabric, local_length).reshape(-1).long()
     max_length = int(gathered_lengths.max().item())
+    if max_length == 0:
+        # Every rank knows the dataset is empty after the length collective.
+        # Avoid backend-dependent zero-sized tensor gathers.
+        return local_values[:0]
 
     if local_values.shape[0] < max_length:
         pad_shape = (max_length - local_values.shape[0], *local_values.shape[1:])

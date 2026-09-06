@@ -19,8 +19,10 @@ def actv_dist(fabric, model1, model2, test_dataloader, do_global_aggregation=Tru
     # # Track epoch start
     # actv_dist.track_epoch_start(fabric, 0, "activation_distance")
 
-    local_squared_distance = torch.tensor(0.0, dtype=torch.float64)
-    local_sample_count = torch.tensor(0.0, dtype=torch.float64)
+    local_squared_distance = torch.tensor(
+        0.0, dtype=torch.float64, device=fabric.device
+    )
+    local_sample_count = torch.tensor(0.0, dtype=torch.float64, device=fabric.device)
     local_offset = 0
 
     for batch_idx, batch in enumerate(test_dataloader):
@@ -30,11 +32,11 @@ def actv_dist(fabric, model1, model2, test_dataloader, do_global_aggregation=Tru
         model1_out = model1(x)  # Output is on fabric.device
         model2_out = model2(x)  # Output is on fabric.device
 
-        # Move model outputs to CPU before further processing
-        model1_out_cpu = model1_out.detach().cpu()
-        model2_out_cpu = model2_out.detach().cpu()
+        # Compute probabilities and squared differences on each rank's device.
+        model1_out_cpu = model1_out.detach().float()
+        model2_out_cpu = model2_out.detach().float()
 
-        # Perform softmax and difference calculations on CPU
+        # Float32 metric arithmetic also avoids low-precision underflow.
         softmax_model1_out = F.softmax(model1_out_cpu, dim=1)
         softmax_model2_out = F.softmax(model2_out_cpu, dim=1)
 

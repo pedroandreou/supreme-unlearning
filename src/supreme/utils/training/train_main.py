@@ -294,8 +294,11 @@ def setup_training(
     gpu_str = f"{num_gpus}gpus" if include_gpus_in_path else ""
     dist_str = f"dist_{distributed_strategy_name}" if num_gpus > 1 else "no_dist"
 
+    from supreme.utils.batching import training_batch_namespace
+
     checkpoint_path = os.path.join(
         project_config.CHECKPOINT_PATH,
+        training_batch_namespace(),
         f"precision_{precision}",
         gpu_str,
         dist_str,
@@ -492,6 +495,9 @@ def main():
         num_gpus = fabric_devices
 
     batch_size = args.batch_size
+    from supreme.utils.batching import configure_batch_size_mode, resolve_batch_size
+
+    configure_batch_size_mode(args.batch_size_mode)
     lr = args.lr
 
     ##############################################################
@@ -559,6 +565,8 @@ def main():
             use_sync_batchnorm,
             distributed_strategy_name,
         ) = initialize_fabric(fabric_config)
+        num_gpus = fabric.world_size
+        fabric.print(f"Batch configuration: {resolve_batch_size(batch_size, num_gpus)}")
 
         if use_process_tracker:
             tracker = ProcessTracker(
@@ -567,7 +575,9 @@ def main():
                 model_name=model_name,
                 dataset_name=dataset_name,
                 num_gpus=num_gpus,
-                batch_size=batch_size,  # this does not need scaling because is for each process
+                batch_size=resolve_batch_size(batch_size, num_gpus)[
+                    "per_device_batch_size"
+                ],
             )
 
         # Initialize WandB
@@ -596,6 +606,7 @@ def main():
                 "precision": precision,
                 "distributed_strategy": distributed_strategy_name,
                 "batch_size": batch_size,
+                **resolve_batch_size(batch_size, num_gpus),
                 "training_seed": training_seed,
                 "unlearning_seed": unlearning_seed,
                 "unlearning_context": unlearning_context,
@@ -680,7 +691,7 @@ def main():
             print(message)
 
         # Cleanup to prevent segfaults during distributed exit
-        if fabric:
+        if fabric and success:
             cleanup(fabric, used_variables)
 
         # Process tracker cleanup

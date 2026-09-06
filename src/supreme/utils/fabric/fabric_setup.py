@@ -32,6 +32,21 @@ class SLURMAwareFabric(Fabric):
             print(*args, **kwargs)
 
 
+class ProcessGroupDDPStrategy(DDPStrategy):
+    @property
+    def distributed_sampler_kwargs(self) -> Dict[str, Any]:
+        # Visible devices can differ from the externally launched world size.
+        return {"num_replicas": self.world_size, "rank": self.global_rank}
+
+
+class ProcessGroupFSDPStrategy(FSDPStrategy):
+    @property
+    def distributed_sampler_kwargs(self) -> Dict[str, Any]:
+        # Fabric 2.1 FSDP otherwise uses num_nodes * visible local devices,
+        # which is wrong when SLURM binds each rank to one visible GPU.
+        return {"num_replicas": self.world_size, "rank": self.global_rank}
+
+
 class SLURMAwareDDPStrategy(DDPStrategy):
     """Custom DDP strategy that uses SLURM's world_size and global_rank for DistributedSampler.
 
@@ -103,13 +118,21 @@ class FlexibleSLURMEnvironment(SLURMEnvironment):
 
 
 def get_slurm_node_count():
-    """Get the number of nodes from SLURM environment, defaulting to 1 for standalone."""
+    """Infer homogeneous node count from SLURM or torchrun, otherwise use one."""
     # SLURM sets SLURM_NNODES or SLURM_JOB_NUM_NODES
     slurm_nnodes = os.environ.get("SLURM_NNODES") or os.environ.get(
         "SLURM_JOB_NUM_NODES"
     )
     if slurm_nnodes:
         return int(slurm_nnodes)
+    if "WORLD_SIZE" in os.environ and "LOCAL_WORLD_SIZE" in os.environ:
+        world = int(os.environ["WORLD_SIZE"])
+        local = int(os.environ["LOCAL_WORLD_SIZE"])
+        if local < 1 or world < 1 or world % local:
+            raise ValueError(
+                "torchrun WORLD_SIZE must be a positive multiple of LOCAL_WORLD_SIZE"
+            )
+        return world // local
     return 1  # Standalone mode
 
 
@@ -160,7 +183,9 @@ def _create_distributed_strategy(config, is_slurm, device):
             if is_slurm:
                 return SLURMAwareDDPStrategy(find_unused_parameters=find_unused), "ddp"
             else:
-                return DDPStrategy(find_unused_parameters=find_unused), "ddp"
+                return ProcessGroupDDPStrategy(
+                    find_unused_parameters=find_unused
+                ), "ddp"
         raise RuntimeError(
             f"Distributed strategy '{distributed_strategy}' is not supported on CPU. "
             "Use 'auto' or 'ddp' (gloo backend) instead."
@@ -171,10 +196,32 @@ def _create_distributed_strategy(config, is_slurm, device):
         if is_slurm:
             return SLURMAwareDDPStrategy(find_unused_parameters=find_unused), "ddp"
         else:
-            return DDPStrategy(find_unused_parameters=find_unused), "ddp"
+            return ProcessGroupDDPStrategy(find_unused_parameters=find_unused), "ddp"
 
     elif distributed_strategy == "fsdp":
         from torch.distributed.fsdp.wrap import size_based_auto_wrap_policy
+
+        evaluation_precision = None
+        if os.getenv("PERFORM_EVALUATION", "false").lower() == "true":
+            from torch.distributed.fsdp import MixedPrecision
+
+            dtype = {
+                "32-true": torch.float32,
+                "16-true": torch.float16,
+                "16-mixed": torch.float16,
+                "bf16-true": torch.bfloat16,
+                "bf16-mixed": torch.bfloat16,
+            }.get(config["precision"], torch.float32)
+            # FSDP's default BatchNorm exception installs fp32 input hooks.
+            # With true bf16/fp16 checkpoints the BN weights are low precision,
+            # so those hooks cause a dtype mismatch. In inference all modules
+            # can use one consistent compute dtype; there are no BN updates.
+            evaluation_precision = MixedPrecision(
+                param_dtype=dtype,
+                reduce_dtype=dtype,
+                buffer_dtype=dtype,
+                _module_classes_to_ignore=(),
+            )
 
         # Size-based policy keeps small modules (like BatchNorm) unwrapped,
         # avoiding FSDP + BatchNorm incompatibility issues.
@@ -183,8 +230,9 @@ def _create_distributed_strategy(config, is_slurm, device):
             min_num_params=1_000_000,
         )
         return (
-            FSDPStrategy(
+            ProcessGroupFSDPStrategy(
                 auto_wrap_policy=auto_wrap_policy,
+                mixed_precision=evaluation_precision,
                 state_dict_type="full",  # Save full (non-sharded) state dict as a single file
             ),
             "fsdp",
@@ -264,9 +312,9 @@ def initialize_fabric(config):
     )
 
     # Warn if FSDP/DeepSpeed is selected but only 1 GPU is available
-    multi_gpu = (
-        config.get("num_gpus", 1) > 1 or os.environ.get("SLURM_NTASKS", "1") != "1"
-    )
+    from supreme.utils.batching import launched_world_size
+
+    multi_gpu = launched_world_size(config.get("num_gpus", 1)) > 1
     if not multi_gpu and distributed_strategy_name.startswith(("fsdp", "deepspeed")):
         import warnings
 
@@ -383,31 +431,51 @@ def initialize_fabric(config):
 
 
 def setup_model_for_inference(fabric, model, distributed_strategy_name):
-    """Set up a model for inference (no training) with fabric.
+    """Set up reference models during unlearning or inference-only Stage 3.
 
-    - DDP: fabric.setup() wraps the model with DistributedDataParallel.
-    - FSDP: fabric.setup_module() wraps with FullyShardedDataParallel. This
-      actually shards parameters across GPUs for a real memory benefit over DDP.
-      setup_module() is the documented way to set up inference models with FSDP:
-      https://lightning.ai/docs/fabric/2.1.0/api/generated/lightning.fabric.fabric.Fabric.html
-      With use_orig_params=True (the default in PyTorch 2.0+, fsdp.py:171),
-      named_parameters() returns original names and shapes - required by
-      layerwise_distance metric (which wraps the iteration in summon_full_params).
-    - DeepSpeed: model.to(device) only. DeepSpeed ZeRO Stage 1/2 do not support
-      optimizer=None at engine initialization (see deepspeedai/DeepSpeed#1699),
-      and creating multiple DeepSpeed engines causes fabric.backward() crashes
-      (see Lightning-AI/pytorch-lightning#19773). As a result, DeepSpeed inference
-      models are replicated on each GPU - same as DDP - and only the trainable
-      model gets a DeepSpeed engine.
+    Stage 3 (PERFORM_EVALUATION=true): DDP and FSDP use Fabric's forward
+    wrappers; ZeRO 3 uses a separate inference engine per model with parameter
+    sharding. ZeRO 1/2 use synchronized replicas with DeepSpeed-compatible
+    precision, because there is no optimizer or gradient state to shard.
 
-    Args:
-        fabric: Lightning Fabric instance
-        model: The model to set up
-        distributed_strategy_name: Name of the distributed strategy (e.g., 'ddp', 'fsdp', 'deepspeed_stage2')
-
-    Returns:
-        The model set up for inference
+    During Stage 2, preserve the existing reference-model setup: DDP/FSDP
+    wrappers and device-local DeepSpeed references. Never create additional
+    training engines that would replace the active engine used by backward().
     """
+    if os.getenv("PERFORM_EVALUATION", "false").lower() == "true":
+        # Stage 3 has no backward passes or optimizers. Each model needs its
+        # own forward wrapper, including Fabric's precision conversion.
+        if distributed_strategy_name.startswith("deepspeed"):
+            from copy import deepcopy
+
+            strategy = fabric.strategy
+            training_config = strategy.config
+            inference_config = deepcopy(training_config)
+            stage = inference_config.get("zero_optimization", {}).get("stage", 0)
+            if stage in (1, 2):
+                # ZeRO 1/2 shard optimizer/gradient state, neither of which
+                # exists in inference. Parameters remain replicated, as in
+                # training. DeepSpeed rejects stage 1/2 without an optimizer.
+                from supreme.utils.fabric.inference import ReplicatedEvaluationModule
+
+                fabric.print(
+                    f"Stage 3 ZeRO {stage}: replicated inference, no optimizer or gradients"
+                )
+                return ReplicatedEvaluationModule(fabric, model)
+            inference_config.pop("optimizer", None)
+            inference_config.pop("scheduler", None)
+            strategy.config = inference_config
+            try:
+                model = fabric.setup_module(model)
+            finally:
+                strategy.config = training_config
+            fabric.print(
+                f"Stage 3 DeepSpeed: selected ZeRO {stage}; "
+                f"inference parameter stage {3 if stage == 3 else 0}; no optimizer"
+            )
+            return model.eval()
+        return fabric.setup_module(model).eval()
+
     if distributed_strategy_name == "ddp":
         model = fabric.setup(model)
     elif distributed_strategy_name == "fsdp":

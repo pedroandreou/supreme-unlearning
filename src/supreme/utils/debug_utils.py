@@ -541,7 +541,9 @@ def handle_distributed_error(fabric, error, epoch=None):
     """Handles errors in distributed training, coordinating debugging through rank 0"""
     # All ranks report their errors
     print(f"\n{'='*50}")
-    print(f"**Error** occurred on rank {fabric.local_rank}")
+    print(
+        f"**Error** occurred on rank {getattr(fabric, 'global_rank', 'uninitialized')}"
+    )
 
     # Add detailed error information
     error_details = {
@@ -606,35 +608,10 @@ def handle_distributed_error(fabric, error, epoch=None):
         except Exception as e:
             print(f"  × GPU check failed: {e}")
 
-    try:
-        # Synchronize all processes and collect error info
-        error_info = {
-            "rank": fabric.local_rank,
-            "error": str(error),
-            "traceback": traceback.format_exc(),
-            "details": error_details,
-        }
-        all_errors = fabric.all_gather(error_info)
-
-        # Only rank 0 coordinates debugging
-        if fabric.global_rank == 0:
-            print("\nCollected errors from all processes:")
-            for err in all_errors:
-                print(f"\nRank {err['rank']}:")
-                print(f"Error: {err['error']}")
-                print("Details:")
-                for k, v in err["details"].items():
-                    print(f"  {k}: {v}")
-                print("Traceback:")
-                print(err["traceback"])
-
-        fabric.barrier()
-
-    except Exception as gather_error:
-        print(
-            f"Error during error handling on rank {fabric.local_rank}: {gather_error}"
-        )
-
-    print(f"{'='*50}\n")
+    # Error paths must never introduce collectives. Other ranks may still be
+    # in a forward collective, or may already have exited. The supervised
+    # launcher terminates siblings when this rank exits nonzero.
+    sys.stderr.flush()
+    sys.stdout.flush()
     # Re-raise the original error to ensure proper process termination
     raise error

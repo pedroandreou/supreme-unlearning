@@ -48,6 +48,17 @@ _mps_memory_monitor_thread = None
 # =================================================================== #
 # ========================== MEMORY USAGE =========================== #
 # =================================================================== #
+def cancel_resource_tracking(*handles):
+    """Stop local monitors after an error, without distributed collectives."""
+    global monitor_flag, cpu_monitor_flag, _mps_memory_monitor_flag
+    monitor_flag = cpu_monitor_flag = _mps_memory_monitor_flag = False
+    threads = [handle.get("monitor_thread") for handle in handles if handle]
+    threads.append(_mps_memory_monitor_thread)
+    for thread in threads:
+        if thread is not None:
+            thread.join(timeout=1.0)
+
+
 def start_memory_tracking():
     """Initialize GPU memory tracking."""
     global _mps_peak_memory_gb, _mps_memory_monitor_flag, _mps_memory_monitor_thread

@@ -8,6 +8,14 @@ def get_common_parser():
     parser.add_argument("-warm", type=int, default=1, help="warm up training phase")
     parser.add_argument("-lr", type=float, default=0.1, help="initial learning rate")
     parser.add_argument(
+        "-batch_size_mode",
+        choices=["global", "per_device"],
+        default=None,
+        help="Interpret batch sizes as fixed global batches or fixed per-device batches. "
+        "Defaults: BATCH_SIZE_MODE=global for Stage 1/2; EVALUATION_BATCH_SIZE_MODE=per_device for Stage 3. "
+        "Changing the global training batch can change optimization and results.",
+    )
+    parser.add_argument(
         "-wandb_logging_flag",
         action="store_true",
         default=False,

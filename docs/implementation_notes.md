@@ -15,7 +15,7 @@ Lightning Fabric provides [four core distributed operations](https://lightning.a
 - We verified that the number of GPUs does not affect final results
 
 **Common aggregation patterns:**
-- `.mean()`: Average across processes (e.g., accuracy, loss)
+- Global sums divided by global counts: Stage 3 accuracy, loss and other sample-dependent means (not an unweighted average of rank means)
 - `.max()`: Maximum across processes (e.g., execution time, peak memory)
 - `.sum()`: Sum across processes (e.g., total correct predictions)
 
@@ -63,7 +63,7 @@ effective_batch_size = per_gpu_batch_size × num_gpus
 
 **Problem:** If you use `batch_size=64` on 4 GPUs, your effective batch size becomes 256, not 64. This changes training dynamics and produces different results than single-GPU training.
 
-**Our Solution:** We automatically scale `batch_size` down by `num_gpus` to maintain the same effective batch size. This is handled centrally in [`create_dataloader()`](../src/supreme/utils/generic_utils.py#L56-L93):
+**Our Solution for Stage 1/2:** We automatically scale `batch_size` down by `num_gpus` to maintain the same effective batch size. Stage 3 instead uses a per-device batch size, since inference does not update model parameters. This is handled centrally in [`create_dataloader()`](../src/supreme/utils/generic_utils.py):
 
 ```python
 if num_gpus > 1:
@@ -274,6 +274,11 @@ Checkpoint paths automatically include the strategy (e.g. `2gpus/dist_ddp/`, `4g
 
 ### How inference-only models are wrapped during unlearning
 
+This section describes Stage 2. Stage 3 uses a separate inference-only setup,
+including parameter-sharded ZeRO 3 reference models. See
+[Distributed Stage 3 evaluation](distributed_evaluation.md) for its model layout,
+metric aggregation, launcher and validation instructions.
+
 The unlearning pipeline sets up multiple models per run: one trainable model (the one being unlearned) and several inference-only models (the original frozen model, the retrained reference, and optionally an unlearning teacher). SUPREME handles these asymmetrically depending on the distributed strategy:
 
 | Strategy | Trainable model | Inference-only models (original, retrained, teacher) |
@@ -301,4 +306,4 @@ The computation is still correct: importances are computed locally with `loss.ba
 
 **Checkpoint format by strategy.** Training and unlearning checkpoints are saved via `fabric.save()` for DDP and FSDP, which handles strategy-specific unwrapping automatically and produces a `{"model": state_dict}` format. For DeepSpeed, `fabric.save()` produces a sharded directory incompatible with `torch.load()`, so we extract the raw model's state_dict and save it directly via `torch.save()`. Both formats are loaded transparently by `load_weights_efficiently()`. DeepSpeed checkpoints do not include optimiser states - only model weights - but training and unlearning always run to completion (no mid-epoch resumption), so optimiser state isn't needed.
 
-**Correctness note for `layerwise_distance`.** FSDP inference models have sharded parameters; iterating `named_parameters()` and doing element-wise comparison on local shards would give wrong results. [`metrics_main.py`](../src/supreme/eval_metrics/metrics_main.py) detects FSDP-wrapped models and wraps the `lay_dist` call in `FSDP.summon_full_params(..., writeback=False)` for both models, temporarily gathering full params on every rank. Brief memory spike, but guaranteed correctness. Other metrics (accuracy, jsdiv, activation_distance, completeness, time, ZRF, MIA) use only forward passes and are unaffected.
+**Stage 3 parameter distance.** [`model_lay_dist`](../src/supreme/eval_metrics/layerwise_distance.py) gathers FSDP parameters or ZeRO 3 parameter pairs before comparing them, validates names/shapes, and partitions arithmetic by element count. FSDP full-parameter gathering temporarily increases memory use. Other data-dependent metrics distribute forward passes and aggregate padding-corrected statistics as described in the [Stage 3 guide](distributed_evaluation.md).

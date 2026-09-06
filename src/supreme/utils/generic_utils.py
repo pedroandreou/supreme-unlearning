@@ -66,30 +66,28 @@ def create_dataloader(
     num_workers=8,
     pin_memory=None,
     num_gpus=1,
+    batch_size_mode=None,
     **kwargs,
 ):
-    """
-    num_workers is set to 0 because Scalene does not really support multiprocessing, even though it states that it does
-    the effective number of workers is 32 if SCALENE is not set in our environment
+    """Create a loader with explicit global or per-device batch semantics.
 
-    Note: In distributed training, each GPU processes batch_size samples, so effective batch size = batch_size * num_gpus.
-    To maintain the same effective batch size as single-GPU training, we scale batch_size down by num_gpus.
-
-    See: https://huggingface.co/docs/accelerate/concept_guides/performance
+    Defaults: global for Stage 1/2, per-device for Stage 3. Override using
+    BATCH_SIZE_MODE / EVALUATION_BATCH_SIZE_MODE or batch_size_mode. SCALENE
+    disables loader workers; DATALOADER_NUM_WORKERS otherwise overrides them.
     """
+    from supreme.utils.batching import launched_world_size, resolve_batch_size
 
     # pin_memory: only supported on CUDA, not on MPS or CPU
     if pin_memory is None:
         pin_memory = torch.cuda.is_available()
 
-    # Scale batch_size for multi-GPU distributed training to maintain same effective batch size
-    # effective_batch_size = per_gpu_batch_size * num_gpus
-    # To keep effective_batch_size constant, we use: per_gpu_batch_size = batch_size // num_gpus
-    if num_gpus > 1:
-        scaled_batch_size = batch_size // num_gpus
-        if scaled_batch_size < 1:
-            scaled_batch_size = 1
-        batch_size = scaled_batch_size
+    batch_config = resolve_batch_size(
+        batch_size, launched_world_size(num_gpus), batch_size_mode
+    )
+    batch_size = batch_config["per_device_batch_size"]
+    num_workers = int(os.getenv("DATALOADER_NUM_WORKERS", str(num_workers)))
+    if num_workers < 0:
+        raise ValueError("DATALOADER_NUM_WORKERS must be nonnegative")
 
     # Create the dataloader with appropriate settings
     dataloader = DataLoader(
@@ -102,6 +100,7 @@ def create_dataloader(
         # drop_last=is_training,  # Drop last incomplete batch only during training
     )
 
+    dataloader.supreme_batch_config = batch_config
     return dataloader
 
 

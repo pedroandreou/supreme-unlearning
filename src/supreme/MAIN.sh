@@ -77,7 +77,7 @@ wandb_logging_flag_unlearning=false
 wandb_logging_flag_evaluation="${WANDB_LOG_EVALUATION:-true}"
 wandb_resume_existing="${WANDB_RESUME_EXISTING:-false}"
 export_class_distribution_info_flag=false
-track_evaluation_resources=false
+track_evaluation_resources=${TRACK_EVALUATION_RESOURCES:-false}
 cleanup_checkpoints_after_eval="${CLEANUP_CHECKPOINTS_AFTER_EVAL:-false}"
 
 # Training
@@ -151,6 +151,7 @@ fi
 
 script_dir=$(dirname "$(realpath "$0")")
 root_dir=$(realpath "${script_dir}/../..") # script_dir = src/supreme/ → ../.. = project root
+export PYTHONPATH="${root_dir}/src${PYTHONPATH:+:$PYTHONPATH}"
 
 # Activate the project venv if one isn't already active. Honor $SUPREME_VENV,
 # otherwise probe common names (the Makefile default is `unlearning`). Harmless if
@@ -165,11 +166,21 @@ if [ -z "${VIRTUAL_ENV:-}" ]; then
 fi
 
 # GPU setup
+export BATCH_SIZE_MODE="${BATCH_SIZE_MODE:-global}"
+batch_path_component=""
+case "$BATCH_SIZE_MODE" in
+global) ;;
+per_device) batch_path_component="batch_per_device/" ;;
+*)
+	echo "BATCH_SIZE_MODE must be global or per_device"
+	exit 2
+	;;
+esac
 if [ -n "$SLURM_JOB_ID" ]; then
 	DEVICE_IDS=${CUDA_VISIBLE_DEVICES:-"0"}
-	PYTHON_LAUNCHER="srun python"
-	export NCCL_IB_DISABLE=1
-	export NCCL_P2P_LEVEL=NVL
+	PYTHON_LAUNCHER="srun --kill-on-bad-exit=1 python"
+	# Let NCCL discover the available interconnect. Site-specific NCCL_*
+	# environment overrides are inherited without disabling InfiniBand here.
 	export PYTHONFAULTHANDLER=1
 	NUM_GPUS=${SLURM_NTASKS:-1}
 else
@@ -177,6 +188,11 @@ else
 	PYTHON_LAUNCHER="CUDA_VISIBLE_DEVICES=$DEVICE_IDS python"
 	IFS=',' read -r -a gpu_array <<<"$DEVICE_IDS"
 	NUM_GPUS=${#gpu_array[@]}
+	if [ "$NUM_GPUS" -gt 1 ]; then
+		# Supervise the complete worker group so a failed rank cannot leave
+		# peers blocked in NCCL. Fabric detects these externally launched ranks.
+		PYTHON_LAUNCHER="CUDA_VISIBLE_DEVICES=$DEVICE_IDS python -m supreme.utils.fabric.launch_single_node --nproc-per-node=$NUM_GPUS"
+	fi
 fi
 
 gpu_path_component=""
@@ -205,6 +221,7 @@ export USE_FABRIC_CALLBACKS="false"
 export WANDB_LOG_EVALUATION="$wandb_logging_flag_evaluation"
 
 WANDB_PROJECT_PREFIX="${WANDB_PROJECT_PREFIX:-R32}"
+[ "$BATCH_SIZE_MODE" = per_device ] && WANDB_PROJECT_PREFIX+="_batch_per_device"
 export WANDB_PROJECT_PREFIX
 
 echo "=============================================="
@@ -222,6 +239,7 @@ echo "Evaluation Seeds (K=$K): ${EVALUATION_SEEDS[*]}"
 echo "Precision: $precision"
 echo "WandB Prefix: $WANDB_PROJECT_PREFIX"
 echo "Num GPUs: $NUM_GPUS"
+echo "Stage 1/2 batch mode: $BATCH_SIZE_MODE | Stage 3: ${EVALUATION_BATCH_SIZE_MODE:-per_device}"
 echo "=============================================="
 echo ""
 
@@ -338,6 +356,7 @@ run_evaluation() {
 
 	[ "$wandb_logging_flag_evaluation" = true ] && eval_cmd+=" -wandb_logging_flag"
 	[ "$cleanup_checkpoints_after_eval" = true ] && eval_cmd+=" -cleanup_checkpoints_after_eval"
+	[ "$track_evaluation_resources" = true ] && eval_cmd+=" -track_evaluation_resources"
 
 	# Check WandB for existing results
 	if [ "$force_reevaluation" = false ]; then
@@ -404,7 +423,7 @@ fi
 # Flock prevents race conditions when multiple cells share the same (TRAINING_SEED, MODEL, DATASET):
 # the marker file is only written after train_model returns successfully, so any task that sees it
 # is guaranteed a fully-trained checkpoint. Always-on - cheap when J=1 (single cell per cluster).
-LOCK_DIR="${root_dir}/logs/training/.locks"
+LOCK_DIR="${root_dir}/logs/training/.locks/${batch_path_component}"
 mkdir -p "$LOCK_DIR"
 LOCK_FILE="${LOCK_DIR}/train_seed_${TRAINING_SEED}_${MODEL}_${DATASET}.lock"
 TRAINING_DONE_MARKER="${LOCK_DIR}/train_seed_${TRAINING_SEED}_${MODEL}_${DATASET}.done"
@@ -432,7 +451,7 @@ _train_if_needed() {
 	# Confirm the trainer actually produced a checkpoint before marking done -
 	# otherwise a future run would skip training yet find no checkpoint (deadlock).
 	local base_ckpt_dir ts_dir final_ckpt
-	base_ckpt_dir="${root_dir}/logs/training/precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/${MODEL}/${DATASET}"
+	base_ckpt_dir="${root_dir}/logs/training/${batch_path_component}precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/${MODEL}/${DATASET}"
 	ts_dir=$(ls -td "${base_ckpt_dir}"/*/ 2>/dev/null | head -1)
 	final_ckpt=""
 	[ -n "$ts_dir" ] && final_ckpt=$(ls -t "${ts_dir}"*-best.pth 2>/dev/null | head -1)
@@ -471,7 +490,7 @@ fi
 weight_path=$(find_checkpoint "$MODEL" "$DATASET" 2>/dev/null || true)
 if [ -z "$weight_path" ]; then
 	echo "ERROR: No checkpoint found for $MODEL/$DATASET after training phase."
-	echo "  Expected at: logs/training/precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/$MODEL/$DATASET/"
+	echo "  Expected at: logs/training/${batch_path_component}precision_${precision}/${gpu_path_component}${dist_str_component}train_seed_${TRAINING_SEED}/unlearning_seed_${TRAINING_SEED}/model_checkpoints/$MODEL/$DATASET/"
 	exit 1
 fi
 echo "Using checkpoint: $weight_path"
@@ -521,19 +540,19 @@ for j in "${UNLEARNING_SEEDS[@]}"; do
 	# Build log directory with two-level seed structure
 	case "$STRATEGY" in
 	"fullclass")
-		main_dir="${root_dir}/logs/unlearning/precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/fullclass/${DATASET}/${MODEL}/classes_${n_classes}"
+		main_dir="${root_dir}/logs/unlearning/${batch_path_component}precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/fullclass/${DATASET}/${MODEL}/classes_${n_classes}"
 		unlearning_args="-classes $n_classes -forget_class_name $FORGET_TARGET"
 		sub_dir="${main_dir}/forget_class_${FORGET_TARGET}"
 		;;
 	"subclass")
 		local_n_superclasses=${N_SUPERCLASSES["$DATASET"]}
 		local_n_subclasses=${N_SUBCLASSES["$DATASET"]}
-		main_dir="${root_dir}/logs/unlearning/precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/subclass/${DATASET}/${MODEL}/superclasses_${local_n_superclasses}_subclasses_${local_n_subclasses}"
+		main_dir="${root_dir}/logs/unlearning/${batch_path_component}precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/subclass/${DATASET}/${MODEL}/superclasses_${local_n_superclasses}_subclasses_${local_n_subclasses}"
 		unlearning_args="-superclasses $local_n_superclasses -subclasses $local_n_subclasses -forget_subclass_name $FORGET_TARGET"
 		sub_dir="${main_dir}/forget_class_${FORGET_TARGET}"
 		;;
 	"random_")
-		main_dir="${root_dir}/logs/unlearning/precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/random_/${DATASET}/${MODEL}/classes_${n_classes}"
+		main_dir="${root_dir}/logs/unlearning/${batch_path_component}precision_${precision}/${gpu_path_component}train_seed_${TRAINING_SEED}/unlearn_seed_${current_unlearning_seed}/random_/${DATASET}/${MODEL}/classes_${n_classes}"
 		unlearning_args="-classes $n_classes -forget_perc $FORGET_TARGET"
 		sub_dir="${main_dir}/forget_perc_${FORGET_TARGET}"
 		;;

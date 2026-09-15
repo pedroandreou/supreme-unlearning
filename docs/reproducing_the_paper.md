@@ -36,7 +36,10 @@ bash src/supreme/run_local.sh \
   --forget-percs 0.001
 ```
 
-The full grid above is the long-running production job. If you would rather try the pipeline first on a single cell (one method, one seed, one scenario) to confirm the environment is set up correctly before launching the full grid, use the smaller Quickstart command from the [README](../README.md#-quickstart) instead.
+The full grid above is the long-running production job. To check the environment
+first, use the smaller command in the [experiment quickstart](quickstart.md).
+The [reproduction notebook](../notebooks/reproduce_experiments.ipynb) provides a
+step-by-step walkthrough from installation through the full grid and table generation.
 
 The pipeline writes per-stage outputs (training checkpoints, unlearning checkpoints, already-logged W&B results) to disk and to W&B, and detects and skips them on re-launch. Interruptions are therefore safe to resume: re-running the same command will pick up where it left off, only re-doing the cells that did not finish.
 

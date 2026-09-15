@@ -186,4 +186,4 @@ on a machine whose `nvidia-smi` shows GPUs usually means a CPU-only PyTorch buil
 (reinstall via `make cuda`) or, inside Docker, that the container was started
 without GPU access (see the NVIDIA Container Toolkit note in §3b).
 
-Then run a minimal smoke test - see [README → Running Experiments](../README.md#-running-experiments).
+Then run the small example in the [experiment quickstart](quickstart.md).

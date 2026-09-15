@@ -52,6 +52,8 @@ controlled design.
 
 ## Select a protocol
 
+[![SUPREME pipeline stages, seed notation and matched or nested seed protocols](../assets/seed-protocol-overview.svg)](../assets/seed-protocol-overview.svg)
+
 After following the [environment setup](environment_setup.md), the local and
 SLURM launchers accept these flags. They configure real experiments, unlike the
 [published-results example](results/README.md), which only reads existing tables.

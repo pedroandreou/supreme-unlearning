@@ -1,6 +1,6 @@
 <div align="center">
 
-![SUPREME](assets/SUPREME-wordmark.svg)
+![SUPREME: reproducible evaluation for image unlearning, with independent seed control across training, unlearning and evaluation](assets/SUPREME-wordmark.svg)
 
 <h2>Evaluate unlearning beyond a single trained model.</h2>
 

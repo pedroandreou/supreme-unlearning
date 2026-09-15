@@ -87,8 +87,7 @@ import ...
 
 If your component derives from third-party code, keep its attribution in the
 source-file header (`Paper:`, `Reference:`, `Notes:`) and credit the upstream
-project in the README [Acknowledgements](https://github.com/pedroandreou/supreme-unlearning#-acknowledgements)
-section.
+project in the [acknowledgements](acknowledgements.md).
 
 ## Opening a pull request
 
@@ -104,9 +103,14 @@ section.
    ```
 5. Push and open a PR. The PR template will guide you through the checklist.
 
-CI (`.github/workflows/ci.yml`) runs the same `ruff` lint + format checks and a
-packaging build check on every PR, so a green `make quality` locally should mean
-a green CI.
+CI runs lint, format, package-build and test checks on every PR. Release and
+container publishing workflows are documented in the [maintainer guide](maintaining.md).
+
+## Sharing methods and results
+
+Add your method to [community/](../community/README.md) and submit results to the
+[community results table](../community/leaderboard.md), following its reporting
+requirements.
 
 ## Documentation
 

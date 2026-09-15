@@ -10,16 +10,16 @@ the latter sample different starting models.
 separate training and unlearning variance. For a metric with deterministic
 evaluation, their Equation (4) gives
 
-$$
+```math
 \operatorname{Var}(\bar Z)
 = \frac{\sigma_{\mathrm{train}}^2}{I}
 + \frac{\sigma_{\mathrm{unlearn}}^2}{IJ}.
-$$
+```
 
-Here, $I$ counts independently trained starting models and $J$ counts unlearning
+Here, $`I`$ counts independently trained starting models and $`J`$ counts unlearning
 repetitions per starting model. Under the paper's sampling assumptions,
-increasing $J$ reduces only the second term. If training variance is positive,
-holding $I$ fixed leaves a nonzero uncertainty floor. This is a statement about
+increasing $`J`$ reduces only the second term. If training variance is positive,
+holding $`I`$ fixed leaves a nonzero uncertainty floor. This is a statement about
 the variance of the estimated mean, not a claim that every extra unlearning run
 is useless or that a universal seed count is sufficient.
 
@@ -29,14 +29,14 @@ The [pipeline](../src/supreme/README.md) exposes three nested levels:
 
 | Level | Repeated operation | Interpretation |
 |---|---|---|
-| Training, $I$ | Train an original model for each training seed | Sample variation between starting models |
-| Unlearning, $J$ | Reuse each original model across unlearning seeds | Sample variation within that starting model |
-| Evaluation, $K$ | Re-evaluate each unlearned model across evaluation seeds | Investigate randomness in a stochastic evaluator |
+| Training, $`I`$ | Train an original model for each training seed | Sample variation between starting models |
+| Unlearning, $`J`$ | Reuse each original model across unlearning seeds | Sample variation within that starting model |
+| Evaluation, $`K`$ | Re-evaluate each unlearned model across evaluation seeds | Investigate randomness in a stochastic evaluator |
 
 SUPREME schedules these repetitions and retains their seed identities. Analysis
-must preserve this grouping: the $J$ runs sharing a checkpoint are not $J$
+must preserve this grouping: the $`J`$ runs sharing a checkpoint are not $`J`$
 independent training replicates. Separate stage controls enable a variance
-analysis; the launchers do not automatically estimate variance components.
+analysis by retaining the training, unlearning and evaluation hierarchy.
 
 For a stochastic evaluator, applying total variance again separates
 between-training, within-training/between-unlearning, and within-model evaluation
@@ -64,7 +64,7 @@ SLURM launchers accept these flags. They configure real experiments, unlike the
 
 These small counts illustrate syntax, not a recommended experimental budget.
 Use distinct training seeds and distinct nonnegative inner indices below 1000;
-see [seed mapping](notation.md#independence-requirement). Report $I$, $J$ and $K$
+see [seed mapping](notation.md#independence-requirement). Report $`I`$, $`J`$ and $`K`$
 separately, alongside the data split, method configuration and hardware.
 
 Choose repetitions according to the metric, stage variability and cost. See
@@ -78,11 +78,10 @@ do not gain additional variation from changing only the unlearning seed.
 The [training-seed study](https://arxiv.org/abs/2510.26714v5) reports a
 training/unlearning variance analysis using 75 training seeds and ten unlearning
 seeds per training seed in its image experiments. SUPREME supported the extended
-image-classification experiments; this does not make its LLM or federated
-learning experiments SUPREME capabilities.
+image-classification experiments through its nested training/unlearning workflow.
 
 The [SUPREME framework paper](https://arxiv.org/abs/2606.00380) demonstrates
-Pins Face Recognition with ten training seeds and matched $J=K=1$. Its
+Pins Face Recognition with ten training seeds and matched $`J=K=1`$. Its
 [published tables](results/README.md) show aggregate spread across those
 pipelines. They do not contain the nested observations needed to recover
 separate training, unlearning and evaluation variance components.

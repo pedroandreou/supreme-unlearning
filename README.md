@@ -1,8 +1,126 @@
 <div align="center">
 
-<h3><strong>⚡ SUPREME - A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation</strong></h3>
+![SUPREME](assets/SUPREME-wordmark.svg)
 
-![*SUPREME*](assets/SUPREME-wordmark.svg)
+<h2>Evaluate unlearning beyond a single trained model.</h2>
+
+Control training, unlearning and evaluation seeds separately. Compare methods
+against retraining, from one GPU to a cluster, through an extensible Python API.
+
+<p>
+  <a href="https://pedroandreou.github.io/supreme-unlearning-page/results/"><strong>Explore published results</strong></a> ·
+  <a href="#try-the-results-example">Try the local example</a> ·
+  <a href="notebooks/custom_components.ipynb">Add your method</a>
+</p>
+
+<p>
+  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&label=PyPI" alt="PyPI version"></a>
+  <a href="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml"><img src="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://arxiv.org/abs/2606.00380"><img src="https://img.shields.io/badge/Paper-WIPE--OUT_2_2026-582c83" alt="WIPE-OUT 2 paper"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
+</p>
+
+</div>
+
+## Why more unlearning seeds are not enough
+
+Repeating unlearning on one trained model measures variation conditional on
+that model. It does not reveal how the result changes when the original model
+is trained again. When training contributes to variability, extra unlearning
+runs cannot generally replace independent training runs.
+[Lanyon et al.](https://arxiv.org/abs/2510.26714v5) explain this through a
+training/unlearning variance decomposition and give guidance on allocating
+compute between the two.
+
+SUPREME makes this experimental design practical: train **I** original models,
+run **J** unlearning repetitions per model, and optionally **K** evaluation
+repetitions per unlearned model. Separate stage seeds support investigating
+where variation arises; distributed execution supports the repeated workload.
+The framework provides the experiment structure, not an automatic
+variance-component report.
+
+**[Understand the seed design and its limits](docs/seed_protocols.md)**
+· [Research on training seeds](https://arxiv.org/abs/2510.26714v5)
+
+## See what the paper reports
+
+[![Published forget-accuracy differences, showing means and standard deviations across ten seeds](assets/published-seed-variation.png)](https://pedroandreou.github.io/supreme-unlearning-page/results/)
+
+*Existing Table 1 results on Pins Face Recognition, random-sample unlearning
+(forget 0.1%). Accuracy differences are unlearned minus retrained, in percentage
+points. Bars show one standard deviation across ten seeds, not confidence
+intervals. These experiments used one GPU and matched stage seeds (J = K = 1),
+so this plot shows combined variation, not separate stage contributions.*
+
+**[Interactive viewer](https://pedroandreou.github.io/supreme-unlearning-page/results/)**
+· [Download the tables](docs/results/)
+· [Paper](https://arxiv.org/abs/2606.00380)
+· [Presentation](docs/presentations/125_Andreou_Petros.pptx)
+
+## Try the results example
+
+Browse the published values with Python 3.9 or later. This example uses only the
+standard library and reads existing results; it runs no experiments.
+
+```bash
+git clone https://github.com/pedroandreou/supreme-unlearning.git
+cd supreme-unlearning
+python3 examples/paper_results.py
+```
+
+To export all three tables, JSON metadata and an offline interactive viewer:
+
+```bash
+python3 examples/paper_results.py --output paper-results
+# Open paper-results/index.html in your browser.
+```
+
+For actual model training, unlearning and evaluation, follow the
+[experiment quickstart](#-quickstart) or [paper reproduction guide](docs/reproducing_the_paper.md).
+To install the framework as a library:
+
+```bash
+pip install supreme-unlearning
+```
+
+The experiment environment uses the paper's pinned Python/PyTorch stack.
+See [setup and supported platforms](docs/environment_setup.md) and
+[dependency guidance](.github/SECURITY.md).
+The pinned research dependencies include versions with published security
+advisories. Read the security guidance before loading external models or checkpoints.
+
+## Why SUPREME?
+
+Machine unlearning aims to remove the influence of selected training data from
+an already-trained model while preserving performance on the retained data.
+
+SUPREME provides a common train → unlearn → evaluate workflow for image
+classification. It compares methods with a retrained reference, supports
+separate seeds for each stage, and can distribute stages across GPUs and nodes.
+Researchers can register datasets, models, methods and metrics from their own
+packages. See [available components](#-available-components) and
+[implementation limits](docs/implementation_notes.md).
+
+### Framework comparison
+
+Adapted from [slide 2](docs/presentations/125_Andreou_Petros.pptx) of the WIPE-OUT 2
+presentation (September 2026). “Yes” reproduces a check; “Not shown” means the
+capability was not identified in that comparison.
+
+| Framework | Domain in the comparison | Multi-seed | Multi-GPU | Multi-precision |
+|---|---|:---:|:---:|:---:|
+| [OpenUnlearning](https://github.com/locuslab/open-unlearning) | LLMs | Not shown | Yes | Yes |
+| [MUBox](https://doi.org/10.1145/3734436.3734454) | Image classification | Not shown | Not shown | Not shown |
+| [ERASURE](https://github.com/aiim-research/ERASURE) | Image classification | Yes | Not shown | Not shown |
+| [Deep Unlearn](https://github.com/xcadet/deepunlearn) | Image classification | Yes | Not shown | Not shown |
+| **SUPREME** | **Image classification** | **Yes** | **Yes** | **Yes** |
+
+[Definitions, sources and comparison scope](docs/framework_comparison.md).
+This is a capability comparison, not a measured ranking of speed or unlearning quality.
+The paper's results use the matched seed protocol and a single GPU.
+
+<details>
+<summary>Technology and development tools</summary>
 
 <p>
   <strong>🔬 Tech Stack</strong><br>
@@ -42,41 +160,12 @@
   <a href="https://pre-commit.com/"><img src="https://img.shields.io/badge/pre--commit-FAB040?logo=precommit&logoColor=white" alt="pre-commit"></a>
 </p>
 
-<p>
-  <strong>📄 Publication</strong><br>
-  <a href="docs/presentations/125_Andreou_Petros.pptx">Presentation slides (PowerPoint)</a><br>
-  <a href="https://arxiv.org/abs/2606.00380"><img src="https://img.shields.io/badge/arXiv-2606.00380-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Preprint"></a>
-  <a href="https://aiimlab.org/events/ECML_PKDD_2026_WIPE-OUT_2_Workshop_on_Machine_Unlearning_and_Privacy_Preservation.html"><img src="https://img.shields.io/badge/Published-WIPE--OUT_2_(ECML--PKDD_2026)-brightgreen" alt="Published at the WIPE-OUT 2 Workshop, ECML-PKDD 2026"></a>
-  <a href="https://pedroandreou.github.io/supreme-unlearning-page/"><img src="https://img.shields.io/badge/Project_Page-Live-2ea44f?logo=githubpages&logoColor=white" alt="Project Page"></a>
-</p>
 
-<p>
-  <strong>📦 Repository</strong><br>
-  <a href="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml"><img src="https://github.com/pedroandreou/supreme-unlearning/actions/workflows/ci.yml/badge.svg" alt="CI (lint, build, tests)"></a>
-  <a href="https://pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/pypi/v/supreme-unlearning?logo=pypi&logoColor=white&label=PyPI&cacheSeconds=3600" alt="PyPI"></a>
-  <a href="https://test.pypi.org/project/supreme-unlearning/"><img src="https://img.shields.io/badge/TestPyPI-supreme--unlearning-orange?logo=pypi&logoColor=white" alt="TestPyPI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue" alt="MIT License"></a>
-</p>
+</details>
 
-</div>
-
----
-
-## 📖 Overview
-
-**SUPREME** is an open-source framework for evaluating *machine unlearning* methods on image classification tasks at scale.
-
-Machine unlearning removes the influence of a chosen subset of training data (a class, a sub-class, or a random sample) from an already-trained model, *without* retraining from scratch. A good unlearned model should behave as if it had never seen the forgotten data while still classifying everything else accurately. Comparing the many proposed methods fairly demands a standardised, repeatable harness, and SUPREME is that harness.
-
-**The gap it fills.** Existing image-classification unlearning frameworks - [MUBox](https://dl.acm.org/doi/10.1145/3734436.3734454), [DeepUnlearn](https://github.com/xcadet/deepunlearn), and [ERASURE](https://github.com/aiim-research/ERASURE) - run on a single device, which caps how many methods, scenarios, and seeds can be evaluated in reasonable time. SUPREME distributes the **entire** train → unlearn → evaluate pipeline across multiple GPUs and nodes, removing that bottleneck. It does for image-classification unlearning what [Open-Unlearning](https://github.com/locuslab/open-unlearning) did for LLM unlearning in the text domain: turn a single-device research problem into a scalable, reproducible benchmark. To our knowledge it is the first multi-GPU framework for the field.
-
-From a single command it runs the full pipeline - train a baseline, unlearn the chosen subset, then evaluate against a from-scratch *retrained* reference - on distributed, mixed-precision hardware (PyTorch + Lightning Fabric, with SLURM helpers), and it is pip-installable and registry-based so you can add your own datasets, models, methods, and metrics without forking. The full component matrix is in [Available Components](#-available-components) below. Because randomness enters at three independent points - **training**, **unlearning**, and **evaluation** - SUPREME varies the seed at each stage separately and reports the resulting distribution rather than a [single, potentially misleading point estimate](https://arxiv.org/abs/2510.26714).
-
-SUPREME evolved from the codebases of [Selective Synaptic Dampening (SSD)](https://github.com/if-loops/selective-synaptic-dampening) and [bad-teaching unlearning](https://github.com/vikram2000b/bad-teaching-unlearning), generalising them from single-method, single-device scripts into a standardised, distributed evaluation platform.
-
-For the formal pipeline algorithm and mathematical notation (seed formulas, set definitions, operation signatures), see [`src/supreme/README.md`](src/supreme/README.md) and [`docs/notation.md`](docs/notation.md).
-
-> **🔒 Security note:** SUPREME pins the exact dependency stack used for the WIPE-OUT 2 (ECML-PKDD 2026) paper to keep results reproducible. Some pinned versions have published advisories that apply only when loading untrusted checkpoints or models - see [SECURITY.md](.github/SECURITY.md) for details and safe-usage guidance.
+SUPREME builds on [Selective Synaptic Dampening](https://github.com/if-loops/selective-synaptic-dampening)
+and [Bad Teacher](https://github.com/vikram2000b/bad-teaching-unlearning).
+Please cite the original method papers alongside SUPREME when using their implementations.
 
 ---
 
@@ -307,10 +396,13 @@ CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](
 
 | Document | Covers |
 |---|---|
+| [Published results](docs/results/README.md) | Existing paper tables, measurement definitions, downloads and the offline viewer |
+| [Framework comparison](docs/framework_comparison.md) | Slide-2 comparison with definitions, sources and scope |
 | [`docs/contributing.md`](docs/contributing.md) | How to report issues, add components, and open a pull request |
 | [`CHANGELOG.md`](CHANGELOG.md) | Notable changes per release (Keep a Changelog / SemVer) |
 | [`community/`](community/README.md) | Community-contributed methods, templates, and the results leaderboard |
 | [`docs/notation.md`](docs/notation.md) | Symbol glossary - seeds, datasets, models, indices, counts |
+| [`docs/seed_protocols.md`](docs/seed_protocols.md) | Why training seeds matter, variance decomposition, and choosing a nested protocol |
 | [`src/supreme/README.md`](src/supreme/README.md) | Formal algorithm specification (matched and decoupled protocols) |
 | [`docs/environment_setup.md`](docs/environment_setup.md) | Virtual-env and Docker Dev Container setup, `.env` template, prerequisites |
 | [`docs/reproducing_the_paper.md`](docs/reproducing_the_paper.md) | Single command for the paper's experiment grid plus the W&B-export-to-LaTeX-tables workflow |
@@ -388,12 +480,6 @@ for details.
 
 ---
 
-## ⭐ Star History
-
-<a href="https://star-history.com/#pedroandreou/supreme-unlearning&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=pedroandreou/supreme-unlearning&type=Date" />
-  </picture>
-</a>
+If SUPREME is useful for your research, star the repository to keep it handy and
+share the [results viewer](https://pedroandreou.github.io/supreme-unlearning-page/results/)
+with a colleague working on image unlearning.

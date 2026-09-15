@@ -1,12 +1,16 @@
 # SUPREME: Algorithmic Specification
 
-This page documents what the pipeline does at the algorithm level. For how to invoke it, see the project root [`../README.md`](../README.md) and the in-script help in [`run_local.sh`](run_local.sh), [`run_slurm.sh`](run_slurm.sh), and [`MAIN.sh`](MAIN.sh).
+This page documents what the pipeline does at the algorithm level. For how to invoke it, see the [project README](../../README.md) and the in-script help in [`run_local.sh`](run_local.sh), [`run_slurm.sh`](run_slurm.sh), and [`MAIN.sh`](MAIN.sh).
 
 ## Notation
 
-All symbols used in this document are defined in [docs/notation.md](../docs/notation.md), the single source of truth across all SUPREME docs. This covers seeds ($s_t, s_u, s_e, I, J, K, \dots$), datasets ($D, D_f, D_r, \dots$), models ($M_o, M_r, M_u, M_\text{init}, \dots$), and operations ($\text{Train}, \text{Sample}, \text{Evaluate}$). Notation matches the paper (Section 2.1 and Algorithm 1).
+All symbols used in this document are defined in [docs/notation.md](../../docs/notation.md), the single source of truth across all SUPREME docs. This covers seeds ($s_t, s_u, s_e, I, J, K, \dots$), datasets ($D, D_f, D_r, \dots$), models ($M_o, M_r, M_u, M_\text{init}, \dots$), and operations ($\text{Train}, \text{Sample}, \text{Evaluate}$). Notation matches the paper (Section 2.1 and Algorithm 1).
 
 ## Seed protocols
+
+For the research motivation, variance formula and interpretation limits, see
+[why training seeds matter](../../docs/seed_protocols.md). Repetitions sharing
+a starting model must retain that grouping in a statistical analysis.
 
 The same pipeline supports three protocols, selected by the `--unlearning-seeds` and `--evaluation-seeds` flags in [`run_local.sh`](run_local.sh) / [`run_slurm.sh`](run_slurm.sh) (passed to [`MAIN.sh`](MAIN.sh) as the `UNLEARNING_SEEDS_J` / `EVALUATION_SEEDS_K` env vars):
 
@@ -18,9 +22,9 @@ The same pipeline supports three protocols, selected by the `--unlearning-seeds`
 | $M_r$ trained | once per $(s_t, c)$, seed $s_t$ | once per $(s_t, j, c)$, seed $s_u$ | once per $(s_t, j, c)$, seed $s_u$ |
 | Evaluations per $(s_t, j, c, a)$ | 1 | 1 | $K$ |
 | Training cost (epochs) | $I \cdot \epsilon^\text{tot}$ | $I \cdot \epsilon^\text{tot}$ | $I \cdot \epsilon^\text{tot}$ |
-| Independent unlearning runs | $I \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ |
-| Independent eval results | $I \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot K \cdot \lvert C\rvert \cdot \lvert A\rvert$ |
-| Best for | dev / debug / small ablations | paper-scale statistical results | evaluator-side variability on top of $I \times J$ |
+| Unlearning runs | $I \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ |
+| Evaluation results | $I \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot \lvert C\rvert \cdot \lvert A\rvert$ | $I \cdot J \cdot K \cdot \lvert C\rvert \cdot \lvert A\rvert$ |
+| Interpretation | combined pipeline variation; used in the SUPREME paper | within-model and between-model variation | evaluator-side variability on top of $I \times J$ |
 
 ### Cost example: 10 training seeds on Cifar100 ($\epsilon^\text{tot} = 200$)
 

@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="864pt" height="453.6pt" viewBox="0 0 864 453.6" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2026-09-15T13:21:59.787471</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.4, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 453.6
+L 864 453.6
+L 864 0
+L 0 0
+z
+" style="fill: #faf8fc"/>
+  </g>
+  <g id="axes_1">
+   <g id="table_1">
+    <g id="patch_2">
+     <path d="M 47.52 163.296
+L 201.312 163.296
+L 201.312 129.276
+L 47.52 129.276
+z
+" style="fill: #582c83; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_1">
+     <text style="fill: #ffffff; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="149.59725" transform="rotate(-0 124.416 149.59725)">Framework</text>
+    </g>
+    <g id="patch_3">
+     <path d="M 201.312 163.296
+L 408.9312 163.296
+L 408.9312 129.276
+L 201.312 129.276
+z
+" style="fill: #582c83; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_2">
+     <text style="fill: #ffffff; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="149.59725" transform="rotate(-0 305.1216 149.59725)">Domain</text>
+    </g>
+    <g id="patch_4">
+     <path d="M 408.9312 163.296
+L 539.6544 163.296
+L 539.6544 129.276
+L 408.9312 129.276
+z
+" style="fill: #582c83; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_3">
+     <text style="fill: #ffffff; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="149.59725" transform="rotate(-0 474.2928 149.59725)">Multi-seed</text>
+    </g>
+    <g id="patch_5">
+     <path d="M 539.6544 163.296
+L 670.3776 163.296
+L 670.3776 129.276
+L 539.6544 129.276
+z
+" style="fill: #582c83; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_4">
+     <text style="fill: #ffffff; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="149.59725" transform="rotate(-0 605.016 149.59725)">Multi-GPU</text>
+    </g>
+    <g id="patch_6">
+     <path d="M 670.3776 163.296
+L 816.48 163.296
+L 816.48 129.276
+L 670.3776 129.276
+z
+" style="fill: #582c83; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_5">
+     <text style="fill: #ffffff; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="149.59725" transform="rotate(-0 743.4288 149.59725)">Multi-precision</text>
+    </g>
+    <g id="patch_7">
+     <path d="M 47.52 197.316
+L 201.312 197.316
+L 201.312 163.296
+L 47.52 163.296
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_6">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="183.61725" transform="rotate(-0 124.416 183.61725)">OpenUnlearning</text>
+    </g>
+    <g id="patch_8">
+     <path d="M 201.312 197.316
+L 408.9312 197.316
+L 408.9312 163.296
+L 201.312 163.296
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_7">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="183.61725" transform="rotate(-0 305.1216 183.61725)">LLMs</text>
+    </g>
+    <g id="patch_9">
+     <path d="M 408.9312 197.316
+L 539.6544 197.316
+L 539.6544 163.296
+L 408.9312 163.296
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_8">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="183.61725" transform="rotate(-0 474.2928 183.61725)">Not shown</text>
+    </g>
+    <g id="patch_10">
+     <path d="M 539.6544 197.316
+L 670.3776 197.316
+L 670.3776 163.296
+L 539.6544 163.296
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_9">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="183.61725" transform="rotate(-0 605.016 183.61725)">Yes</text>
+    </g>
+    <g id="patch_11">
+     <path d="M 670.3776 197.316
+L 816.48 197.316
+L 816.48 163.296
+L 670.3776 163.296
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_10">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="183.61725" transform="rotate(-0 743.4288 183.61725)">Yes</text>
+    </g>
+    <g id="patch_12">
+     <path d="M 47.52 231.336
+L 201.312 231.336
+L 201.312 197.316
+L 47.52 197.316
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_11">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="217.63725" transform="rotate(-0 124.416 217.63725)">MUBox</text>
+    </g>
+    <g id="patch_13">
+     <path d="M 201.312 231.336
+L 408.9312 231.336
+L 408.9312 197.316
+L 201.312 197.316
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_12">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="217.63725" transform="rotate(-0 305.1216 217.63725)">Image classification</text>
+    </g>
+    <g id="patch_14">
+     <path d="M 408.9312 231.336
+L 539.6544 231.336
+L 539.6544 197.316
+L 408.9312 197.316
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_13">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="217.63725" transform="rotate(-0 474.2928 217.63725)">Not shown</text>
+    </g>
+    <g id="patch_15">
+     <path d="M 539.6544 231.336
+L 670.3776 231.336
+L 670.3776 197.316
+L 539.6544 197.316
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_14">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="217.63725" transform="rotate(-0 605.016 217.63725)">Not shown</text>
+    </g>
+    <g id="patch_16">
+     <path d="M 670.3776 231.336
+L 816.48 231.336
+L 816.48 197.316
+L 670.3776 197.316
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_15">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="217.63725" transform="rotate(-0 743.4288 217.63725)">Not shown</text>
+    </g>
+    <g id="patch_17">
+     <path d="M 47.52 265.356
+L 201.312 265.356
+L 201.312 231.336
+L 47.52 231.336
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_16">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="251.65725" transform="rotate(-0 124.416 251.65725)">ERASURE</text>
+    </g>
+    <g id="patch_18">
+     <path d="M 201.312 265.356
+L 408.9312 265.356
+L 408.9312 231.336
+L 201.312 231.336
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_17">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="251.65725" transform="rotate(-0 305.1216 251.65725)">Image classification</text>
+    </g>
+    <g id="patch_19">
+     <path d="M 408.9312 265.356
+L 539.6544 265.356
+L 539.6544 231.336
+L 408.9312 231.336
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_18">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="251.65725" transform="rotate(-0 474.2928 251.65725)">Yes</text>
+    </g>
+    <g id="patch_20">
+     <path d="M 539.6544 265.356
+L 670.3776 265.356
+L 670.3776 231.336
+L 539.6544 231.336
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_19">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="251.65725" transform="rotate(-0 605.016 251.65725)">Not shown</text>
+    </g>
+    <g id="patch_21">
+     <path d="M 670.3776 265.356
+L 816.48 265.356
+L 816.48 231.336
+L 670.3776 231.336
+z
+" style="fill: #ffffff; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_20">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="251.65725" transform="rotate(-0 743.4288 251.65725)">Not shown</text>
+    </g>
+    <g id="patch_22">
+     <path d="M 47.52 299.376
+L 201.312 299.376
+L 201.312 265.356
+L 47.52 265.356
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_21">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="285.67725" transform="rotate(-0 124.416 285.67725)">Deep Unlearn</text>
+    </g>
+    <g id="patch_23">
+     <path d="M 201.312 299.376
+L 408.9312 299.376
+L 408.9312 265.356
+L 201.312 265.356
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_22">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="285.67725" transform="rotate(-0 305.1216 285.67725)">Image classification</text>
+    </g>
+    <g id="patch_24">
+     <path d="M 408.9312 299.376
+L 539.6544 299.376
+L 539.6544 265.356
+L 408.9312 265.356
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_23">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="285.67725" transform="rotate(-0 474.2928 285.67725)">Yes</text>
+    </g>
+    <g id="patch_25">
+     <path d="M 539.6544 299.376
+L 670.3776 299.376
+L 670.3776 265.356
+L 539.6544 265.356
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_24">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="285.67725" transform="rotate(-0 605.016 285.67725)">Not shown</text>
+    </g>
+    <g id="patch_26">
+     <path d="M 670.3776 299.376
+L 816.48 299.376
+L 816.48 265.356
+L 670.3776 265.356
+z
+" style="fill: #f2edf7; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_25">
+     <text style="fill: #201c2c; font: 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="285.67725" transform="rotate(-0 743.4288 285.67725)">Not shown</text>
+    </g>
+    <g id="patch_27">
+     <path d="M 47.52 333.396
+L 201.312 333.396
+L 201.312 299.376
+L 47.52 299.376
+z
+" style="fill: #e9def3; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_26">
+     <text style="fill: #582c83; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="124.416" y="319.69725" transform="rotate(-0 124.416 319.69725)">SUPREME</text>
+    </g>
+    <g id="patch_28">
+     <path d="M 201.312 333.396
+L 408.9312 333.396
+L 408.9312 299.376
+L 201.312 299.376
+z
+" style="fill: #e9def3; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_27">
+     <text style="fill: #582c83; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="305.1216" y="319.650375" transform="rotate(-0 305.1216 319.650375)">Image classification</text>
+    </g>
+    <g id="patch_29">
+     <path d="M 408.9312 333.396
+L 539.6544 333.396
+L 539.6544 299.376
+L 408.9312 299.376
+z
+" style="fill: #e9def3; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_28">
+     <text style="fill: #582c83; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="474.2928" y="319.69725" transform="rotate(-0 474.2928 319.69725)">Yes</text>
+    </g>
+    <g id="patch_30">
+     <path d="M 539.6544 333.396
+L 670.3776 333.396
+L 670.3776 299.376
+L 539.6544 299.376
+z
+" style="fill: #e9def3; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_29">
+     <text style="fill: #582c83; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="605.016" y="319.69725" transform="rotate(-0 605.016 319.69725)">Yes</text>
+    </g>
+    <g id="patch_31">
+     <path d="M 670.3776 333.396
+L 816.48 333.396
+L 816.48 299.376
+L 670.3776 299.376
+z
+" style="fill: #e9def3; stroke: #ded8e5; stroke-width: 0.5; stroke-linejoin: miter"/>
+    </g>
+    <g id="text_30">
+     <text style="fill: #582c83; font: 700 12px 'DejaVu Sans'; text-anchor: middle" x="743.4288" y="319.69725" transform="rotate(-0 743.4288 319.69725)">Yes</text>
+    </g>
+   </g>
+   <g id="text_31">
+    <text style="fill: #582c83; font: 700 11px 'DejaVu Sans'; text-anchor: start" x="47.52" y="31.752" transform="rotate(-0 47.52 31.752)">SUPREME  /  FRAMEWORK COMPARISON</text>
+   </g>
+   <g id="text_32">
+    <text style="fill: #201c2c; font: 700 24px 'DejaVu Sans'; text-anchor: start" x="47.52" y="68.04" transform="rotate(-0 47.52 68.04)">Image unlearning, across seeds and devices</text>
+   </g>
+   <g id="text_33">
+    <text style="fill: #625d70; font: 12px 'DejaVu Sans'; text-anchor: start" x="47.52" y="95.256" transform="rotate(-0 47.52 95.256)">Capabilities compared in the WIPE-OUT 2 presentation · September 2026</text>
+   </g>
+   <g id="text_34">
+    <text style="fill: #201c2c; font: 11px 'DejaVu Sans'; text-anchor: start" x="47.52" y="371.952" transform="rotate(-0 47.52 371.952)">“Not shown” means support was not identified in slide 2; it does not mean impossible.</text>
+   </g>
+   <g id="text_35">
+    <text style="fill: #625d70; font: 10px 'DejaVu Sans'; text-anchor: start" x="47.52" y="394.632" transform="rotate(-0 47.52 394.632)">Capability comparison, not measured speed or unlearning quality. Definitions and sources:</text>
+   </g>
+   <g id="text_36">
+    <text style="fill: #582c83; font: 10px 'DejaVu Sans'; text-anchor: start" x="47.52" y="418.6728" transform="rotate(-0 47.52 418.6728)">github.com/pedroandreou/supreme-unlearning/blob/main/docs/framework_comparison.md</text>
+   </g>
+  </g>
+ </g>
+</svg>

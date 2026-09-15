@@ -279,7 +279,15 @@ REVIEW.md
 src/supreme/utils/wandb_utils/latex_generation/figures/
 src/supreme/utils/wandb_utils/results_extraction/combined_results_*
 src/supreme/utils/wandb_utils/results_extraction/wandb_metrics_summary_*
-scripts/
+scripts/*
+!scripts/render_launch_assets.py
+!scripts/validate_published_tables.py
+
+# Published paper tables are intentionally versioned.
+!docs/results/*.csv
+
+# Local export from the published-results example.
+/paper-results/
 generation_log.txt
 paper1/
 audit_r32.py

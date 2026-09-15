@@ -56,7 +56,7 @@ ON_EXISTING ?=
 
 # Directories/files that the lint + format targets operate on. Single source of
 # truth: CI runs `make quality`, so it inherits this list (don't duplicate it there).
-check_dirs := src tests setup.py
+check_dirs := src tests examples scripts/render_launch_assets.py scripts/validate_published_tables.py
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) \

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore SUPREME's published image-unlearning results across methods, models and scenarios. Download the paper's tables without installing software.">
+  <title>Published results | SUPREME</title>
+  <style>
+    :root{color-scheme:light;--ink:#201c2c;--muted:#625d70;--purple:#582c83;--border:#ded8e5;--paper:#faf8fc}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 system-ui,-apple-system,sans-serif}
+    a{color:var(--purple);text-underline-offset:3px}a:hover{text-decoration-thickness:2px}
+    .wrap{max-width:1080px;margin:auto;padding:32px 24px}nav{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:36px}
+    nav a{text-decoration:none;font-weight:650}.eyebrow{color:var(--purple);font-weight:750;letter-spacing:.1em;text-transform:uppercase;font-size:.8rem}
+    h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1.1;letter-spacing:-.04em;max-width:860px;margin:14px 0 20px}h2{font-size:1.3rem;line-height:1.3}
+    .lead{font-size:1.15rem;max-width:800px;color:var(--muted)}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:22px 0 32px}.meta span{border:1px solid var(--border);border-radius:30px;padding:5px 13px;font-size:.85rem}
+    .panel{border:1px solid var(--border);border-radius:16px;background:white;padding:26px;margin:24px 0;box-shadow:0 5px 18px #28103905}
+    .controls{display:grid;grid-template-columns:1fr 1fr 2fr;gap:16px}label{font-weight:650;display:block;font-size:.9rem}
+    select{margin-top:7px;padding:11px 12px;font:inherit;background:white;color:var(--ink);border:1px solid #aaa0b6;border-radius:7px;width:100%}
+    input[type=checkbox]{accent-color:var(--purple);width:18px;height:18px;vertical-align:middle;margin-right:7px}
+    :focus-visible{outline:3px solid #b37ddb;outline-offset:4px}.toolbar{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:20px}
+    button,.button{font:inherit;cursor:pointer;border:1px solid var(--purple);padding:9px 15px;border-radius:7px;background:white;color:var(--purple);text-decoration:none;display:inline-block}
+    .button.primary{background:var(--purple);color:white}button:hover,.button:hover{box-shadow:0 0 0 2px #582c8322}
+    .small{font-size:.87rem;color:var(--muted)}.chart-wrap{overflow-x:auto}#chart{display:block;width:100%;min-width:650px;height:auto;margin-top:10px}.table-wrap{overflow-x:auto}
+    table{border-collapse:collapse;width:100%;font-size:.9rem;font-variant-numeric:tabular-nums}th,td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}th:first-child,td:first-child{text-align:left}th{color:var(--muted);font-weight:600}caption{text-align:left;padding:12px 0;color:var(--muted)}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.grid .panel{margin:0}li{margin-bottom:8px}code{background:#f0eaf6;padding:2px 5px;border-radius:4px;font-size:.9em}pre{overflow-x:auto;background:#f0eaf6;padding:16px;border-radius:8px}pre code{padding:0}
+    footer{border-top:1px solid var(--border);margin-top:36px;padding-top:22px;color:var(--muted);font-size:.85rem}
+    #interactive[hidden]{display:none}details summary{cursor:pointer;font-weight:650}#status{min-height:1.6em}
+    @media(max-width:640px){.wrap{padding:22px 14px}.panel{padding:16px}.controls,.grid{grid-template-columns:1fr}nav{margin-bottom:24px}.toolbar{gap:12px}.meta{margin-bottom:20px}h1{font-size:2.25rem}}
+    @media(prefers-reduced-motion:no-preference){button,.button{transition:box-shadow .15s}}
+  </style>
+</head>
+<body>
+<main class="wrap">
+  <nav aria-label="Main"><a href="https://pedroandreou.github.io/supreme-unlearning-page/">SUPREME</a><div><a href="https://github.com/pedroandreou/supreme-unlearning">Repository</a> · <a href="https://arxiv.org/abs/2606.00380">Paper</a></div></nav>
+  <header>
+    <div class="eyebrow">Published results · image classification</div>
+    <h1>Compare methods.<br>See the variation across seeds.</h1>
+    <p class="lead">Explore the paper's reported means and standard deviations on Pins Face Recognition. Choose a model, scenario and metric, then download the values.</p>
+    <div class="meta"><span>10 seeds</span><span>2 architectures</span><span>Full-class + random sample</span><span>Single-GPU experiment</span></div>
+  </header>
+  <section class="panel" id="interactive" hidden aria-labelledby="explorer-title">
+    <h2 id="explorer-title">Explore the published tables</h2>
+    <div class="controls">
+      <label for="model">Model<select id="model"><option>ViT</option><option>ResNet18</option></select></label>
+      <label for="scenario">Scenario<select id="scenario"><option value="random">Random sample (0.1%)</option><option value="fullclass">Full-class (5 identities)</option></select></label>
+      <label for="metric">Metric<select id="metric"></select></label>
+    </div>
+    <div class="toolbar"><label><input id="spread" type="checkbox" checked>Show standard deviation</label><button id="download" type="button">Download this table (CSV)</button><button id="share" type="button">Copy view link</button></div>
+    <p id="metric-help" class="small"></p>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 960 380" role="img" aria-labelledby="chart-title chart-description"><title id="chart-title"></title><desc id="chart-description"></desc><g id="plot"></g></svg></div>
+    <p class="small">Dots show means. Whiskers show one standard deviation across seeds, not confidence intervals. Axis limits stay fixed when switching models or scenarios for the same metric.</p>
+    <div class="table-wrap"><table><caption id="table-caption"></caption><thead><tr><th scope="col">Method</th><th scope="col">Mean</th><th scope="col">Standard deviation</th></tr></thead><tbody id="rows"></tbody></table></div>
+    <p id="status" class="small" role="status" aria-live="polite"></p>
+  </section>
+  <section class="panel" aria-labelledby="reading-title">
+    <h2 id="reading-title">How to read these results</h2>
+    <p>Accuracy differences are <strong>unlearned minus retrained</strong>, measured in percentage points. A negative value means lower accuracy than the retrained reference. Closeness to zero describes agreement on that metric.</p>
+    <p>Full-class results average over five forget classes within each seed, then report the mean and standard deviation across ten seeds. The random-sample scenario uses a 0.1% forget set. Its forget evaluation uses the training forget samples; retain evaluation uses the test set.</p>
+    <p class="small">Seeds 260–269 use the matched protocol (J = K = 1), so the spread combines stage effects rather than separating training, unlearning and evaluation variance. The paper's experiments ran on one NVIDIA L40S GPU. These are rounded aggregate summaries; individual seed values, checkpoint files and execution times are not included. A small metric difference alone does not establish complete removal of training-data influence.</p>
+  </section>
+  <div class="grid">
+    <section class="panel"><h2>Take the existing results with you</h2><ul><li><a href="pins_main.csv" download>Main table: accuracy differences and weight distances</a></li><li><a href="pins_additional.csv" download>Appendix: activation distances and MIA differences</a></li><li><a href="pins_raw.csv" download>Appendix: raw summaries and retrained reference</a></li><li><a href="results.json" download>All results and metadata (JSON)</a></li><li><a href="metadata.json" download>Source and measurement definitions</a></li></ul><p class="small">Values are transcribed from the existing paper. Standard deviations of differences are preserved from the paper, not estimated from rounded raw values.</p></section>
+    <section class="panel"><h2>Use SUPREME in your research</h2><p>Run the published experiment configuration or register your own method, model, dataset or metric through the Python API.</p><p><a class="button primary" href="https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/reproducing_the_paper.md">Reproduce the experiments</a></p><p><a href="https://github.com/pedroandreou/supreme-unlearning/blob/main/notebooks/custom_components.ipynb">Add your method</a> · <a href="https://github.com/pedroandreou/supreme-unlearning/discussions">Discuss an experiment</a></p><p class="small">Experiment reproduction requires the documented environment, data and compute. This viewer runs entirely in your browser.</p></section>
+  </div>
+  <details class="panel"><summary>Complete main table (available without JavaScript)</summary><div class="table-wrap"><table><caption>Table 1: mean ± standard deviation. Accuracy differences are in percentage points; layer-wise distance is in weight space.</caption><thead><tr><th scope="col">Model</th><th scope="col">Scenario</th><th scope="col">Method</th><th scope="col">Forget difference</th><th scope="col">Retain difference</th><th scope="col">Layer distance</th></tr></thead><tbody>__FALLBACK_ROWS__</tbody></table></div></details>
+  <footer><p>SUPREME: A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation. Petros Andreou, Jamie Lanyon, Axel Finke and Georgina Cosma. <a href="https://arxiv.org/abs/2606.00380">Paper and citation</a> · <a href="https://github.com/pedroandreou/supreme-unlearning/blob/main/docs/results/README.md">Data provenance</a>.</p></footer>
+</main>
+<script id="published-data" type="application/json">__PUBLISHED_DATA__</script>
+<script>
+"use strict";
+const data = JSON.parse(document.getElementById("published-data").textContent);
+const metrics = {
+  forget_accuracy_difference: ["Forget accuracy difference", "pins_main", "percentage points", "difference"],
+  retain_accuracy_difference: ["Retain accuracy difference", "pins_main", "percentage points", "difference"],
+  layer_distance: ["Layer-wise weight distance", "pins_main", "distance", "distance"],
+  forget_activation_distance: ["Forget activation distance", "pins_additional", "distance", "distance"],
+  retain_activation_distance: ["Retain activation distance", "pins_additional", "distance", "distance"],
+  mia_difference: ["MIA score difference", "pins_additional", "score difference", "difference"],
+  forget_accuracy: ["Raw forget accuracy", "pins_raw", "percent", "raw"],
+  retain_accuracy: ["Raw retain accuracy", "pins_raw", "percent", "raw"],
+  mia: ["Raw MIA score", "pins_raw", "score", "raw"]
+};
+const $ = id => document.getElementById(id);
+Object.entries(metrics).forEach(([key, meta]) => $("metric").add(new Option(meta[0], key)));
+const params = new URLSearchParams(location.hash.slice(1));
+for (const id of ["model", "scenario", "metric"]) {
+  if ([...$(id).options].some(option => option.value === params.get(id))) $(id).value = params.get(id);
+}
+$("spread").checked = params.get("spread") !== "0";
+function selection() {
+  const key = $("metric").value;
+  const meta = metrics[key];
+  return {key, meta, rows:data[meta[1]].filter(row => row.model === $("model").value && row.scenario === $("scenario").value)};
+}
+function svgElement(tag, attrs, text) {
+  const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+  Object.entries(attrs).forEach(([name, value]) => el.setAttribute(name, value));
+  if (text !== undefined) el.textContent = text;
+  $("plot").appendChild(el);
+  return el;
+}
+function draw() {
+  const {key, meta, rows} = selection();
+  $("rows").replaceChildren();
+  rows.forEach(row => {
+    const tr = document.createElement("tr");
+    for (const field of ["method", key + "_mean", key + "_std"]) {
+      const cell = document.createElement(field === "method" ? "th" : "td");
+      if (field === "method") cell.scope = "row";
+      cell.textContent = row[field]; tr.appendChild(cell);
+    }
+    $("rows").appendChild(tr);
+  });
+  const title = `${$("model").value} · ${$("scenario").selectedOptions[0].text} · ${meta[0]}`;
+  $("table-caption").textContent = `${title} (${meta[2]}).`;
+  $("chart-title").textContent = title;
+  $("chart-description").textContent = `${rows.length} methods, mean ${$("spread").checked ? "and one standard deviation" : "only"}. Exact values follow in the table.`;
+  $("metric-help").textContent = meta[3] === "difference" ? "Unlearned minus retrained. Zero marks agreement with retraining on this metric." : meta[3] === "distance" ? "Distance between the unlearned and retrained models. Zero marks agreement on this metric." : "Raw model values. The retrained model is included as the reference; these values are not differences.";
+  const bounds = data[meta[1]].flatMap(row => [Number(row[key+"_mean"])-Number(row[key+"_std"]),Number(row[key+"_mean"])+Number(row[key+"_std"])]);
+  let low = Math.min(0, ...bounds), high = Math.max(0, ...bounds);
+  const pad = Math.max((high-low)*0.07, 0.01); low -= pad; high += pad;
+  const x = value => 115 + (value-low)/(high-low)*605;
+  const height = rows.length*44+88;
+  $("chart").setAttribute("viewBox", `0 0 960 ${height}`);
+  $("plot").replaceChildren();
+  for (let tick=0;tick<=4;tick++) {
+    const value=low+(high-low)*tick/4, position=x(value);
+    svgElement("line",{x1:position,x2:position,y1:16,y2:height-52,stroke:"#eee9f2"});
+    svgElement("text",{x:position,y:height-29,"text-anchor":"middle",fill:"#625d70","font-size":13},value.toFixed(Math.max(Math.abs(low),Math.abs(high))<2 ? 2 : 0));
+  }
+  svgElement("line",{x1:x(0),x2:x(0),y1:12,y2:height-52,stroke:"#93869f","stroke-dasharray":"4 4"});
+  rows.forEach((row,i) => {
+    const y=32+i*44, mean=Number(row[key+"_mean"]), sd=Number(row[key+"_std"]);
+    const color=row.method === "Retrain" ? "#536471" : "#582c83";
+    svgElement("text",{x:96,y:y+5,"text-anchor":"end",fill:"#201c2c","font-size":16},row.method);
+    if ($("spread").checked) {
+      svgElement("line",{x1:x(mean-sd),x2:x(mean+sd),y1:y,y2:y,stroke:color,"stroke-width":3});
+      [mean-sd,mean+sd].forEach(v=>svgElement("line",{x1:x(v),x2:x(v),y1:y-6,y2:y+6,stroke:color,"stroke-width":2}));
+    }
+    svgElement("circle",{cx:x(mean),cy:y,r:5,fill:color});
+    svgElement("text",{x:745,y:y+5,fill:"#201c2c","font-size":15,"font-family":"monospace"},`${row[key+"_mean"]} ± ${row[key+"_std"]}`);
+  });
+  svgElement("text",{x:418,y:height-3,"text-anchor":"middle",fill:"#625d70","font-size":13},meta[2]);
+  const hash = new URLSearchParams({model:$("model").value,scenario:$("scenario").value,metric:key,spread:$("spread").checked ? "1":"0"});
+  try {history.replaceState(null,"",`#${hash}`);} catch (_) { /* File previews may restrict history. */ }
+  $("status").textContent = "";
+}
+for (const id of ["model","scenario","metric","spread"]) $(id).addEventListener("change",draw);
+$("download").addEventListener("click",()=>{
+  const {key,meta,rows}=selection();
+  const fields=["model","scenario","method",key+"_mean",key+"_std"];
+  const csv=[fields.join(","),...rows.map(row=>fields.map(field=>row[field]).join(","))].join("\n")+"\n";
+  const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const a=document.createElement("a");a.href=url;a.download=`supreme-${$("model").value}-${$("scenario").value}-${key}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $("status").textContent=`Downloaded ${rows.length} published ${meta[0].toLowerCase()} summaries. Units: ${meta[2]}.`;
+});
+$("share").addEventListener("click",async()=>{
+  const url="https://pedroandreou.github.io/supreme-unlearning-page/results/"+location.hash;
+  try {await navigator.clipboard.writeText(url);$("status").textContent="Copied a link to this view.";}
+  catch (_) {$("status").textContent=`View link: ${url}`;}
+});
+draw();$("interactive").hidden=false;
+</script>
+</body>
+</html>

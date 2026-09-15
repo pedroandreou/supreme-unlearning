@@ -13,7 +13,7 @@ supported benchmarks, and compare against existing approaches.
 | Path | Purpose |
 |---|---|
 | [`methods/`](methods/) | One folder per community-contributed unlearning method: a short README describing the method and a `run.sh` that reproduces its results. Start from [`methods/template/`](methods/template/). |
-| [`leaderboard.md`](leaderboard.md) | Community results table. Submit your numbers via PR. |
+| [`leaderboard.md`](leaderboard.md) | Published reference results and guidance for community submissions. |
 
 ## Two ways to contribute a method
 
@@ -36,5 +36,5 @@ Either way, copy [`methods/template/`](methods/template/) and fill it in. See th
 
 > [!NOTE]
 > The reproducibility numbers in [`docs/reproducing_the_paper.md`](../docs/reproducing_the_paper.md)
-> are fixed to the paper. The [leaderboard](leaderboard.md) is the living table:
-> contribute improvements and new methods there.
+> are fixed to the paper. The [reference tables](leaderboard.md) retain those
+> values; community contributions identify their own experimental settings and sources.

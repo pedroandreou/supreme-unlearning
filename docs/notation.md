@@ -7,7 +7,7 @@ Single source of truth for symbols used across SUPREME's READMEs and algorithmic
 | Symbol | Meaning |
 |---|---|
 | $I$ | number of training seeds |
-| $J$ | number of unlearning seeds per training seed (default $J = 1$; paper main experiments use larger values) |
+| $J$ | number of unlearning seeds per training seed (default $J = 1$; the SUPREME paper uses $J = 1$) |
 | $K$ | number of evaluation seeds per unlearning seed (default $K = 1$) |
 | $i$ | training-seed index, $i \in \{1, \dots, I\}$ (paper, 1-indexed) or $\{0, \dots, I-1\}$ (codebase, 0-indexed) |
 | $j$ | unlearning-seed index, $j \in \{1, \dots, J\}$ (paper) or $\{0, \dots, J-1\}$ (codebase) |
@@ -18,13 +18,15 @@ Single source of truth for symbols used across SUPREME's READMEs and algorithmic
 
 ### Independence requirement
 
-The claim of *statistically-independent unlearning and evaluation runs* requires:
+Nested repetitions require distinct seed identities at each level:
 
 1. All $I$ training seeds are mutually distinct.
 2. All $I \cdot J$ unlearning seeds, one per $(s_t, j)$ pair, are mutually distinct.
 3. When $K > 1$, all $I \cdot J \cdot K$ evaluation seeds, one per $(s_t, j, k)$ triple, are mutually distinct.
 
-The paper's formulas $s_u \leftarrow (i-1) J + j$ and $s_e \leftarrow (i-1) J K + (j-1) K + k$ satisfy these by construction. The scripts in this repo use the sparser $s_u = s_t \cdot 1000 + j$ (and $s_e = s_u \cdot 1000 + k$ when $K > 1$), which preserves independence as long as $J \leq 1000$ and $K \leq 1000$. When $J = 1$ both collapse to $s_u = s_t$; when $K = 1$ they collapse to $s_e = s_u$.
+The paper's formulas $s_u \leftarrow (i-1) J + j$ and $s_e \leftarrow (i-1) J K + (j-1) K + k$ give distinct identities by construction. The scripts use the sparser $s_u = s_t \cdot 1000 + j$ (and $s_e = s_u \cdot 1000 + k$ when $K > 1$). Use distinct nonnegative indices $j,k < 1000$ to avoid collisions; counts alone do not constrain arbitrary user-supplied indices. When $J = 1$, the scripts use $s_u = s_t$; when $K = 1$, they use $s_e = s_u$.
+
+Distinct seeds do not make nested results marginally independent: unlearning runs share their original model, and evaluation repetitions share their unlearned model. Treat repetitions as conditionally independent only under the relevant sampling assumptions. See [seed protocols and variance interpretation](seed_protocols.md).
 
 ## Datasets and partitions
 

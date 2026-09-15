@@ -1,0 +1,25 @@
+{
+  "title": "SUPREME published results: Pins Face Recognition",
+  "paper_url": "https://arxiv.org/abs/2606.00380",
+  "paper_title": "SUPREME: A Multi-GPU Framework for Reproducible Image Unlearning Method Evaluation",
+  "reference_release": "v0.1.0-paper",
+  "dataset": "Pins Face Recognition",
+  "models": ["ResNet18", "ViT"],
+  "training_seeds": [260, 261, 262, 263, 264, 265, 266, 267, 268, 269],
+  "seed_protocol": "Matched: J = K = 1; training, unlearning and evaluation seeds coincide within a run.",
+  "hardware": "One NVIDIA L40S GPU (48 GB)",
+  "fullclass_targets": ["alex_lawther", "bill_gates", "danielle_panabaker", "hugh_jackman", "josh_radnor"],
+  "random_forget_fraction": 0.001,
+  "aggregation": "Full-class: average over five forget classes within each seed, then mean and standard deviation over ten seeds. Random: mean and standard deviation over ten seeds for a 0.1% forget set.",
+  "data_kind": "Published aggregate values, transcribed at the paper's two-decimal precision. These files contain no individual-seed measurements or model checkpoints.",
+  "accuracy_unit": "percent for raw accuracy; percentage points for differences",
+  "difference_definition": "Unlearned minus retrained. Closer to zero indicates closer agreement on that metric, not proof of data removal.",
+  "error_bars": "One standard deviation across seeds, not confidence intervals. Symmetric bars may extend beyond a metric's physical range.",
+  "rounding": "Differences were copied from the reported difference tables, not recalculated from rounded raw means. Values displayed as -0.00 retain the source sign in CSV.",
+  "excluded": "UNSIR is excluded from the random-sample scenario by design. Original-model values and execution times are not supplied by these three paper tables.",
+  "tables": {
+    "pins_main.csv": "Table 1: Accuracy differences and layer-wise distances (LaTeX label tab:pins_results_main).",
+    "pins_additional.csv": "Appendix: MIA differences and activation distances (LaTeX label tab:pins_results_appendix).",
+    "pins_raw.csv": "Appendix: Raw accuracy and MIA summaries, including the retrained reference (LaTeX label tab:pins_raw_values)."
+  }
+}

@@ -5,6 +5,30 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-09-15
+
+### Added
+
+- Published paper tables in CSV format, with a standard-library Python example
+  and an interactive offline results viewer.
+- Seed-design and variance-analysis guidance, framework comparisons, and
+  task-specific installation, library, experiment and component guides.
+- WIPE-OUT 2 presentation, published-results figures and seed-protocol diagram.
+- Regression tests for published table exports and documentation mathematics.
+
+### Changed
+
+- Concise project overview and banner highlighting independent seed control
+  across training, unlearning and evaluation.
+- Runtime container reference updated to `0.1.5`.
+
+### Fixed
+
+- GitHub rendering of display equations and inline mathematical notation.
+
+The unlearning implementations and paper-reproduction dependency pins are
+unchanged. Results assets reproduce the existing paper tables.
+
 ## [0.1.4] - 2026-08-18
 
 ### Added
@@ -156,6 +180,7 @@ scripts: `supreme-train`, `supreme-unlearn`. Pin paper reproduction to the
   untracked dataset images), anchored venv ignores, `.dockerignore` /
   `.vscode/tasks.json` paths, and added `SLURM_ACCOUNT` to `.env.example`.
 
+[0.1.5]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.5
 [0.1.4]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.4
 [0.1.3]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.3
 [0.1.2]: https://github.com/pedroandreou/supreme-unlearning/releases/tag/v0.1.2

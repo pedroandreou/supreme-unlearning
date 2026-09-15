@@ -7,3 +7,37 @@ and publish the release to PyPI (a manual run targets TestPyPI as a dry-run). Th
 CUDA images are published to GHCR manually via [`.github/workflows/docker.yml`](../.github/workflows/docker.yml)
 (runtime image) and [`.github/workflows/devcontainer.yml`](../.github/workflows/devcontainer.yml)
 (prebuilt dev container). Notable changes per release are tracked in [`CHANGELOG.md`](../CHANGELOG.md).
+
+## Publish a release
+
+Release and container workflows run on GitHub-hosted Ubuntu runners. They do not
+require an SSH session, a GPU server, datasets or experiment runs.
+
+1. Choose an unused version and update `supreme.__version__`, the runtime image
+   reference in `docker/docker-compose.yml`, and `CHANGELOG.md`.
+2. Run `make quality`, `make test` and `make build`. Commit the release files,
+   push `main`, and wait for its CI checks to pass.
+3. Create and push the corresponding version tag on that tested commit. For
+   example, a new `v0.1.5` tag triggers the production PyPI upload and GitHub
+   Release. Do not move an existing release tag or reuse a published version.
+4. Run both container workflows from the release tag, once for the versioned
+   image and once for `latest`. Select the same source tag for all four runs.
+
+For `v0.1.5`, the container commands are:
+
+```bash
+gh workflow run docker.yml --ref v0.1.5 -f tag=0.1.5
+gh workflow run docker.yml --ref v0.1.5 -f tag=latest
+gh workflow run devcontainer.yml --ref v0.1.5 -f tag=0.1.5
+gh workflow run devcontainer.yml --ref v0.1.5 -f tag=latest
+```
+
+Container builds are separate from the Python release and may take substantially
+longer. Check all workflow outcomes and both image tags before announcing that
+all packages are available. Rebuilding a container tag changes what that tag
+resolves to; use an image digest when an immutable reference is needed.
+
+The repository's `pypi` deployment environment records Python publication. The
+[project website](https://pedroandreou.github.io/supreme-unlearning-page/) is
+deployed separately by GitHub Pages from the `supreme-unlearning-page` repository.
+A Python release does not require redeploying an unchanged website.

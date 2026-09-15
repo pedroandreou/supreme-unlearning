@@ -2,11 +2,6 @@
 
 ![SUPREME: reproducible evaluation for image unlearning, with independent seed control across training, unlearning and evaluation](assets/SUPREME-wordmark.svg)
 
-<h2>Evaluate unlearning beyond a single trained model.</h2>
-
-Control training, unlearning and evaluation seeds separately. Compare methods
-against retraining, from one GPU to a cluster, through an extensible Python API.
-
 <p>
   <a href="https://pedroandreou.github.io/supreme-unlearning-page/results/"><strong>Explore published results</strong></a> ·
   <a href="#try-the-results-example">Try the local example</a> ·
@@ -22,7 +17,7 @@ against retraining, from one GPU to a cluster, through an extensible Python API.
 
 </div>
 
-## Why more unlearning seeds are not enough
+## Evaluate unlearning beyond a single trained model
 
 Repeating unlearning on one trained model measures variation conditional on
 that model. It does not reveal how the result changes when the original model
@@ -35,7 +30,8 @@ compute between the two.
 SUPREME makes this experimental design practical: train **I** original models,
 run **J** unlearning repetitions per model, and optionally **K** evaluation
 repetitions per unlearned model. Separate stage seeds support investigating
-where variation arises; distributed execution supports the repeated workload.
+where variation arises. An extensible Python API supports comparisons against
+retraining, with execution from one GPU to a cluster.
 
 **[Seed design and variance analysis](docs/seed_protocols.md)**
 · [Research on training seeds](https://arxiv.org/abs/2510.26714v5)

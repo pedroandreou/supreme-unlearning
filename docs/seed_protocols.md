@@ -11,7 +11,7 @@ separate training and unlearning variance. For a metric with deterministic
 evaluation, their Equation (4) gives
 
 ```math
-\operatorname{Var}(\bar Z)
+\mathrm{Var}(\bar Z)
 = \frac{\sigma_{\mathrm{train}}^2}{I}
 + \frac{\sigma_{\mathrm{unlearn}}^2}{IJ}.
 ```

@@ -12,7 +12,7 @@ def test_seed_variance_equation_uses_a_math_fence():
     blocks = re.findall(r"^```math\n(.*?)^```", source, flags=re.M | re.S)
     assert len(blocks) == 1
     assert blocks[0].strip() == (
-        r"\operatorname{Var}(\bar Z)"
+        r"\mathrm{Var}(\bar Z)"
         "\n"
         r"= \frac{\sigma_{\mathrm{train}}^2}{I}"
         "\n"

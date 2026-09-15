@@ -20,17 +20,26 @@ require an SSH session, a GPU server, datasets or experiment runs.
 3. Create and push the corresponding version tag on that tested commit. For
    example, a new `v0.1.5` tag triggers the production PyPI upload and GitHub
    Release. Do not move an existing release tag or reuse a published version.
-4. Run both container workflows from the release tag, once for the versioned
-   image and once for `latest`. Select the same source tag for all four runs.
+4. Run both container workflows from a tested source tag. Publish the runtime
+   image once for the version and once for `latest`; the development-container
+   workflow accepts both tags in one run.
 
 For `v0.1.5`, the container commands are:
 
 ```bash
 gh workflow run docker.yml --ref v0.1.5 -f tag=0.1.5
 gh workflow run docker.yml --ref v0.1.5 -f tag=latest
-gh workflow run devcontainer.yml --ref v0.1.5 -f tag=0.1.5
-gh workflow run devcontainer.yml --ref v0.1.5 -f tag=latest
+gh workflow run devcontainer.yml --ref v0.1.5-containers -f tag=0.1.5,latest
 ```
+
+The `v0.1.5-containers` reference includes the development-container build
+configuration fix without changing the published Python release. Subsequent
+releases can use their release tag for both workflows.
+
+The publishing workflow uses `.devcontainer/devcontainer.build.json` to build
+the CUDA Dockerfile and development features from source. The interactive
+`.devcontainer/devcontainer.json` configuration instead pulls the prebuilt image.
+Keep their feature settings aligned.
 
 Container builds are separate from the Python release and may take substantially
 longer. Check all workflow outcomes and both image tags before announcing that

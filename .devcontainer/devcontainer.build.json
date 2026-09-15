@@ -1,0 +1,20 @@
+{
+    "name": "SUPREME image build",
+    "build": {
+        "dockerfile": "../docker/pure_pip.Dockerfile.cuda_12_1",
+        "context": ".."
+    },
+    "features": {
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest",
+            "ppa": false
+        },
+        "ghcr.io/devcontainers/features/common-utils:2": {
+            "installZsh": false,
+            "username": "vscode",
+            "upgradePackages": true
+        }
+    },
+    "remoteUser": "vscode",
+    "containerUser": "vscode"
+}

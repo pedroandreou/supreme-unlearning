@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Image tag to publish (e.g. 0.1.0 or latest)"
+        description: "Image tags to publish, comma-separated (e.g. 0.1.5,latest)"
         default: "latest"
         required: true
 
@@ -53,6 +53,9 @@ jobs:
       - name: Build and push dev container
         uses: devcontainers/ci@v0.3
         with:
+          # Build from source. The interactive configuration pulls the existing
+          # prebuilt image and must not be used to publish its replacement.
+          configFile: .devcontainer/devcontainer.build.json
           imageName: ${{ steps.img.outputs.name }}
           imageTag: ${{ github.event.inputs.tag }}
           cacheFrom: ${{ steps.img.outputs.name }}
